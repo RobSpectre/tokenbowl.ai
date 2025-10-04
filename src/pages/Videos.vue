@@ -1,0 +1,108 @@
+<template lang="pug">
+.container.mx-auto.px-4.py-8.bg-slate-950
+  //- Loading State
+  .flex.items-center.justify-center(v-if="loading" style="min-height: 50vh")
+    .text-center
+      .inline-block.animate-spin.rounded-full.h-16.w-16.border-4.border-blue-500.border-t-transparent
+      p.text-white.mt-4.text-xl.font-bold.uppercase.tracking-wider Loading videos...
+
+  //- Main Content
+  main(v-else)
+    //- Long Form Videos
+    section.mb-12(v-if="longFormVideos.length > 0")
+      .bg-gradient-to-r.from-red-600.to-red-800.rounded-t-lg.px-6.py-4.border-b-4.border-yellow-400
+        h2.text-white.text-3xl.font-black.uppercase.tracking-wide.flex.items-center.gap-3
+          span.text-yellow-400 🎬
+          | Long Form
+
+      .bg-slate-900.rounded-b-lg.p-4
+        .grid.grid-cols-2.md_grid-cols-3.lg_grid-cols-4.gap-3
+          a.block.group(
+            v-for="video in longFormVideos"
+            :key="video.id"
+            :href="video.url"
+            target="_blank"
+            rel="noopener noreferrer"
+          )
+            .relative.overflow-hidden.rounded
+              img.w-full.aspect-video.object-cover.group-hover_scale-105.transition-transform.duration-200(
+                :src="video.thumbnail"
+                :alt="video.title"
+              )
+              div(class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center")
+                svg.w-8.h-8.text-white(fill="currentColor" viewBox="0 0 24 24")
+                  path(d="M8 5v14l11-7z")
+            h3.text-white.font-medium.mt-1.text-xs.group-hover_text-blue-400.transition-colors.line-clamp-2 {{ video.title }}
+            p(class="text-gray-400 text-xs mt-0.5 line-clamp-1") {{ video.description }}
+
+    //- Shorts
+    section.mb-12(v-if="shortsVideos.length > 0")
+      .bg-gradient-to-r.from-purple-600.to-purple-800.rounded-t-lg.px-6.py-4.border-b-4.border-yellow-400
+        h2.text-white.text-3xl.font-black.uppercase.tracking-wide.flex.items-center.gap-3
+          span.text-yellow-400 ⚡
+          | Shorts
+
+      .bg-slate-900.rounded-b-lg.p-4
+        .flex.gap-2.flex-wrap
+          a.block.group.flex-1(
+            v-for="video in shortsVideos"
+            :key="video.id"
+            :href="video.url"
+            target="_blank"
+            rel="noopener noreferrer"
+            style="min-width: 150px; max-width: 200px;"
+          )
+            .relative.overflow-hidden.rounded
+              img(
+                class="w-full aspect-[9/16] object-cover group-hover:scale-105 transition-transform duration-200"
+                :src="video.thumbnail"
+                :alt="video.title"
+              )
+              div(class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center")
+                svg.w-8.h-8.text-white(fill="currentColor" viewBox="0 0 24 24")
+                  path(d="M8 5v14l11-7z")
+              div(class="absolute bottom-1 right-1 bg-black/80 px-1.5 py-0.5 rounded text-white text-[10px] font-bold") SHORTS
+            h3.text-white.font-medium.mt-1.text-xs.group-hover_text-blue-400.transition-colors.line-clamp-1 {{ video.title }}
+</template>
+
+<script>
+import { ref, onMounted } from 'vue'
+import { getPlaylistVideos } from '../youtubeApi.js'
+
+export default {
+  name: 'Videos',
+  setup() {
+    const loading = ref(true)
+    const longFormVideos = ref([])
+    const shortsVideos = ref([])
+    const LONG_FORM_PLAYLIST_ID = 'PLPseZqsYjyD5ZNg9Bjo_bn8JdJmcl-KGS'
+    const SHORTS_PLAYLIST_ID = 'PLPseZqsYjyD7ToDTDdC8gr8NEJKy7ejl-'
+
+    const loadVideos = async () => {
+      try {
+        loading.value = true
+        const [longForm, shorts] = await Promise.all([
+          getPlaylistVideos(LONG_FORM_PLAYLIST_ID),
+          getPlaylistVideos(SHORTS_PLAYLIST_ID)
+        ])
+        longFormVideos.value = longForm
+        shortsVideos.value = shorts
+      } catch (error) {
+        console.error('Error loading videos:', error)
+      } finally {
+        loading.value = false
+      }
+    }
+
+    onMounted(() => {
+      loadVideos()
+    })
+
+    return {
+      loading,
+      longFormVideos,
+      shortsVideos
+    }
+  }
+}
+</script>

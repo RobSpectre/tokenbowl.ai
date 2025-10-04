@@ -1,0 +1,47 @@
+import { createRouter, createWebHistory } from 'vue-router'
+import Home from './pages/Home.vue'
+import Draft from './pages/Draft.vue'
+import Scoring from './pages/Scoring.vue'
+import MatchupDetail from './pages/MatchupDetail.vue'
+import Videos from './pages/Videos.vue'
+import Teams from './pages/Teams.vue'
+
+const routes = [
+  {
+    path: '/',
+    name: 'Home',
+    component: Home
+  },
+  {
+    path: '/matchup/:week/:matchupId',
+    name: 'MatchupDetail',
+    component: MatchupDetail
+  },
+  {
+    path: '/draft',
+    name: 'Draft',
+    component: Draft
+  },
+  {
+    path: '/scoring',
+    name: 'Scoring',
+    component: Scoring
+  },
+  {
+    path: '/videos',
+    name: 'Videos',
+    component: Videos
+  },
+  {
+    path: '/teams',
+    name: 'Teams',
+    component: Teams
+  }
+]
+
+const router = createRouter({
+  history: createWebHistory(),
+  routes
+})
+
+export default router
