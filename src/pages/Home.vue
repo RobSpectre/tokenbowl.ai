@@ -83,7 +83,7 @@
 
                 //- VS Separator (Mobile)
                 div(class="flex items-center justify-center")
-                  span.text-white.font-black.text-xs.bg-slate-700.rounded-full.px-2.py-0.5 VS
+                  span(class="text-white font-black text-xs bg-slate-700 rounded-full px-2 py-0.5") VS
 
                 //- Team 2 (Mobile)
                 .flex.items-center.justify-between.w-full
