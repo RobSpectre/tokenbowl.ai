@@ -274,37 +274,80 @@
     //- History
     section.mb-12
       .bg-gradient-to-r.from-green-600.to-green-800.rounded-t-lg.px-6.py-4.border-b-4.border-yellow-400
-        h2.text-white.text-3xl.font-black.uppercase.tracking-wide.flex.items-center.gap-3
+        h2(class="text-white text-xl sm:text-3xl font-black uppercase tracking-wide flex items-center gap-2 sm:gap-3")
           span.text-yellow-400 📊
           | History
 
-      .bg-slate-900.rounded-b-lg.p-6
-        div(ref="standingsChartRef" style="width: 100%; height: 400px;")
+      div(class="bg-slate-900 rounded-b-lg p-3 sm:p-6 overflow-x-auto")
+        div(ref="standingsChartRef" class="w-full min-w-[350px] h-[250px] sm:h-[400px]")
 
     //- Points
     section.mb-12
       .bg-gradient-to-r.from-cyan-600.to-cyan-800.rounded-t-lg.px-6.py-4.border-b-4.border-yellow-400
-        h2.text-white.text-3xl.font-black.uppercase.tracking-wide.flex.items-center.gap-3
+        h2(class="text-white text-xl sm:text-3xl font-black uppercase tracking-wide flex items-center gap-2 sm:gap-3")
           span.text-yellow-400 📈
           | Total Points
 
-      .bg-slate-900.rounded-b-lg.p-6
-        div(ref="pointsChartRef" style="width: 100%; height: 500px;")
+      div(class="bg-slate-900 rounded-b-lg p-3 sm:p-6 overflow-x-auto")
+        div(ref="pointsChartRef" class="w-full min-w-[350px] h-[300px] sm:h-[500px]")
 
     //- Transactions
     section.mb-12
-      .bg-gradient-to-r.from-orange-600.to-orange-800.rounded-t-lg.px-6.py-4.border-b-4.border-yellow-400
-        h2.text-white.text-3xl.font-black.uppercase.tracking-wide.flex.items-center.gap-3
+      div(class="bg-gradient-to-r from-orange-600 to-orange-800 rounded-t-lg px-4 sm:px-6 py-3 sm:py-4 border-b-4 border-yellow-400")
+        h2(class="text-white text-xl sm:text-3xl font-black uppercase tracking-wide flex items-center gap-2 sm:gap-3")
           span.text-yellow-400 💼
           | Week {{ selectedWeek }} Transactions
 
-      .bg-slate-900.rounded-b-lg.p-6(v-if="transactions && transactions.length > 0")
+      div(class="bg-slate-900 rounded-b-lg p-3 sm:p-6" v-if="transactions && transactions.length > 0")
         .space-y-3
-          .bg-slate-800.rounded-lg.p-4(
+          div(class="bg-slate-800 rounded-lg p-3 sm:p-4"
             v-for="(transaction, index) in transactions"
             :key="index"
           )
-            .flex.items-start.gap-4
+            //- Mobile Layout (stacked)
+            div(class="flex flex-col gap-3 sm:hidden")
+              //- Team Info
+              div(v-if="transaction.teamInfo" class="flex items-center gap-2")
+                img(class="h-10 w-10 object-contain"
+                  v-if="transaction.teamInfo.logo"
+                  :src="transaction.teamInfo.logo"
+                  :alt="transaction.teamInfo.aiModel"
+                  :class="transaction.teamInfo.invertLogo ? 'invert brightness-200' : ''"
+                )
+                div(class="flex-1")
+                  .text-white.font-bold.text-sm {{ transaction.teamInfo.aiModel }}
+                  .text-blue-400.text-xs {{ transaction.teamInfo.owner }}
+                div(class="text-right")
+                  div(:class="getTransactionDelta(transaction) > 0 ? 'text-green-400' : 'text-red-400'" class="text-xl font-black") {{ getTransactionDelta(transaction) > 0 ? '+' : '' }}{{ getTransactionDelta(transaction) }}
+                  .text-gray-400.text-xs Δ ROS
+
+              //- Transaction Type
+              .text-white.font-bold.text-sm {{ getTransactionType(transaction.type) }}
+
+              //- Players
+              div(class="grid grid-cols-1 gap-2")
+                div(v-if="transaction.adds")
+                  .text-green-400.text-xs.font-semibold.mb-1 Added:
+                  div(v-for="playerId in Object.keys(transaction.adds)" :key="playerId" class="flex items-center gap-2 bg-slate-700 rounded p-2")
+                    img(class="w-10 h-10 rounded object-cover" :src="getPlayerImageUrl(playerId)" :alt="getPlayerNameFromId(playerId)" @error="$event.target.style.display='none'")
+                    div(class="flex-1 min-w-0")
+                      div(class="text-gray-300 text-xs font-semibold truncate") {{ getPlayerNameFromId(playerId) }}
+                      div(class="text-blue-400 text-xs") {{ getPlayerPosition(playerId) }}
+                    div(class="text-gray-400 text-xs" v-if="getPlayerRankECR(playerId)") ROS: {{ getPlayerRankECR(playerId) }}
+
+                div(v-if="transaction.drops")
+                  .text-red-400.text-xs.font-semibold.mb-1 Dropped:
+                  div(v-for="playerId in Object.keys(transaction.drops)" :key="playerId" class="flex items-center gap-2 bg-slate-700 rounded p-2")
+                    img(class="w-10 h-10 rounded object-cover" :src="getPlayerImageUrl(playerId)" :alt="getPlayerNameFromId(playerId)" @error="$event.target.style.display='none'")
+                    div(class="flex-1 min-w-0")
+                      div(class="text-gray-300 text-xs font-semibold truncate") {{ getPlayerNameFromId(playerId) }}
+                      div(class="text-blue-400 text-xs") {{ getPlayerPosition(playerId) }}
+                    div(class="text-gray-400 text-xs" v-if="getPlayerRankECR(playerId)") ROS: {{ getPlayerRankECR(playerId) }}
+
+              .text-gray-500.text-xs.text-right {{ formatTransactionDate(transaction.created) }}
+
+            //- Desktop Layout (original)
+            div(class="hidden sm:flex sm:items-start sm:gap-4")
               div(v-if="transaction.teamInfo" class="flex items-center gap-3 min-w-[250px]")
                 img.h-16.w-16.object-contain(
                   v-if="transaction.teamInfo.logo"
@@ -349,7 +392,7 @@
 </template>
 
 <script>
-import { ref, onMounted, watch, computed, nextTick } from 'vue'
+import { ref, onMounted, onUnmounted, watch, computed, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { getLeagueData, getMatchups, getRosters, getLeagueUsers, getTransactions, getPlayers } from '../sleeperApi.js'
 import { getTeamInfo } from '../teamMappings.js'
@@ -950,12 +993,36 @@ export default {
       renderPointsChart()
     })
 
+    // Handle window resize for responsive charts
+    const handleResize = () => {
+      if (standingsChart) {
+        standingsChart.resize()
+      }
+      if (pointsChart) {
+        pointsChart.resize()
+      }
+    }
+
     onMounted(() => {
       loadData().then(() => {
         renderStandingsChart()
         renderPointsChart()
       })
       loadVideos()
+
+      // Add resize listener
+      window.addEventListener('resize', handleResize)
+    })
+
+    // Clean up on unmount
+    onUnmounted(() => {
+      window.removeEventListener('resize', handleResize)
+      if (standingsChart) {
+        standingsChart.dispose()
+      }
+      if (pointsChart) {
+        pointsChart.dispose()
+      }
     })
 
     return {
