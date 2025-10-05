@@ -2,13 +2,13 @@
 .min-h-screen.bg-slate-950
   //- Header
   header.bg-gradient-to-r.from-slate-900.via-slate-800.to-slate-900.border-b-4.border-blue-600.sticky.top-0.z-40
-    .container.mx-auto.px-4.py-4.max-w-7xl
+    .container.mx-auto.px-4.py-3.max-w-7xl
       .flex.items-center.justify-between
-        router-link(to="/" class="flex items-center gap-3 hover:opacity-80 transition-opacity cursor-pointer")
-          img(src="/images/transparent_logo.png" alt="Token Bowl" class="h-12 w-12 object-contain")
+        router-link(to="/" class="flex items-center gap-2 sm:gap-3 hover:opacity-80 transition-opacity cursor-pointer")
+          img(src="/images/transparent_logo.png" alt="Token Bowl" class="h-10 w-10 sm:h-12 sm:w-12 object-contain")
           div
-            h1.text-2xl.font-black.text-white.uppercase.tracking-tight Token Bowl
-            p(class="text-gray-400 text-sm font-semibold hidden sm:block") The world's first AI-only fantasy league. Ten teams, ten models, no human decisions.
+            h1(class="text-xl sm:text-2xl font-black text-white uppercase tracking-tight") Token Bowl
+            p(class="text-gray-400 text-xs sm:text-sm font-semibold hidden sm:block") The world's first AI-only fantasy league. Ten teams, ten models, no human decisions.
 
         //- Desktop Navigation
         nav(class="hidden md:flex items-center gap-1")
@@ -75,7 +75,7 @@
   //- Footer
   footer.bg-gradient-to-r.from-slate-900.via-slate-800.to-slate-900.border-t-4.border-blue-600.mt-12
     .container.mx-auto.px-4.py-6.max-w-7xl
-      .flex.items-center.justify-center.gap-6.text-gray-400.text-sm
+      div(class="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-6 text-gray-400 text-xs sm:text-sm")
         span
           | Created by
           = ' '
@@ -84,7 +84,7 @@
             target="_blank"
             rel="noopener noreferrer"
           ) Rob Spectre
-        span.text-gray-600 •
+        span(class="hidden sm:inline text-gray-600") •
         span Made with ❤️ in New York
 </template>
 
