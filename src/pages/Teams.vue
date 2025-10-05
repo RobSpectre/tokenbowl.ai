@@ -16,7 +16,50 @@
     //- Team Selector (Fixed)
     div(class="fixed top-16 md:top-24 left-0 right-0 z-30 bg-slate-950 pb-2 sm:pb-4 pt-2 sm:pt-4 shadow-lg")
       div(class="container mx-auto px-2 sm:px-4 max-w-7xl")
-        div(class="flex gap-1 sm:gap-2 overflow-x-auto scrollbar-hide justify-start sm:justify-center")
+        //- Mobile Custom Dropdown
+        div(class="md:hidden relative")
+          //- Dropdown Button
+          button(
+            class="w-full px-4 py-3 bg-slate-800 text-white font-bold rounded-lg border-2 border-blue-600 focus:outline-none focus:border-yellow-400 transition-colors flex items-center justify-between"
+            @click="toggleMobileDropdown"
+          )
+            .flex.items-center.gap-3(v-if="selectedTeam")
+              img.h-8.w-8.object-contain(
+                :src="selectedTeam.teamInfo.logo"
+                :alt="selectedTeam.teamInfo.aiModel"
+                :class="selectedTeam.teamInfo.invertLogo ? 'invert brightness-200' : ''"
+              )
+              span {{ selectedTeam.teamInfo.aiModel }}
+            span(v-else) Select Team
+            svg.w-5.h-5.transition-transform(
+              :class="mobileDropdownOpen ? 'rotate-180' : ''"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            )
+              path(stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7")
+
+          //- Dropdown Menu
+          div(
+            v-if="mobileDropdownOpen"
+            class="absolute top-full left-0 right-0 mt-2 bg-slate-800 rounded-lg border-2 border-blue-600 shadow-xl max-h-96 overflow-y-auto z-50"
+          )
+            button(
+              v-for="team in teams"
+              :key="team.roster_id"
+              class="w-full px-4 py-3 flex items-center gap-3 hover:bg-slate-700 transition-colors border-b border-slate-700 last:border-b-0"
+              :class="selectedTeam?.roster_id === team.roster_id ? 'bg-blue-600' : ''"
+              @click="selectTeamFromDropdown(team)"
+            )
+              img.h-8.w-8.object-contain.flex-shrink-0(
+                :src="team.teamInfo.logo"
+                :alt="team.teamInfo.aiModel"
+                :class="team.teamInfo.invertLogo ? 'invert brightness-200' : ''"
+              )
+              span.text-white.font-bold {{ team.teamInfo.aiModel }}
+
+        //- Desktop Buttons
+        div(class="hidden md:flex gap-1 sm:gap-2 overflow-x-auto scrollbar-hide justify-start sm:justify-center")
           button(class="px-2 py-1.5 sm:px-3 sm:py-2 rounded-lg font-bold text-xs transition-all duration-200 flex flex-col items-center gap-1 flex-shrink-0"
             v-for="team in teams"
             :key="team.roster_id"
@@ -31,7 +74,7 @@
             span.text-xs {{ team.teamInfo.aiModel }}
 
     //- Spacer for fixed selector
-    div(class="h-24 sm:h-28")
+    div(class="h-20 md:h-28")
 
     //- Selected Team Details
     div(class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-8" v-if="selectedTeam")
@@ -113,6 +156,9 @@
                   .flex-1.min-w-0
                     div(class="text-white font-semibold text-sm sm:text-base truncate") {{ getPlayerName(playerId) }}
                     div(class="text-gray-400 text-xs hidden sm:block") {{ getPlayerTeam(playerId) }}
+                    div(class="flex gap-2 text-xs mt-0.5")
+                      span(class="text-gray-500" v-if="getPlayerVORP(playerId)") VORP: {{ getPlayerVORP(playerId) }}
+                      span(class="text-gray-500" v-if="getPlayerROS(playerId)") ROS: {{ getPlayerROS(playerId).toFixed(1) }}
                   .text-right.flex-shrink-0
                     div(class="text-blue-400 font-bold text-base sm:text-lg") {{ getPlayerPoints(currentMatchup, playerId) }}
 
@@ -137,9 +183,193 @@
                     .flex-1
                       .text-white.font-semibold.text-sm {{ getPlayerName(playerId) }}
                       .text-gray-400.text-xs {{ getPlayerTeam(playerId) }}
+                      div(class="flex gap-2 text-xs mt-0.5")
+                        span(class="text-gray-500" v-if="getPlayerVORP(playerId)") VORP: {{ getPlayerVORP(playerId) }}
+                        span(class="text-gray-500" v-if="getPlayerROS(playerId)") ROS: {{ getPlayerROS(playerId).toFixed(1) }}
 
-      //- Transaction History
-      div(class="lg:col-span-1")
+        //- Matchup History
+        section(class="mb-4 sm:mb-8" v-if="teamHistory")
+          div(class="bg-gradient-to-r from-green-600 to-green-800 rounded-t-lg px-4 sm:px-6 py-3 sm:py-4 border-b-4 border-yellow-400")
+            h3(class="text-white text-lg sm:text-2xl font-black uppercase tracking-wide flex items-center gap-2 sm:gap-3")
+              span.text-yellow-400 📅
+              | Matchup History
+
+          div(class="bg-slate-900 rounded-b-lg p-4 sm:p-6")
+            div(class="space-y-4")
+              div(
+                v-for="matchup in teamHistory.matchups"
+                :key="matchup.week"
+                class="bg-slate-800 rounded-lg overflow-hidden border-2 border-slate-700"
+              )
+                //- Week Header
+                .bg-gradient-to-r.from-slate-700.to-slate-600.px-4.py-2.flex.items-center.justify-between
+                  .text-white.font-bold.text-sm Week {{ matchup.week }}
+                  .flex.items-center.gap-2(v-if="matchup.opponentScore !== null")
+                    span.text-xs.font-bold.uppercase(
+                      :class="matchup.won ? 'text-green-400' : 'text-red-400'"
+                    ) {{ matchup.won ? 'WIN' : 'LOSS' }}
+
+                div(class="p-4" v-if="matchup.opponent")
+                  //- Mobile Layout (stacked)
+                  div(class="flex flex-col gap-2 md:hidden")
+                    //- Team 1 (Mobile)
+                    .flex.items-center.justify-between.w-full.bg-slate-750.rounded-lg.p-2
+                      div(class="flex items-center gap-2 flex-1 min-w-0")
+                        img(class="h-10 w-10 flex-shrink-0 object-contain"
+                          :src="selectedTeam.teamInfo.logo"
+                          :alt="selectedTeam.teamInfo.aiModel"
+                          :class="selectedTeam.teamInfo.invertLogo ? 'invert brightness-200' : ''"
+                        )
+                        div(class="min-w-0 flex-1")
+                          div(class="text-white font-bold text-sm truncate") {{ selectedTeam.teamInfo.aiModel }}
+                          div(class="text-blue-400 text-xs font-semibold truncate") {{ selectedTeam.teamInfo.owner }}
+                      div(class="flex flex-col items-end flex-shrink-0 ml-2")
+                        div(class="text-white font-black text-xl") {{ matchup.teamScore.toFixed(2) }}
+                        div(v-if="matchup.opponentScore !== null")
+                          span.text-green-400.text-xs.font-bold.uppercase(v-if="matchup.won") W
+                          span.text-red-400.text-xs.font-bold.uppercase(v-else) L
+
+                    //- VS Separator (Mobile)
+                    div(class="flex items-center justify-center py-1")
+                      div(class="relative flex items-center justify-center w-full")
+                        div(class="absolute inset-0 flex items-center")
+                          div(class="w-full border-t border-slate-600")
+                        div(class="relative bg-slate-800 px-2")
+                          span(class="text-gray-400 font-bold text-xs") VS
+
+                    //- Team 2 (Mobile)
+                    .flex.items-center.justify-between.w-full.bg-slate-750.rounded-lg.p-2
+                      div(class="flex items-center gap-2 flex-1 min-w-0")
+                        img(class="h-10 w-10 flex-shrink-0 object-contain"
+                          :src="matchup.opponent.logo"
+                          :alt="matchup.opponent.aiModel"
+                          :class="matchup.opponent.invertLogo ? 'invert brightness-200' : ''"
+                        )
+                        div(class="min-w-0 flex-1")
+                          div(class="text-white font-bold text-sm truncate") {{ matchup.opponent.aiModel }}
+                          div(class="text-blue-400 text-xs font-semibold truncate") {{ matchup.opponent.owner }}
+                      div(class="flex flex-col items-end flex-shrink-0 ml-2")
+                        div(class="text-white font-black text-xl") {{ matchup.opponentScore.toFixed(2) }}
+                        div(v-if="matchup.opponentScore !== null")
+                          span.text-green-400.text-xs.font-bold.uppercase(v-if="!matchup.won") W
+                          span.text-red-400.text-xs.font-bold.uppercase(v-else) L
+
+                  //- Desktop Layout (side by side with VS in the middle)
+                  div(class="hidden md:flex md:items-center md:gap-2")
+                    //- Team 1 (Desktop)
+                    div(class="flex-1 flex items-center justify-between bg-slate-750 rounded-lg p-3")
+                      div(class="flex items-center gap-3")
+                        img(class="h-12 w-12 object-contain"
+                          :src="selectedTeam.teamInfo.logo"
+                          :alt="selectedTeam.teamInfo.aiModel"
+                          :class="selectedTeam.teamInfo.invertLogo ? 'invert brightness-200' : ''"
+                        )
+                        div
+                          div(class="text-white font-bold text-lg") {{ selectedTeam.teamInfo.aiModel }}
+                          div(class="text-blue-400 text-sm font-semibold") {{ selectedTeam.teamInfo.owner }}
+                      div(class="text-right")
+                        div(class="text-white font-black text-3xl") {{ matchup.teamScore.toFixed(2) }}
+                        div(v-if="matchup.opponentScore !== null" class="mt-2")
+                          span(class="text-green-400 text-xs font-bold uppercase" v-if="matchup.won") W
+                          span(class="text-red-400 text-xs font-bold uppercase" v-else) L
+
+                    //- VS Separator (Desktop)
+                    div(class="flex-shrink-0 px-2")
+                      div(class="bg-slate-700 rounded-full px-3 py-1")
+                        span(class="text-white font-black text-sm") VS
+
+                    //- Team 2 (Desktop)
+                    div(class="flex-1 flex items-center justify-between bg-slate-750 rounded-lg p-3")
+                      div(class="text-left")
+                        div(class="text-white font-black text-3xl") {{ matchup.opponentScore.toFixed(2) }}
+                        div(v-if="matchup.opponentScore !== null" class="mt-2")
+                          span(class="text-green-400 text-xs font-bold uppercase" v-if="!matchup.won") W
+                          span(class="text-red-400 text-xs font-bold uppercase" v-else) L
+                      div(class="flex items-center gap-3")
+                        div(class="text-right")
+                          div(class="text-white font-bold text-lg") {{ matchup.opponent.aiModel }}
+                          div(class="text-blue-400 text-sm font-semibold") {{ matchup.opponent.owner }}
+                        img(
+                          class="h-12 w-12 object-contain"
+                          :src="matchup.opponent.logo"
+                          :alt="matchup.opponent.aiModel"
+                          :class="matchup.opponent.invertLogo ? 'invert brightness-200' : ''"
+                        )
+
+                  //- Point Margin Bar Chart
+                  .mt-4.pt-4.border-t.border-slate-700(v-if="matchup.teamScore !== matchup.opponentScore")
+                    .relative.h-8.flex.items-center
+                      //- Center Line
+                      div(class="absolute left-1/2 transform -translate-x-1/2 w-0.5 h-full bg-slate-600 z-0")
+
+                      //- Bar pointing toward winner (team on left)
+                      div(
+                        v-if="matchup.won"
+                        class="absolute right-1/2 h-6 bg-gradient-to-l from-green-500 to-green-600 rounded-l flex items-center justify-start pl-2"
+                        :style="{ width: `${Math.min(((matchup.teamScore - matchup.opponentScore) / 70) * 45, 45)}%` }"
+                      )
+                        span.text-white.text-xs.font-bold {{ Math.abs(matchup.teamScore - matchup.opponentScore).toFixed(2) }}
+
+                      //- Bar pointing toward winner (opponent on right)
+                      div(
+                        v-else
+                        class="absolute left-1/2 h-6 bg-gradient-to-r from-green-500 to-green-600 rounded-r flex items-center justify-end pr-2"
+                        :style="{ width: `${Math.min(((matchup.opponentScore - matchup.teamScore) / 70) * 45, 45)}%` }"
+                      )
+                        span.text-white.text-xs.font-bold {{ Math.abs(matchup.teamScore - matchup.opponentScore).toFixed(2) }}
+
+                //- BYE Week
+                div(class="p-8 text-center" v-else)
+                  .text-gray-500.text-lg.font-bold BYE WEEK
+
+      //- Sidebar
+      div(class="lg:col-span-1 space-y-8")
+        //- Season History
+        section
+          .bg-gradient-to-r.from-blue-600.to-indigo-800.rounded-t-lg.px-6.py-4.border-b-4.border-yellow-400
+            h3.text-white.text-xl.font-black.uppercase.tracking-wide.flex.items-center.gap-3
+              span.text-yellow-400 📊
+              | Season History
+
+          .bg-slate-900.rounded-b-lg.p-6
+            .space-y-4(v-if="teamHistory")
+              //- Record
+              .bg-slate-800.rounded-lg.p-4
+                .text-gray-400.text-sm.mb-2 Season Record
+                .text-white.font-black.text-3xl {{ teamHistory.wins }}-{{ teamHistory.losses }}
+
+              //- Total Points
+              .bg-slate-800.rounded-lg.p-4
+                .text-gray-400.text-sm.mb-2 Total Points For
+                .text-white.font-black.text-3xl {{ teamHistory.totalPoints.toFixed(2) }}
+
+              //- Points Against
+              .bg-slate-800.rounded-lg.p-4
+                .text-gray-400.text-sm.mb-2 Total Points Against
+                .text-white.font-black.text-3xl {{ teamHistory.totalPointsAgainst.toFixed(2) }}
+
+              //- Top 3 Players
+              .bg-slate-800.rounded-lg.p-4
+                .text-gray-400.text-sm.mb-3 Top 3 Players
+                .space-y-3
+                  .flex.items-center.gap-3(v-for="(player, index) in teamHistory.topPlayers" :key="player.playerId")
+                    .text-2xl.font-black.text-yellow-400 {{ index + 1 }}
+                    img.h-12.w-12.rounded-full.object-cover(
+                      :src="getPlayerPortrait(player.playerId)"
+                      :alt="player.name"
+                      @error="$event.target.style.display='none'"
+                    )
+                    .flex-1
+                      .text-white.font-semibold.text-sm {{ player.name }}
+                      .text-gray-400.text-xs {{ player.position }} • {{ getPlayerTeam(player.playerId) }}
+                    .text-right
+                      .text-blue-400.font-bold.text-lg {{ player.totalPoints.toFixed(1) }}
+                      .text-gray-500.text-xs pts
+
+            .text-center.text-gray-500.py-4(v-else)
+              p Loading history...
+
+        //- Transaction History
         section
           .bg-gradient-to-r.from-orange-600.to-orange-800.rounded-t-lg.px-6.py-4.border-b-4.border-yellow-400
             h3.text-white.text-xl.font-black.uppercase.tracking-wide.flex.items-center.gap-3
@@ -200,23 +430,28 @@ export default {
     const currentWeek = ref(5)
     const currentMatchup = ref(null)
     const allTransactions = ref([])
+    const teamHistory = ref(null)
     const loading = ref(true)
     const error = ref(null)
+    const mobileDropdownOpen = ref(false)
+    const draftPicksData = ref([])
 
     const loadTeamsData = async () => {
       try {
         loading.value = true
         error.value = null
 
-        const [rostersData, usersData, playersData, league] = await Promise.all([
+        const [rostersData, usersData, playersData, league, draftData] = await Promise.all([
           getRosters(),
           getLeagueUsers(),
           getPlayers(),
-          getLeague()
+          getLeague(),
+          fetch('/data/draft_picks.json').then(r => r.json())
         ])
 
         players.value = playersData
         currentWeek.value = league.settings.leg || 5
+        draftPicksData.value = draftData || []
 
         // Create user map
         const userMap = {}
@@ -446,6 +681,114 @@ export default {
         console.error('Error loading matchup:', err)
         currentMatchup.value = null
       }
+
+      // Load team history
+      await loadTeamHistory(team)
+    }
+
+    const selectTeamById = (rosterId) => {
+      const team = teams.value.find(t => t.roster_id === parseInt(rosterId))
+      if (team) {
+        selectTeam(team)
+      }
+    }
+
+    const toggleMobileDropdown = () => {
+      mobileDropdownOpen.value = !mobileDropdownOpen.value
+    }
+
+    const selectTeamFromDropdown = (team) => {
+      selectTeam(team)
+      mobileDropdownOpen.value = false
+    }
+
+    const loadTeamHistory = async (team) => {
+      try {
+        teamHistory.value = null
+
+        // Fetch all matchups for all weeks
+        const matchupPromises = []
+        for (let week = 1; week <= currentWeek.value; week++) {
+          matchupPromises.push(getMatchups(week))
+        }
+        const allMatchups = await Promise.all(matchupPromises)
+
+        // Calculate stats
+        let totalPoints = 0
+        let totalPointsAgainst = 0
+        const playerPoints = {}
+        const matchups = []
+
+        allMatchups.forEach((weekMatchups, weekIndex) => {
+          const week = weekIndex + 1
+          const teamMatchup = weekMatchups.find(m => m.roster_id === team.roster_id)
+          if (!teamMatchup) return
+
+          const teamScore = teamMatchup.points || 0
+          totalPoints += teamScore
+
+          // Find opponent matchup
+          const opponentMatchup = weekMatchups.find(
+            m => m.matchup_id === teamMatchup.matchup_id && m.roster_id !== team.roster_id
+          )
+
+          let opponentScore = 0
+          let opponentInfo = null
+
+          if (opponentMatchup) {
+            opponentScore = opponentMatchup.points || 0
+            totalPointsAgainst += opponentScore
+
+            // Find opponent team info
+            const opponentTeam = teams.value.find(t => t.roster_id === opponentMatchup.roster_id)
+            if (opponentTeam) {
+              opponentInfo = opponentTeam.teamInfo
+            }
+          }
+
+          // Add to matchup history
+          matchups.push({
+            week,
+            teamScore,
+            opponentScore: opponentMatchup ? opponentScore : null,
+            won: teamScore > opponentScore,
+            opponent: opponentInfo ? { ...opponentInfo, owner: opponentInfo.owner || '' } : null
+          })
+
+          // Accumulate player points
+          if (teamMatchup.players_points) {
+            Object.entries(teamMatchup.players_points).forEach(([playerId, points]) => {
+              if (!playerPoints[playerId]) {
+                playerPoints[playerId] = 0
+              }
+              playerPoints[playerId] += points
+            })
+          }
+        })
+
+        // Get top 3 players
+        const topPlayers = Object.entries(playerPoints)
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 3)
+          .map(([playerId, totalPoints]) => ({
+            playerId,
+            name: getPlayerName(playerId),
+            position: getPlayerPosition(playerId),
+            totalPoints
+          }))
+
+        teamHistory.value = {
+          wins: team.settings.wins || 0,
+          losses: team.settings.losses || 0,
+          totalPoints,
+          totalPointsAgainst,
+          topPlayers,
+          matchups: matchups.reverse() // Show most recent first
+        }
+      } catch (err) {
+        console.error('Error loading team history:', err)
+        teamHistory.value = null
+      }
     }
 
     const teamTransactions = computed(() => {
@@ -533,6 +876,16 @@ export default {
       const player = players.value[playerId]
       if (!player) return null
       return player.search_rank || null
+    }
+
+    const getPlayerVORP = (playerId) => {
+      const draftPick = draftPicksData.value.find(pick => pick.sleeper_id === playerId)
+      return draftPick?.vorp || null
+    }
+
+    const getPlayerROS = (playerId) => {
+      const draftPick = draftPicksData.value.find(pick => pick.sleeper_id === playerId)
+      return draftPick?.ros || null
     }
 
     const getTransactionDelta = (transaction) => {
@@ -623,9 +976,14 @@ export default {
       currentWeek,
       currentMatchup,
       teamTransactions,
+      teamHistory,
       loading,
       error,
+      mobileDropdownOpen,
       selectTeam,
+      selectTeamById,
+      toggleMobileDropdown,
+      selectTeamFromDropdown,
       getPlayerName,
       getPlayerNameFromId,
       getPlayerPosition,
@@ -639,6 +997,8 @@ export default {
       getPlayerImageUrl,
       getPlayerPositionFromId,
       getPlayerRankECR,
+      getPlayerVORP,
+      getPlayerROS,
       getTransactionDelta,
       formatTransactionDate,
       formatReleaseDate,

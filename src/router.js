@@ -5,6 +5,8 @@ import Scoring from './pages/Scoring.vue'
 import MatchupDetail from './pages/MatchupDetail.vue'
 import Videos from './pages/Videos.vue'
 import Teams from './pages/Teams.vue'
+import Slopup from './pages/Slopup.vue'
+import SlopupDetail from './pages/SlopupDetail.vue'
 
 const routes = [
   {
@@ -36,6 +38,16 @@ const routes = [
     path: '/teams',
     name: 'Teams',
     component: Teams
+  },
+  {
+    path: '/slopup',
+    name: 'Slopup',
+    component: Slopup
+  },
+  {
+    path: '/slopup/:week',
+    name: 'SlopupDetail',
+    component: SlopupDetail
   }
 ]
 

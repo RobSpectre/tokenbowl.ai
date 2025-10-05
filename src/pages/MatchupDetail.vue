@@ -384,7 +384,7 @@ export default {
     const getPlayerName = (playerId) => {
       const player = players.value[playerId]
       if (!player) return `Player ${playerId}`
-      return `${player.first_name} ${player.last_name} (${player.position})`
+      return `${player.first_name} ${player.last_name}`
     }
 
     const getPlayerPoints = (team, playerId) => {

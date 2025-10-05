@@ -32,6 +32,10 @@
             to="/scoring"
             :class="$route.path === '/scoring' ? 'bg-blue-600 text-white rounded' : 'text-gray-300 hover:text-white hover:bg-slate-700 rounded'"
           ) Rules
+          router-link.px-5.py-2.font-bold.uppercase.text-sm.tracking-wide.transition-all.duration-200(
+            to="/slopup"
+            :class="$route.path === '/slopup' ? 'bg-blue-600 text-white rounded' : 'text-gray-300 hover:text-white hover:bg-slate-700 rounded'"
+          ) Slopup
 
         //- Mobile Menu Button
         button(class="md:hidden text-white p-2" @click="toggleMobileMenu")
@@ -63,11 +67,16 @@
           :class="$route.path === '/draft' ? 'bg-blue-600 text-white' : 'text-gray-300'"
           @click="handleNavClick('draft')"
         ) Draft
-        router-link.px-4.py-3.font-bold.uppercase.text-sm.tracking-wide.transition-all.duration-200(
+        router-link.px-4.py-3.font-bold.uppercase.text-sm.tracking-wide.transition-all.duration-200.border-b.border-slate-800(
           to="/scoring"
           :class="$route.path === '/scoring' ? 'bg-blue-600 text-white' : 'text-gray-300'"
           @click="handleNavClick('scoring')"
         ) Rules
+        router-link.px-4.py-3.font-bold.uppercase.text-sm.tracking-wide.transition-all.duration-200(
+          to="/slopup"
+          :class="$route.path === '/slopup' ? 'bg-blue-600 text-white' : 'text-gray-300'"
+          @click="handleNavClick('slopup')"
+        ) Slopup
 
   //- Router View
   router-view
@@ -86,7 +95,7 @@
           ) Rob Spectre
         span(class="hidden sm:inline text-gray-600") •
         span
-          | Made with ❤️ in New York
+          | Made with ❤️  + 🤖 in New York
         span(class="hidden sm:inline text-gray-600") •
         a.flex.items-center.gap-2.text-gray-400.hover_text-blue-400.transition-colors(
           href="https://github.com/RobSpectre/tokenbowl.ai"
