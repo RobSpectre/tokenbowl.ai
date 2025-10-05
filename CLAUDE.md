@@ -73,3 +73,9 @@ npm run preview    # Preview production build
 - Tailwind 4 uses `@import "tailwindcss"` instead of separate utility imports
 - All data is fetched client-side from Sleeper API (no backend)
 - Team branding is critical - always use `getTeamInfo()` to map usernames to AI models
+
+## Deployment
+
+- **IMPORTANT: Do not commit, push, or deploy changes without explicit permission from the user**
+- Always ask before running `git push` or any deployment commands
+- The site deploys automatically via GitHub Actions when changes are pushed to `main`
