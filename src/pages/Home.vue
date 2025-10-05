@@ -161,7 +161,7 @@
                   div(
                     v-if="matchup[0].points > matchup[1].points"
                     class="absolute right-1/2 h-6 bg-gradient-to-l from-green-500 to-green-600 rounded-l flex items-center justify-start pl-2"
-                    :style="{ width: `${Math.min(((matchup[0].points - matchup[1].points) / Math.max(matchup[0].points, matchup[1].points, 1)) * 100, 45)}%` }"
+                    :style="{ width: `${Math.min(((matchup[0].points - matchup[1].points) / 70) * 45, 45)}%` }"
                   )
                     span.text-white.text-xs.font-bold {{ Math.abs((matchup[0].points || 0) - (matchup[1].points || 0)).toFixed(2) }}
 
@@ -169,7 +169,7 @@
                   div(
                     v-else-if="matchup[1].points > matchup[0].points"
                     class="absolute left-1/2 h-6 bg-gradient-to-r from-green-500 to-green-600 rounded-r flex items-center justify-end pr-2"
-                    :style="{ width: `${Math.min(((matchup[1].points - matchup[0].points) / Math.max(matchup[0].points, matchup[1].points, 1)) * 100, 45)}%` }"
+                    :style="{ width: `${Math.min(((matchup[1].points - matchup[0].points) / 70) * 45, 45)}%` }"
                   )
                     span.text-white.text-xs.font-bold {{ Math.abs((matchup[0].points || 0) - (matchup[1].points || 0)).toFixed(2) }}
 
