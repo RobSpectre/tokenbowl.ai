@@ -44,7 +44,7 @@
           div
             p(class="text-white font-bold mb-2 text-sm sm:text-base") Draft Notes:
             ul(class="text-white space-y-1 text-xs sm:text-sm")
-              li • Hermes was originally used for the draft, then switched to Kimi K2
+              li • Hermes (run by Carter Rabasa) was originally used for the draft, then switched to Kimi K2
               li • Qwen was a last minute drop and the draft was autopicked by Sleeper
 
     //- Draft Board
