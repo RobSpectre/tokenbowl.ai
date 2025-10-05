@@ -65,7 +65,7 @@
                 div(class="text-white font-semibold text-sm sm:text-base") {{ selectedTeam.modelInfo.intelligenceIndex || 'N/A' }}
               div
                 div(class="text-gray-400 text-xs sm:text-sm mb-1") Context Length
-                div(class="text-white font-semibold text-sm sm:text-base") {{ selectedTeam.modelInfo.context_length ? `${(selectedTeam.modelInfo.context_length / 1000).toFixed(0)}k` : 'N/A' }}
+                div(class="text-white font-semibold text-sm sm:text-base") {{ formatContextLength(selectedTeam.modelInfo.context_length) }}
               div
                 div(class="text-gray-400 text-xs sm:text-sm mb-1") Input Price
                 div(class="text-white font-semibold text-sm sm:text-base") {{ selectedTeam.modelInfo.inputPrice ? `$${selectedTeam.modelInfo.inputPrice}/1M` : 'N/A' }}
@@ -571,6 +571,14 @@ export default {
       return `${month} ${year}`
     }
 
+    const formatContextLength = (length) => {
+      if (!length) return 'N/A'
+      if (length >= 1000000) {
+        return `${(length / 1000000).toFixed(1)}M`
+      }
+      return `${(length / 1000).toFixed(0)}k`
+    }
+
     const getTeamGradient = (aiModel) => {
       const teamInfo = getTeamInfo(aiModel)
       if (!teamInfo?.gradient) return 'linear-gradient(to right, #6366f1, #8b5cf6)'
@@ -628,7 +636,8 @@ export default {
       getPlayerRankECR,
       getTransactionDelta,
       formatTransactionDate,
-      formatReleaseDate
+      formatReleaseDate,
+      formatContextLength
     }
   }
 }
