@@ -47,6 +47,15 @@
               li • Hermes (run by Carter Rabasa) was originally used for the draft, then switched to Kimi K2
               li • Qwen was a last minute drop and the draft was autopicked by Sleeper
 
+    //- ADP Chart
+    section.mb-8
+      .bg-gradient-to-r.from-green-600.to-emerald-800.rounded-t-lg.px-6.py-4.border-b-4.border-yellow-400
+        h2.text-white.text-2xl.font-black.uppercase.tracking-wide.flex.items-center.gap-3
+          span.text-yellow-400 📊
+          | Draft Analysis
+      .bg-slate-900.rounded-b-lg.p-6
+        div(ref="adpChartRef" style="width: 100%; height: 400px")
+
     //- Draft Board
     section
       .bg-slate-900.rounded-lg.overflow-hidden
@@ -161,9 +170,10 @@
 </template>
 
 <script>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, nextTick } from 'vue'
 import { getTeamInfoByAiModel } from '../teamMappings.js'
 import { getRosters, getLeagueUsers, getPlayers } from '../sleeperApi.js'
+import * as echarts from 'echarts'
 
 export default {
   name: 'Draft',
@@ -173,6 +183,9 @@ export default {
     const players = ref({})
     const loading = ref(true)
     const error = ref(null)
+    const adpChartRef = ref(null)
+    const adpData = ref([])
+    let adpChart = null
 
     const loadDraftData = async () => {
       try {
@@ -308,8 +321,139 @@ export default {
       }).sort((a, b) => a.aiModel.localeCompare(b.aiModel))
     })
 
+    const loadADPData = async () => {
+      try {
+        const response = await fetch('/picks_by_adp.csv')
+        const text = await response.text()
+
+        // Parse CSV
+        const lines = text.trim().split('\n')
+        const headers = lines[0].split(',')
+
+        const data = lines.slice(1).map(line => {
+          const values = line.split(',')
+          return {
+            manager: values[1],
+            draft_position: parseFloat(values[2]),
+            adp: values[3] ? parseFloat(values[3]) : null
+          }
+        })
+
+        adpData.value = data.filter(d => d.adp !== null)
+        renderADPChart()
+      } catch (err) {
+        console.error('Error loading ADP data:', err)
+      }
+    }
+
+    const renderADPChart = async () => {
+      if (!adpChartRef.value || adpData.value.length === 0) return
+
+      await nextTick()
+
+      if (!adpChart) {
+        adpChart = echarts.init(adpChartRef.value)
+      }
+
+      const draftPositions = adpData.value.map(d => d.draft_position)
+      const adpValues = adpData.value.map(d => d.adp)
+
+      const option = {
+        backgroundColor: 'transparent',
+        animation: true,
+        animationDuration: 1000,
+        animationEasing: 'cubicOut',
+        tooltip: {
+          trigger: 'axis',
+          backgroundColor: 'rgba(15, 23, 42, 0.9)',
+          borderColor: '#3b82f6',
+          textStyle: { color: '#fff' },
+          formatter: (params) => {
+            let result = `<div style="font-weight: bold; margin-bottom: 4px;">Pick ${params[0].axisValue}</div>`
+            params.forEach(param => {
+              result += `<div style="margin-top: 4px;">${param.marker} ${param.seriesName}: ${param.value.toFixed(1)}</div>`
+            })
+            return result
+          }
+        },
+        legend: {
+          data: ['Ideal Average Draft Position', 'Token Bowl Picks'],
+          top: 10,
+          textStyle: { color: '#9ca3af' }
+        },
+        grid: {
+          left: '3%',
+          right: '4%',
+          bottom: '3%',
+          top: 60,
+          containLabel: true
+        },
+        xAxis: {
+          type: 'category',
+          data: draftPositions,
+          name: 'Draft Position',
+          nameLocation: 'middle',
+          nameGap: 30,
+          nameTextStyle: { color: '#9ca3af', fontSize: 12 },
+          axisLabel: { color: '#9ca3af', interval: 9 },
+          axisLine: { lineStyle: { color: '#475569' } }
+        },
+        yAxis: {
+          type: 'value',
+          name: 'ADP Value',
+          nameTextStyle: { color: '#9ca3af', fontSize: 12 },
+          axisLabel: { color: '#9ca3af' },
+          axisLine: { lineStyle: { color: '#475569' } },
+          splitLine: { lineStyle: { color: '#334155' } }
+        },
+        series: [
+          {
+            name: 'Ideal Average Draft Position',
+            type: 'line',
+            data: draftPositions,
+            smooth: true,
+            lineStyle: {
+              width: 3,
+              color: '#3b82f6'
+            },
+            itemStyle: {
+              color: '#3b82f6'
+            },
+            areaStyle: {
+              color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                { offset: 0, color: 'rgba(59, 130, 246, 0.3)' },
+                { offset: 1, color: 'rgba(59, 130, 246, 0.05)' }
+              ])
+            }
+          },
+          {
+            name: 'Token Bowl Picks',
+            type: 'line',
+            data: adpValues,
+            smooth: true,
+            lineStyle: {
+              width: 3,
+              color: '#facc15'
+            },
+            itemStyle: {
+              color: '#facc15'
+            },
+            areaStyle: {
+              color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                { offset: 0, color: 'rgba(250, 204, 21, 0.3)' },
+                { offset: 1, color: 'rgba(250, 204, 21, 0.05)' }
+              ])
+            }
+          }
+        ]
+      }
+
+      adpChart.setOption(option)
+    }
+
     onMounted(() => {
       loadDraftData()
+      loadADPData()
     })
 
     return {
@@ -325,7 +469,8 @@ export default {
       getPlayerName,
       getPlayerPosition,
       getPlayerTeam,
-      draftedTeams
+      draftedTeams,
+      adpChartRef
     }
   }
 }
