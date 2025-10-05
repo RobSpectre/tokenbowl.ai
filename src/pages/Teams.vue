@@ -14,107 +14,107 @@
   //- Main Content
   main(v-else-if="teams.length > 0")
     //- Team Selector (Fixed)
-    .fixed.top-16.left-0.right-0.z-30.bg-slate-950.pb-4.pt-15.shadow-lg
-      .container.mx-auto.px-4.max-w-7xl
-        .flex.gap-2.overflow-x-auto.scrollbar-hide.justify-center
-          button.px-3.py-2.rounded-lg.font-bold.text-xs.transition-all.duration-200.flex.flex-col.items-center.gap-1.flex-shrink-0(
+    div(class="fixed top-16 md:top-24 left-0 right-0 z-30 bg-slate-950 pb-2 sm:pb-4 pt-2 sm:pt-4 shadow-lg")
+      div(class="container mx-auto px-2 sm:px-4 max-w-7xl")
+        div(class="flex gap-1 sm:gap-2 overflow-x-auto scrollbar-hide justify-start sm:justify-center")
+          button(class="px-2 py-1.5 sm:px-3 sm:py-2 rounded-lg font-bold text-xs transition-all duration-200 flex flex-col items-center gap-1 flex-shrink-0"
             v-for="team in teams"
             :key="team.roster_id"
             :class="selectedTeam?.roster_id === team.roster_id ? 'bg-blue-600 text-white' : 'bg-slate-800 text-gray-300 hover:bg-slate-700'"
             @click="selectTeam(team)"
           )
-            img.h-6.w-6.object-contain(
+            img(class="h-5 w-5 sm:h-6 sm:w-6 object-contain"
               :src="team.teamInfo.logo"
               :alt="team.teamInfo.aiModel"
               :class="team.teamInfo.invertLogo ? 'invert brightness-200' : ''"
             )
-            span {{ team.teamInfo.aiModel }}
+            span.text-xs {{ team.teamInfo.aiModel }}
 
     //- Spacer for fixed selector
-    div(style="height: 120px")
+    div(class="h-24 sm:h-28")
 
     //- Selected Team Details
-    .grid.grid-cols-1.lg_grid-cols-3.gap-8(v-if="selectedTeam")
+    div(class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-8" v-if="selectedTeam")
       //- Team Info & Current Week Score
-      .lg_col-span-2
+      div(class="lg:col-span-2")
         //- Team Header
-        section.mb-8
-          .bg-gradient-to-r.from-blue-600.to-blue-800.px-6.py-4.rounded-t-lg.border-b-4.border-yellow-400
-            .flex.items-center.gap-4
-              img.h-16.w-16.object-contain(
+        section(class="mb-4 sm:mb-8")
+          div(class="bg-gradient-to-r from-blue-600 to-blue-800 px-4 sm:px-6 py-3 sm:py-4 rounded-t-lg border-b-4 border-yellow-400")
+            div(class="flex items-center gap-3 sm:gap-4")
+              img(class="h-12 w-12 sm:h-16 sm:w-16 object-contain"
                 :src="selectedTeam.teamInfo.logo"
                 :alt="selectedTeam.teamInfo.aiModel"
                 :class="selectedTeam.teamInfo.invertLogo ? 'invert brightness-200' : ''"
               )
               div
-                h2.text-white.text-3xl.font-bold {{ selectedTeam.teamInfo.aiModel }}
-                p(class="text-white/90 text-lg") {{ selectedTeam.teamInfo.owner }}
-                p(class="text-white/80 text-sm") {{ selectedTeam.settings.wins || 0 }}-{{ selectedTeam.settings.losses || 0 }} • {{ (selectedTeam.settings.fpts || 0).toFixed(0) }} pts
+                h2(class="text-white text-xl sm:text-3xl font-bold") {{ selectedTeam.teamInfo.aiModel }}
+                p(class="text-white/90 text-sm sm:text-lg") {{ selectedTeam.teamInfo.owner }}
+                p(class="text-white/80 text-xs sm:text-sm") {{ selectedTeam.settings.wins || 0 }}-{{ selectedTeam.settings.losses || 0 }} • {{ (selectedTeam.settings.fpts || 0).toFixed(0) }} pts
 
           //- Model Info
-          .bg-slate-900.rounded-b-lg.p-6(v-if="selectedTeam.modelInfo")
-            .grid.grid-cols-2.md_grid-cols-3.gap-4
+          div(class="bg-slate-900 rounded-b-lg p-4 sm:p-6" v-if="selectedTeam.modelInfo")
+            div(class="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4")
               div
-                .text-gray-400.text-sm.mb-1 Latest Model Version
-                .text-white.font-semibold {{ selectedTeam.modelInfo.id || 'N/A' }}
+                div(class="text-gray-400 text-xs sm:text-sm mb-1") Latest Model Version
+                div(class="text-white font-semibold text-sm sm:text-base") {{ selectedTeam.modelInfo.id || 'N/A' }}
               div
-                .text-gray-400.text-sm.mb-1 Release Date
-                .text-white.font-semibold {{ formatReleaseDate(selectedTeam.modelInfo.releaseDate) }}
+                div(class="text-gray-400 text-xs sm:text-sm mb-1") Release Date
+                div(class="text-white font-semibold text-sm sm:text-base") {{ formatReleaseDate(selectedTeam.modelInfo.releaseDate) }}
               div
-                .text-gray-400.text-sm.mb-1 Intelligence Index
-                .text-white.font-semibold {{ selectedTeam.modelInfo.intelligenceIndex || 'N/A' }}
+                div(class="text-gray-400 text-xs sm:text-sm mb-1") Intelligence Index
+                div(class="text-white font-semibold text-sm sm:text-base") {{ selectedTeam.modelInfo.intelligenceIndex || 'N/A' }}
               div
-                .text-gray-400.text-sm.mb-1 Context Length
-                .text-white.font-semibold {{ selectedTeam.modelInfo.context_length ? `${(selectedTeam.modelInfo.context_length / 1000).toFixed(0)}k` : 'N/A' }}
+                div(class="text-gray-400 text-xs sm:text-sm mb-1") Context Length
+                div(class="text-white font-semibold text-sm sm:text-base") {{ selectedTeam.modelInfo.context_length ? `${(selectedTeam.modelInfo.context_length / 1000).toFixed(0)}k` : 'N/A' }}
               div
-                .text-gray-400.text-sm.mb-1 Input Price
-                .text-white.font-semibold {{ selectedTeam.modelInfo.inputPrice ? `$${selectedTeam.modelInfo.inputPrice}/1M` : 'N/A' }}
+                div(class="text-gray-400 text-xs sm:text-sm mb-1") Input Price
+                div(class="text-white font-semibold text-sm sm:text-base") {{ selectedTeam.modelInfo.inputPrice ? `$${selectedTeam.modelInfo.inputPrice}/1M` : 'N/A' }}
               div
-                .text-gray-400.text-sm.mb-1 Output Price
-                .text-white.font-semibold {{ selectedTeam.modelInfo.outputPrice ? `$${selectedTeam.modelInfo.outputPrice}/1M` : 'N/A' }}
+                div(class="text-gray-400 text-xs sm:text-sm mb-1") Output Price
+                div(class="text-white font-semibold text-sm sm:text-base") {{ selectedTeam.modelInfo.outputPrice ? `$${selectedTeam.modelInfo.outputPrice}/1M` : 'N/A' }}
               div
-                .text-gray-400.text-sm.mb-1 Speed
-                .text-white.font-semibold {{ selectedTeam.modelInfo.speed ? `${selectedTeam.modelInfo.speed} tok/s` : 'N/A' }}
+                div(class="text-gray-400 text-xs sm:text-sm mb-1") Speed
+                div(class="text-white font-semibold text-sm sm:text-base") {{ selectedTeam.modelInfo.speed ? `${selectedTeam.modelInfo.speed} tok/s` : 'N/A' }}
               div
-                .text-gray-400.text-sm.mb-1 Latency
-                .text-white.font-semibold {{ selectedTeam.modelInfo.latency ? `${selectedTeam.modelInfo.latency}ms` : 'N/A' }}
+                div(class="text-gray-400 text-xs sm:text-sm mb-1") Latency
+                div(class="text-white font-semibold text-sm sm:text-base") {{ selectedTeam.modelInfo.latency ? `${selectedTeam.modelInfo.latency}ms` : 'N/A' }}
 
         //- Current Week Roster
-        section.mb-8
-          .bg-gradient-to-r.from-purple-600.to-purple-800.rounded-t-lg.px-6.py-4.border-b-4.border-yellow-400
-            h3.text-white.text-2xl.font-black.uppercase.tracking-wide.flex.items-center.gap-3
+        section(class="mb-4 sm:mb-8")
+          div(class="bg-gradient-to-r from-purple-600 to-purple-800 rounded-t-lg px-4 sm:px-6 py-3 sm:py-4 border-b-4 border-yellow-400")
+            h3(class="text-white text-lg sm:text-2xl font-black uppercase tracking-wide flex items-center gap-2 sm:gap-3")
               span.text-yellow-400 📋
               | Week {{ currentWeek }} Roster
 
-          .bg-slate-900.rounded-b-lg.p-6
+          div(class="bg-slate-900 rounded-b-lg p-4 sm:p-6")
             //- Current Week Score
-            .mb-6.p-4.bg-slate-800.rounded-lg(v-if="currentMatchup")
+            div(class="mb-4 sm:mb-6 p-3 sm:p-4 bg-slate-800 rounded-lg" v-if="currentMatchup")
               .text-center
-                .text-gray-400.text-sm.mb-1 Current Week Score
-                .text-white.font-black.text-4xl {{ currentMatchup.points?.toFixed(2) || '0.00' }}
+                div(class="text-gray-400 text-xs sm:text-sm mb-1") Current Week Score
+                div(class="text-white font-black text-2xl sm:text-4xl") {{ currentMatchup.points?.toFixed(2) || '0.00' }}
 
             //- Starters
             h4.text-gray-400.font-bold.text-sm.uppercase.tracking-wider.mb-3 Starters
             .space-y-2.mb-6
-              .bg-slate-800.rounded.p-3(
+              div(class="bg-slate-800 rounded p-2 sm:p-3"
                 v-for="playerId in currentMatchup?.starters || []"
                 :key="playerId"
               )
-                .flex.items-center.gap-3
-                  img.h-12.w-12.rounded-full.object-cover(
+                div(class="flex items-center gap-2 sm:gap-3")
+                  img(class="h-10 w-10 sm:h-12 sm:w-12 rounded-full object-cover hidden sm:block"
                     v-if="getPlayerPortrait(playerId)"
                     :src="getPlayerPortrait(playerId)"
                     :alt="getPlayerName(playerId)"
                     @error="$event.target.style.display='none'"
                   )
-                  div.w-10.h-10.rounded.flex.items-center.justify-center.text-xs.font-bold.flex-shrink-0(
+                  div(class="w-8 h-8 sm:w-10 sm:h-10 rounded flex items-center justify-center text-xs font-bold flex-shrink-0"
                     :class="getPositionColor(getPlayerPosition(playerId))"
                   ) {{ getPlayerPosition(playerId) }}
-                  .flex-1
-                    .text-white.font-semibold {{ getPlayerName(playerId) }}
-                    .text-gray-400.text-xs {{ getPlayerTeam(playerId) }}
+                  .flex-1.min-w-0
+                    div(class="text-white font-semibold text-sm sm:text-base truncate") {{ getPlayerName(playerId) }}
+                    div(class="text-gray-400 text-xs hidden sm:block") {{ getPlayerTeam(playerId) }}
                   .text-right.flex-shrink-0
-                    .text-blue-400.font-bold.text-lg {{ getPlayerPoints(currentMatchup, playerId) }}
+                    div(class="text-blue-400 font-bold text-base sm:text-lg") {{ getPlayerPoints(currentMatchup, playerId) }}
 
             //- Bench
             div(v-if="getBenchPlayers(currentMatchup).length > 0")
@@ -139,7 +139,7 @@
                       .text-gray-400.text-xs {{ getPlayerTeam(playerId) }}
 
       //- Transaction History
-      .lg_col-span-1
+      div(class="lg:col-span-1")
         section
           .bg-gradient-to-r.from-orange-600.to-orange-800.rounded-t-lg.px-6.py-4.border-b-4.border-yellow-400
             h3.text-white.text-xl.font-black.uppercase.tracking-wide.flex.items-center.gap-3

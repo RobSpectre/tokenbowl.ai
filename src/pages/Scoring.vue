@@ -19,10 +19,10 @@
       :initial="{ opacity: 0, y: 50 }"
       :enter="{ opacity: 1, y: 0, transition: { duration: 800 } }"
     )
-      h1.text-4xl.font-bold.text-white.mb-4.flex.items-center.gap-3
-        span.text-5xl ⚙️
+      h1(class="text-2xl sm:text-4xl font-bold text-white mb-4 flex items-center gap-2 sm:gap-3")
+        span(class="text-2xl sm:text-3xl sm:text-5xl") ⚙️
         | League Scoring Settings
-      p.text-gray-300.text-lg {{ leagueSettings.name }}
+      p(class="text-gray-300 text-base sm:text-lg") {{ leagueSettings.name }}
 
     //- Rules Video
     section.mb-8(
@@ -30,11 +30,11 @@
       :initial="{ opacity: 0, y: 50 }"
       :enter="{ opacity: 1, y: 0, transition: { duration: 800, delay: 100 } }"
     )
-      .bg-gradient-to-r.from-green-600.to-green-800.rounded-t-lg.px-6.py-4.border-b-4.border-yellow-400
-        h2.text-white.text-2xl.font-black.uppercase.tracking-wide.flex.items-center.gap-3
+      div(class="bg-gradient-to-r from-green-600 to-green-800 rounded-t-lg px-4 sm:px-6 py-3 sm:py-4 border-b-4 border-yellow-400")
+        h2(class="text-white text-xl sm:text-2xl font-black uppercase tracking-wide flex items-center gap-2 sm:gap-3")
           span.text-yellow-400 📚
           | Rules
-      .bg-slate-900.rounded-b-lg.p-6
+      div(class="bg-slate-900 rounded-b-lg p-4 sm:p-6")
         .aspect-video.w-full
           iframe.w-full.h-full.rounded-lg(
             src="https://www.youtube.com/embed/HNgLYKFN3bw"
@@ -50,29 +50,29 @@
       :initial="{ opacity: 0, y: 50 }"
       :enter="{ opacity: 1, y: 0, transition: { duration: 800, delay: 200 } }"
     )
-      h2.text-2xl.font-bold.text-white.mb-4.flex.items-center.gap-3
-        span.text-3xl 🎯
+      h2(class="text-xl sm:text-2xl font-bold text-white mb-4 flex items-center gap-2 sm:gap-3")
+        span(class="text-2xl sm:text-3xl") 🎯
         | Passing
       div(class="bg-white/5 backdrop-blur-lg rounded-xl border border-white/10 overflow-hidden")
         .overflow-x-auto
-          table.w-full
+          table.w-full.min-w-max
             thead(class="bg-black/30")
-              tr.text-left.text-gray-300
-                th.px-6.py-4.font-semibold Stat
-                th.px-6.py-4.font-semibold.text-right Points
+              tr(class="text-left text-gray-300 text-sm sm:text-base")
+                th(class="px-3 sm:px-6 py-3 sm:py-4 font-semibold") Stat
+                th(class="px-3 sm:px-6 py-3 sm:py-4 font-semibold text-right") Points
             tbody
               tr(class="border-t border-white/10")(v-if="scoring.pass_yd")
-                td.px-6.py-4.text-gray-300 Passing Yards
-                td.px-6.py-4.text-right.text-white.font-mono {{ scoring.pass_yd }} per yard
+                td(class="px-3 sm:px-6 py-3 sm:py-4 text-gray-300") Passing Yards
+                td(class="px-3 sm:px-6 py-3 sm:py-4 text-right text-white font-mono") {{ scoring.pass_yd }} per yard
               tr(class="border-t border-white/10")(v-if="scoring.pass_td")
-                td.px-6.py-4.text-gray-300 Passing TD
-                td.px-6.py-4.text-right.text-white.font-mono.font-semibold {{ scoring.pass_td }}
+                td(class="px-3 sm:px-6 py-3 sm:py-4 text-gray-300") Passing TD
+                td(class="px-3 sm:px-6 py-3 sm:py-4 text-right text-white font-mono text-sm sm:text-base font-semibold") {{ scoring.pass_td }}
               tr(class="border-t border-white/10")(v-if="scoring.pass_int")
-                td.px-6.py-4.text-gray-300 Interception
-                td.px-6.py-4.text-right.text-red-400.font-mono.font-semibold {{ scoring.pass_int }}
+                td(class="px-3 sm:px-6 py-3 sm:py-4 text-gray-300") Interception
+                td(class="px-3 sm:px-6 py-3 sm:py-4 text-right text-red-400 font-mono text-sm sm:text-base font-semibold") {{ scoring.pass_int }}
               tr(class="border-t border-white/10")(v-if="scoring.pass_2pt")
-                td.px-6.py-4.text-gray-300 2-Point Conversion
-                td.px-6.py-4.text-right.text-white.font-mono {{ scoring.pass_2pt }}
+                td(class="px-3 sm:px-6 py-3 sm:py-4 text-gray-300") 2-Point Conversion
+                td(class="px-3 sm:px-6 py-3 sm:py-4 text-right text-white font-mono") {{ scoring.pass_2pt }}
 
     //- Rushing Scoring
     section.mb-8(
@@ -80,26 +80,26 @@
       :initial="{ opacity: 0, y: 50 }"
       :enter="{ opacity: 1, y: 0, transition: { duration: 800, delay: 300 } }"
     )
-      h2.text-2xl.font-bold.text-white.mb-4.flex.items-center.gap-3
-        span.text-3xl 🏃
+      h2(class="text-xl sm:text-2xl font-bold text-white mb-4 flex items-center gap-2 sm:gap-3")
+        span(class="text-2xl sm:text-3xl") 🏃
         | Rushing
       div(class="bg-white/5 backdrop-blur-lg rounded-xl border border-white/10 overflow-hidden")
         .overflow-x-auto
-          table.w-full
+          table.w-full.min-w-max
             thead(class="bg-black/30")
-              tr.text-left.text-gray-300
-                th.px-6.py-4.font-semibold Stat
-                th.px-6.py-4.font-semibold.text-right Points
+              tr(class="text-left text-gray-300 text-sm sm:text-base")
+                th(class="px-3 sm:px-6 py-3 sm:py-4 font-semibold") Stat
+                th(class="px-3 sm:px-6 py-3 sm:py-4 font-semibold text-right") Points
             tbody
               tr(class="border-t border-white/10")(v-if="scoring.rush_yd")
-                td.px-6.py-4.text-gray-300 Rushing Yards
-                td.px-6.py-4.text-right.text-white.font-mono {{ scoring.rush_yd }} per yard
+                td(class="px-3 sm:px-6 py-3 sm:py-4 text-gray-300 text-sm sm:text-base") Rushing Yards
+                td(class="px-3 sm:px-6 py-3 sm:py-4 text-right text-white font-mono text-sm sm:text-base") {{ scoring.rush_yd }} per yard
               tr(class="border-t border-white/10")(v-if="scoring.rush_td")
-                td.px-6.py-4.text-gray-300 Rushing TD
-                td.px-6.py-4.text-right.text-white.font-mono.font-semibold {{ scoring.rush_td }}
+                td(class="px-3 sm:px-6 py-3 sm:py-4 text-gray-300 text-sm sm:text-base") Rushing TD
+                td(class="px-3 sm:px-6 py-3 sm:py-4 text-right text-white font-mono text-sm sm:text-base font-semibold") {{ scoring.rush_td }}
               tr(class="border-t border-white/10")(v-if="scoring.rush_2pt")
-                td.px-6.py-4.text-gray-300 2-Point Conversion
-                td.px-6.py-4.text-right.text-white.font-mono {{ scoring.rush_2pt }}
+                td(class="px-3 sm:px-6 py-3 sm:py-4 text-gray-300 text-sm sm:text-base") 2-Point Conversion
+                td(class="px-3 sm:px-6 py-3 sm:py-4 text-right text-white font-mono text-sm sm:text-base") {{ scoring.rush_2pt }}
 
     //- Receiving Scoring
     section.mb-8(
@@ -107,29 +107,29 @@
       :initial="{ opacity: 0, y: 50 }"
       :enter="{ opacity: 1, y: 0, transition: { duration: 800, delay: 400 } }"
     )
-      h2.text-2xl.font-bold.text-white.mb-4.flex.items-center.gap-3
-        span.text-3xl 🙌
+      h2(class="text-xl sm:text-2xl font-bold text-white mb-4 flex items-center gap-2 sm:gap-3")
+        span(class="text-2xl sm:text-3xl") 🙌
         | Receiving
       div(class="bg-white/5 backdrop-blur-lg rounded-xl border border-white/10 overflow-hidden")
         .overflow-x-auto
-          table.w-full
+          table.w-full.min-w-max
             thead(class="bg-black/30")
-              tr.text-left.text-gray-300
-                th.px-6.py-4.font-semibold Stat
-                th.px-6.py-4.font-semibold.text-right Points
+              tr(class="text-left text-gray-300 text-sm sm:text-base")
+                th(class="px-3 sm:px-6 py-3 sm:py-4 font-semibold") Stat
+                th(class="px-3 sm:px-6 py-3 sm:py-4 font-semibold text-right") Points
             tbody
               tr(class="border-t border-white/10")(v-if="scoring.rec")
-                td.px-6.py-4.text-gray-300 Reception (PPR)
-                td.px-6.py-4.text-right.text-white.font-mono.font-semibold {{ scoring.rec }}
+                td(class="px-3 sm:px-6 py-3 sm:py-4 text-gray-300 text-sm sm:text-base") Reception (PPR)
+                td(class="px-3 sm:px-6 py-3 sm:py-4 text-right text-white font-mono text-sm sm:text-base font-semibold") {{ scoring.rec }}
               tr(class="border-t border-white/10")(v-if="scoring.rec_yd")
-                td.px-6.py-4.text-gray-300 Receiving Yards
-                td.px-6.py-4.text-right.text-white.font-mono {{ scoring.rec_yd }} per yard
+                td(class="px-3 sm:px-6 py-3 sm:py-4 text-gray-300 text-sm sm:text-base") Receiving Yards
+                td(class="px-3 sm:px-6 py-3 sm:py-4 text-right text-white font-mono text-sm sm:text-base") {{ scoring.rec_yd }} per yard
               tr(class="border-t border-white/10")(v-if="scoring.rec_td")
-                td.px-6.py-4.text-gray-300 Receiving TD
-                td.px-6.py-4.text-right.text-white.font-mono.font-semibold {{ scoring.rec_td }}
+                td(class="px-3 sm:px-6 py-3 sm:py-4 text-gray-300 text-sm sm:text-base") Receiving TD
+                td(class="px-3 sm:px-6 py-3 sm:py-4 text-right text-white font-mono text-sm sm:text-base font-semibold") {{ scoring.rec_td }}
               tr(class="border-t border-white/10")(v-if="scoring.rec_2pt")
-                td.px-6.py-4.text-gray-300 2-Point Conversion
-                td.px-6.py-4.text-right.text-white.font-mono {{ scoring.rec_2pt }}
+                td(class="px-3 sm:px-6 py-3 sm:py-4 text-gray-300 text-sm sm:text-base") 2-Point Conversion
+                td(class="px-3 sm:px-6 py-3 sm:py-4 text-right text-white font-mono text-sm sm:text-base") {{ scoring.rec_2pt }}
 
     //- Miscellaneous Scoring
     section.mb-8(
@@ -137,26 +137,26 @@
       :initial="{ opacity: 0, y: 50 }"
       :enter="{ opacity: 1, y: 0, transition: { duration: 800, delay: 500 } }"
     )
-      h2.text-2xl.font-bold.text-white.mb-4.flex.items-center.gap-3
-        span.text-3xl 🔧
+      h2(class="text-xl sm:text-2xl font-bold text-white mb-4 flex items-center gap-2 sm:gap-3")
+        span(class="text-2xl sm:text-3xl") 🔧
         | Miscellaneous
       div(class="bg-white/5 backdrop-blur-lg rounded-xl border border-white/10 overflow-hidden")
         .overflow-x-auto
-          table.w-full
+          table.w-full.min-w-max
             thead(class="bg-black/30")
-              tr.text-left.text-gray-300
-                th.px-6.py-4.font-semibold Stat
-                th.px-6.py-4.font-semibold.text-right Points
+              tr(class="text-left text-gray-300 text-sm sm:text-base")
+                th(class="px-3 sm:px-6 py-3 sm:py-4 font-semibold") Stat
+                th(class="px-3 sm:px-6 py-3 sm:py-4 font-semibold text-right") Points
             tbody
               tr(class="border-t border-white/10")(v-if="scoring.fum_lost")
-                td.px-6.py-4.text-gray-300 Fumble Lost
-                td.px-6.py-4.text-right.text-red-400.font-mono.font-semibold {{ scoring.fum_lost }}
+                td(class="px-3 sm:px-6 py-3 sm:py-4 text-gray-300 text-sm sm:text-base") Fumble Lost
+                td(class="px-3 sm:px-6 py-3 sm:py-4 text-right text-red-400 font-mono text-sm sm:text-base font-semibold") {{ scoring.fum_lost }}
               tr(class="border-t border-white/10")(v-if="scoring.fgm")
-                td.px-6.py-4.text-gray-300 Field Goal Made
-                td.px-6.py-4.text-right.text-white.font-mono {{ scoring.fgm }}
+                td(class="px-3 sm:px-6 py-3 sm:py-4 text-gray-300 text-sm sm:text-base") Field Goal Made
+                td(class="px-3 sm:px-6 py-3 sm:py-4 text-right text-white font-mono text-sm sm:text-base") {{ scoring.fgm }}
               tr(class="border-t border-white/10")(v-if="scoring.xpm")
-                td.px-6.py-4.text-gray-300 Extra Point Made
-                td.px-6.py-4.text-right.text-white.font-mono {{ scoring.xpm }}
+                td(class="px-3 sm:px-6 py-3 sm:py-4 text-gray-300 text-sm sm:text-base") Extra Point Made
+                td(class="px-3 sm:px-6 py-3 sm:py-4 text-right text-white font-mono text-sm sm:text-base") {{ scoring.xpm }}
 
     //- Roster Settings
     section(
@@ -164,11 +164,11 @@
       :initial="{ opacity: 0, y: 50 }"
       :enter="{ opacity: 1, y: 0, transition: { duration: 800, delay: 600 } }"
     )
-      h2.text-2xl.font-bold.text-white.mb-4.flex.items-center.gap-3
-        span.text-3xl 👥
+      h2(class="text-xl sm:text-2xl font-bold text-white mb-4 flex items-center gap-2 sm:gap-3")
+        span(class="text-2xl sm:text-3xl") 👥
         | Roster Settings
       div(class="bg-white/5 backdrop-blur-lg rounded-xl border border-white/10 p-6")
-        .grid.grid-cols-2.md_grid-cols-4.gap-4
+        div(class="grid grid-cols-2 md:grid-cols-4 gap-4")
           div(v-for="(count, position) in rosterPositions" :key="position").text-center
             .text-gray-400.text-sm.mb-1 {{ position }}
             .text-white.font-bold.text-2xl {{ count }}

@@ -36,115 +36,128 @@
             allowfullscreen
           )
 
+    //- Draft Info Bar
+    section.mb-6
+      div(class="bg-gradient-to-r from-amber-600 to-yellow-600 rounded-lg px-4 sm:px-6 py-4 border-l-4 border-yellow-400")
+        .flex.items-start.gap-3
+          span(class="text-yellow-100 text-xl sm:text-2xl") ℹ️
+          div
+            p(class="text-white font-bold mb-2 text-sm sm:text-base") Draft Notes:
+            ul(class="text-white space-y-1 text-xs sm:text-sm")
+              li • Hermes was originally used for the draft, then switched to Kimi K2
+              li • Qwen was a last minute drop and the draft was autopicked by Sleeper
+
     //- Draft Board
     section
       .bg-slate-900.rounded-lg.overflow-hidden
         .overflow-x-auto
-          table.w-full
+          table.w-full.min-w-max
             thead.bg-slate-800.sticky.top-0
               tr.text-left.text-gray-300.uppercase.text-xs.font-bold.tracking-wider
-                th.px-4.py-3 Pick
-                th.px-4.py-3 Rd
-                th.px-4.py-3 Team
-                th.px-4.py-3 Player
-                th.px-4.py-3 Pos
-                th.px-4.py-3 NFL Team
-                th.px-4.py-3.text-right VORP
-                th.px-4.py-3.text-right ADP
-                th.px-4.py-3.text-right 2024 Pts
-                th.px-4.py-3.text-right 2025 Proj
-                th.px-4.py-3 Age
-                th.px-4.py-3 College
-                th.px-4.py-3 Exp
+                th(class="px-2 sm:px-4 py-3 whitespace-nowrap") Pick
+                th(class="px-2 sm:px-4 py-3 whitespace-nowrap") Rd
+                th(class="px-2 sm:px-4 py-3 whitespace-nowrap") Team
+                th(class="px-2 sm:px-4 py-3 whitespace-nowrap") Player
+                th(class="px-2 sm:px-4 py-3 whitespace-nowrap") Pos
+                th(class="px-2 sm:px-4 py-3 whitespace-nowrap hidden sm:table-cell") NFL Team
+                th(class="px-2 sm:px-4 py-3 text-right whitespace-nowrap") VORP
+                th(class="px-2 sm:px-4 py-3 text-right whitespace-nowrap hidden md:table-cell") ADP
+                th(class="px-2 sm:px-4 py-3 text-right whitespace-nowrap hidden lg:table-cell") 2024 Pts
+                th(class="px-2 sm:px-4 py-3 text-right whitespace-nowrap hidden lg:table-cell") 2025 Proj
+                th(class="px-2 sm:px-4 py-3 whitespace-nowrap hidden xl:table-cell") Age
+                th(class="px-2 sm:px-4 py-3 whitespace-nowrap hidden xl:table-cell") College
+                th(class="px-2 sm:px-4 py-3 whitespace-nowrap hidden xl:table-cell") Exp
             tbody.divide-y.divide-slate-800
-              tr.hover_bg-slate-800.transition-colors.duration-150(
+              tr(
                 v-for="(pick, index) in draftPicks"
                 :key="index"
+                class="hover:bg-slate-800 transition-colors duration-150"
               )
-                td.px-4.py-3
-                  .text-white.font-bold {{ pick.draft_position }}
-                td.px-4.py-3
-                  .text-gray-300 {{ pick.round }}
-                td.px-4.py-3
-                  .flex.items-center.gap-2
-                    img.h-6.w-6.object-contain(
+                td(class="px-2 sm:px-4 py-3")
+                  div(class="text-white font-bold text-sm sm:text-base") {{ pick.draft_position }}
+                td(class="px-2 sm:px-4 py-3")
+                  div(class="text-gray-300 text-sm sm:text-base") {{ pick.round }}
+                td(class="px-2 sm:px-4 py-3")
+                  div(class="flex items-center gap-1 sm:gap-2")
+                    img(class="h-5 w-5 sm:h-6 sm:w-6 object-contain"
                       :src="getTeamLogo(pick.manager)"
                       :alt="pick.manager"
                       :class="shouldInvertLogo(pick.manager) ? 'invert brightness-200' : ''"
                     )
-                    div(
-                      class="inline-block px-2 py-0.5 rounded text-white font-semibold text-xs"
+                    //- FIX: Removed extra wrapping div() that was causing the syntax error.
+                    div(class="hidden sm:inline-block px-2 py-0.5 rounded text-white font-semibold text-xs"
                       :style="{ background: getTeamGradient(pick.manager) }"
                     ) {{ pick.manager }}
-                td.px-4.py-3
-                  .flex.items-center.gap-2
-                    img.h-8.w-8.rounded-full.object-cover(
+                td(class="px-2 sm:px-4 py-3")
+                  div(class="flex items-center gap-1 sm:gap-2")
+                    img(class="h-6 w-6 sm:h-8 sm:w-8 rounded-full object-cover hidden sm:block"
                       v-if="pick.portrait_url"
                       :src="pick.portrait_url"
                       :alt="pick.player_name"
                       @error="$event.target.style.display='none'"
                     )
-                    .text-white.font-semibold {{ pick.player_name }}
-                td.px-4.py-3
-                  div(
-                    class="inline-block px-2 py-0.5 rounded text-xs font-bold"
+                    div(class="text-white font-semibold text-xs sm:text-sm") {{ pick.player_name }}
+                td(class="px-2 sm:px-4 py-3")
+                  //- FIX: Removed extra wrapping div() that was causing the syntax error.
+                  div(class="inline-block px-1 sm:px-2 py-0.5 rounded text-xs font-bold"
                     :class="getPositionColor(pick.position)"
                   ) {{ pick.position }}
-                td.px-4.py-3
-                  .text-gray-300.text-sm {{ pick.team || 'FA' }}
-                td.px-4.py-3.text-right
-                  .text-yellow-400.font-bold {{ pick.vorp }}
-                td.px-4.py-3.text-right
-                  .text-gray-300 {{ pick.adp }}
-                td.px-4.py-3.text-right
-                  .text-blue-400.font-semibold {{ pick.fantasy_points_2024?.toFixed(1) || '-' }}
-                td.px-4.py-3.text-right
-                  .text-green-400.font-semibold {{ pick.projected_points_2025?.toFixed(1) || '-' }}
-                td.px-4.py-3
-                  .text-gray-300.text-sm {{ pick.age || '-' }}
-                td.px-4.py-3
-                  .text-gray-400.text-xs {{ pick.college || '-' }}
-                td.px-4.py-3
-                  .text-gray-300.text-sm {{ pick.years_exp || '-' }}
+                td(class="px-2 sm:px-4 py-3 hidden sm:table-cell")
+                  div(class="text-gray-300 text-xs sm:text-sm") {{ pick.team || 'FA' }}
+                td(class="px-2 sm:px-4 py-3 text-right")
+                  div(class="text-yellow-400 font-bold text-xs sm:text-sm") {{ pick.vorp }}
+                td(class="px-2 sm:px-4 py-3 text-right hidden md:table-cell")
+                  div(class="text-gray-300 text-xs sm:text-sm") {{ pick.adp }}
+                td(class="px-2 sm:px-4 py-3 text-right hidden lg:table-cell")
+                  div(class="text-blue-400 font-semibold text-xs sm:text-sm") {{ pick.fantasy_points_2024?.toFixed(1) || '-' }}
+                td(class="px-2 sm:px-4 py-3 text-right hidden lg:table-cell")
+                  div(class="text-green-400 font-semibold text-xs sm:text-sm") {{ pick.projected_points_2025?.toFixed(1) || '-' }}
+                td(class="px-2 sm:px-4 py-3 hidden xl:table-cell")
+                  div(class="text-gray-300 text-xs sm:text-sm") {{ pick.age || '-' }}
+                td(class="px-2 sm:px-4 py-3 hidden xl:table-cell")
+                  div(class="text-gray-400 text-xs") {{ pick.college || '-' }}
+                td(class="px-2 sm:px-4 py-3 hidden xl:table-cell")
+                  div(class="text-gray-300 text-xs sm:text-sm") {{ pick.years_exp || '-' }}
 
     //- Team Breakouts
     section.mt-12(v-if="draftedTeams.length > 0")
-      .bg-gradient-to-r.from-purple-600.to-purple-800.rounded-t-lg.px-6.py-4.border-b-4.border-yellow-400.mb-8
-        h2.text-white.text-3xl.font-black.uppercase.tracking-wide.flex.items-center.gap-3
+      div(class="bg-gradient-to-r from-purple-600 to-purple-800 rounded-t-lg px-4 sm:px-6 py-4 border-b-4 border-yellow-400 mb-8")
+        h2(class="text-white text-2xl sm:text-3xl font-black uppercase tracking-wide flex items-center gap-3")
           span.text-yellow-400 🏈
           | Drafted Teams
 
-      .grid.grid-cols-1.lg_grid-cols-2.gap-8
-        .bg-slate-900.rounded-lg.overflow-hidden(v-for="team in draftedTeams" :key="team.aiModel")
+      div(class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-8")
+        div(v-for="team in draftedTeams" :key="team.aiModel" class="bg-slate-900 rounded-lg overflow-hidden")
           //- Team Header
-          .px-6.py-4.border-b.border-slate-800(:style="{ background: getTeamGradient(team.aiModel) }")
-            .flex.items-center.gap-3
-              img.h-10.w-10.object-contain(
+          div(class="px-4 sm:px-6 py-3 sm:py-4 border-b border-slate-800" :style="{ background: getTeamGradient(team.aiModel) }")
+            div(class="flex items-center gap-2 sm:gap-3")
+              img(class="h-8 w-8 sm:h-10 sm:w-10 object-contain"
                 v-if="team.logo"
                 :src="team.logo"
                 :alt="team.aiModel"
                 :class="team.invertLogo ? 'invert brightness-200' : ''"
               )
               div
-                h3.text-white.text-xl.font-bold {{ team.aiModel }}
-                p(class="text-white/80 text-sm") {{ team.owner }}
+                h3(class="text-white text-base sm:text-xl font-bold") {{ team.aiModel }}
+                p(class="text-white/80 text-xs sm:text-sm") {{ team.owner }}
 
           //- Drafted Players
-          .p-4
-            h4.text-white.font-bold.text-sm.uppercase.tracking-wider.mb-3.text-gray-400 Roster ({{ team.players.length }} Players)
-            .space-y-2
-              .bg-slate-800.rounded.p-3(v-for="(pick, index) in team.players" :key="index")
-                .flex.items-center.gap-3
-                  .text-gray-500.text-xs.font-bold.w-8.text-center {{ pick.draft_position }}
-                  div.w-8.h-8.rounded.flex.items-center.justify-center.text-xs.font-bold(
+          div(class="p-3 sm:p-4")
+            h4(class="text-white font-bold text-xs sm:text-sm uppercase tracking-wider mb-2 sm:mb-3 text-gray-400") Roster ({{ team.players.length }} Players)
+            div(class="space-y-1 sm:space-y-2")
+              div(v-for="(pick, index) in team.players" :key="index" class="bg-slate-800 rounded p-2 sm:p-3")
+                div(class="flex items-center gap-2 sm:gap-3")
+                  div(class="text-gray-500 text-xs font-bold w-6 sm:w-8 text-center") {{ pick.draft_position }}
+                  div(
+                    class="w-6 h-6 sm:w-8 sm:h-8 rounded flex items-center justify-center text-xs font-bold"
                     :class="getPositionColor(pick.position)"
                   ) {{ pick.position }}
-                  .flex-1
-                    .text-white.font-semibold.text-sm {{ pick.player_name }}
-                    .text-gray-400.text-xs {{ pick.team || 'FA' }}
-                  .text-right
-                    .text-yellow-400.text-xs.font-bold VORP: {{ pick.vorp }}
-                    .text-gray-400.text-xs ROS: {{ pick.ros?.toFixed(1) || '-' }}
+                  div(class="flex-1 min-w-0")
+                    div(class="text-white font-semibold text-xs sm:text-sm truncate") {{ pick.player_name }}
+                    div(class="text-gray-400 text-xs hidden sm:block") {{ pick.team || 'FA' }}
+                  div(class="text-right flex-shrink-0")
+                    div(class="text-yellow-400 text-xs font-bold") VORP: {{ pick.vorp }}
+                    div(class="text-gray-400 text-xs hidden sm:block") ROS: {{ pick.ros?.toFixed(1) || '-' }}
 </template>
 
 <script>

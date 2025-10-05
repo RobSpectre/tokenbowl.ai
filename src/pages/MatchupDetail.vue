@@ -15,42 +15,75 @@
   main(v-else-if="matchup")
     //- Back Button
     .mb-6
-      router-link.inline-flex.items-center.gap-2.px-4.py-2.bg-slate-800.hover_bg-slate-700.text-white.font-bold.rounded-lg.transition-all.duration-200(to="/")
+      router-link(to="/" class="inline-flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-lg transition-all duration-200")
         span ←
         |  Back to Matchups
 
     //- Matchup Header
     section.mb-8
-      .bg-gradient-to-r.from-blue-600.to-blue-800.rounded-t-lg.px-6.py-4.border-b-4.border-yellow-400
-        h1.text-white.text-3xl.font-black.uppercase.tracking-wide
+      div(class="bg-gradient-to-r from-blue-600 to-blue-800 rounded-t-lg px-4 sm:px-6 py-3 sm:py-4 border-b-4 border-yellow-400")
+        h1(class="text-white text-xl sm:text-3xl font-black uppercase tracking-wide")
           | Week {{ week }} Matchup
 
       //- Score Summary
-      .bg-slate-900.rounded-b-lg.p-6
-        .grid.grid-cols-2.gap-8.relative
+      div(class="bg-slate-900 rounded-b-lg p-4 sm:p-6")
+        //- Mobile Layout (stacked)
+        div(class="flex flex-col gap-4 sm:hidden")
           //- Team 1
           .text-center
-            img.h-24.w-24.object-contain.mx-auto.mb-4(
+            img(
+              class="h-16 w-16 object-contain mx-auto mb-2"
               :src="getTeamInfo(matchup[0].roster?.user?.display_name).logo"
               :alt="getTeamInfo(matchup[0].roster?.user?.display_name).aiModel"
               :class="getTeamInfo(matchup[0].roster?.user?.display_name).invertLogo ? 'invert brightness-200' : ''"
             )
-            .text-white.font-bold.text-2xl {{ getTeamInfo(matchup[0].roster?.user?.display_name).aiModel }}
-            .text-blue-400.text-lg.font-semibold {{ getTeamInfo(matchup[0].roster?.user?.display_name).owner }}
-            .text-white.font-black.text-5xl.mt-4 {{ matchup[0].points?.toFixed(2) || '0.00' }}
+            div(class="text-white font-bold text-lg") {{ getTeamInfo(matchup[0].roster?.user?.display_name).aiModel }}
+            div(class="text-blue-400 text-sm font-semibold") {{ getTeamInfo(matchup[0].roster?.user?.display_name).owner }}
+            div(class="text-white font-black text-3xl mt-2") {{ matchup[0].points?.toFixed(2) || '0.00' }}
+
+          //- VS Separator (Mobile)
+          div(class="flex items-center justify-center")
+            span.text-white.font-black.text-sm.bg-slate-700.rounded-full.px-3.py-1 VS
 
           //- Team 2
           .text-center
-            img.h-24.w-24.object-contain.mx-auto.mb-4(
+            img(
+              class="h-16 w-16 object-contain mx-auto mb-2"
               :src="getTeamInfo(matchup[1].roster?.user?.display_name).logo"
               :alt="getTeamInfo(matchup[1].roster?.user?.display_name).aiModel"
               :class="getTeamInfo(matchup[1].roster?.user?.display_name).invertLogo ? 'invert brightness-200' : ''"
             )
-            .text-white.font-bold.text-2xl {{ getTeamInfo(matchup[1].roster?.user?.display_name).aiModel }}
-            .text-blue-400.text-lg.font-semibold {{ getTeamInfo(matchup[1].roster?.user?.display_name).owner }}
-            .text-white.font-black.text-5xl.mt-4 {{ matchup[1].points?.toFixed(2) || '0.00' }}
+            div(class="text-white font-bold text-lg") {{ getTeamInfo(matchup[1].roster?.user?.display_name).aiModel }}
+            div(class="text-blue-400 text-sm font-semibold") {{ getTeamInfo(matchup[1].roster?.user?.display_name).owner }}
+            div(class="text-white font-black text-3xl mt-2") {{ matchup[1].points?.toFixed(2) || '0.00' }}
 
-          //- VS Badge
+        //- Desktop Layout (side by side)
+        div(class="hidden sm:grid sm:grid-cols-2 gap-4 sm:gap-8 relative")
+          //- Team 1
+          .text-center
+            img(
+              class="h-24 w-24 object-contain mx-auto mb-4"
+              :src="getTeamInfo(matchup[0].roster?.user?.display_name).logo"
+              :alt="getTeamInfo(matchup[0].roster?.user?.display_name).aiModel"
+              :class="getTeamInfo(matchup[0].roster?.user?.display_name).invertLogo ? 'invert brightness-200' : ''"
+            )
+            div(class="text-white font-bold text-2xl") {{ getTeamInfo(matchup[0].roster?.user?.display_name).aiModel }}
+            div(class="text-blue-400 text-lg font-semibold") {{ getTeamInfo(matchup[0].roster?.user?.display_name).owner }}
+            div(class="text-white font-black text-5xl mt-4") {{ matchup[0].points?.toFixed(2) || '0.00' }}
+
+          //- Team 2
+          .text-center
+            img(
+              class="h-24 w-24 object-contain mx-auto mb-4"
+              :src="getTeamInfo(matchup[1].roster?.user?.display_name).logo"
+              :alt="getTeamInfo(matchup[1].roster?.user?.display_name).aiModel"
+              :class="getTeamInfo(matchup[1].roster?.user?.display_name).invertLogo ? 'invert brightness-200' : ''"
+            )
+            div(class="text-white font-bold text-2xl") {{ getTeamInfo(matchup[1].roster?.user?.display_name).aiModel }}
+            div(class="text-blue-400 text-lg font-semibold") {{ getTeamInfo(matchup[1].roster?.user?.display_name).owner }}
+            div(class="text-white font-black text-5xl mt-4") {{ matchup[1].points?.toFixed(2) || '0.00' }}
+
+          //- VS Badge (Desktop only)
           div(class="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-slate-700 rounded-full px-4 py-2 z-10")
             span.text-white.font-black.text-lg VS
 
@@ -59,7 +92,7 @@
       .bg-gradient-to-r.from-purple-600.to-purple-800.rounded-t-lg.px-6.py-4.border-b-4.border-yellow-400
         h2.text-white.text-2xl.font-black.uppercase.tracking-wide Rosters
 
-      .grid.grid-cols-1.md_grid-cols-2.gap-6.bg-slate-900.rounded-b-lg.p-6
+      div(class="grid grid-cols-1 md:grid-cols-2 gap-6 bg-slate-900 rounded-b-lg p-6")
         //- Team 1 Roster
         div
           h3.text-white.font-bold.text-xl.mb-4 {{ getTeamInfo(matchup[0].roster?.user?.display_name).aiModel }}
@@ -90,7 +123,7 @@
           div(v-if="getBenchPlayers(matchup[0]).length > 0")
             h4.text-gray-400.font-bold.text-sm.uppercase.tracking-wider.mb-3 Bench
             .space-y-2
-              div(class="bg-slate-800/50 rounded p-3")(v-for="playerId in getBenchPlayers(matchup[0])" :key="playerId")
+              div(v-for="playerId in getBenchPlayers(matchup[0])" :key="playerId" class="bg-slate-800/50 rounded p-3")
                 .flex.items-center.gap-3
                   img.h-10.w-10.rounded-full.object-cover(
                     v-if="getPlayerPortrait(playerId)"
@@ -139,7 +172,7 @@
           div(v-if="getBenchPlayers(matchup[1]).length > 0")
             h4.text-gray-400.font-bold.text-sm.uppercase.tracking-wider.mb-3 Bench
             .space-y-2
-              div(class="bg-slate-800/50 rounded p-3")(v-for="playerId in getBenchPlayers(matchup[1])" :key="playerId")
+              div(v-for="playerId in getBenchPlayers(matchup[1])" :key="playerId" class="bg-slate-800/50 rounded p-3")
                 .flex.items-center.gap-3
                   img.h-10.w-10.rounded-full.object-cover(
                     v-if="getPlayerPortrait(playerId)"
