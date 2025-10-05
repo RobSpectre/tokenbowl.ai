@@ -107,11 +107,11 @@
                       span.text-green-400.text-xs.font-bold.uppercase(v-if="matchup[1].points > matchup[0].points") W
                       span.text-red-400.text-xs.font-bold.uppercase(v-else-if="matchup[1].points < matchup[0].points") L
 
-              //- Desktop Layout (side by side)
-              div(class="hidden md:grid md:grid-cols-2 gap-4 relative")
+              //- Desktop Layout (side by side with VS in the middle)
+              div(class="hidden md:flex md:items-center md:gap-2")
                 //- Team 1 (Desktop)
-                .flex.items-center.justify-between
-                  div(class="flex items-center gap-3 flex-1")
+                div(class="flex-1 flex items-center justify-between bg-slate-750 rounded-lg p-3")
+                  div(class="flex items-center gap-3")
                     img(class="h-12 w-12 object-contain"
                       :src="getTeamInfo(matchup[0].roster?.user?.display_name).logo"
                       :alt="getTeamInfo(matchup[0].roster?.user?.display_name).aiModel"
@@ -121,21 +121,26 @@
                       div(class="text-white font-bold text-lg") {{ getTeamInfo(matchup[0].roster?.user?.display_name).aiModel }}
                       div(class="text-blue-400 text-sm font-semibold") {{ getTeamInfo(matchup[0].roster?.user?.display_name).owner }}
                       div(:class="getRecordColor(getRecordThroughWeek(matchup[0].roster_id, selectedWeek - 1).wins, getRecordThroughWeek(matchup[0].roster_id, selectedWeek - 1).losses)" class="text-xs font-bold") {{ getRecordThroughWeek(matchup[0].roster_id, selectedWeek - 1).wins }}-{{ getRecordThroughWeek(matchup[0].roster_id, selectedWeek - 1).losses }}
-                  .text-right
+                  div(class="text-right")
                     div(class="text-white font-black text-3xl") {{ matchup[0].points?.toFixed(2) || '0.00' }}
-                    .mt-2(v-if="isWeekComplete(matchup)")
-                      .text-green-400.text-xs.font-bold.uppercase(v-if="matchup[0].points > matchup[1].points") W
-                      .text-red-400.text-xs.font-bold.uppercase(v-else-if="matchup[0].points < matchup[1].points") L
+                    div(v-if="isWeekComplete(matchup)" class="mt-2")
+                      span(class="text-green-400 text-xs font-bold uppercase" v-if="matchup[0].points > matchup[1].points") W
+                      span(class="text-red-400 text-xs font-bold uppercase" v-else-if="matchup[0].points < matchup[1].points") L
+
+                //- VS Separator (Desktop) - No absolute positioning
+                div(class="flex-shrink-0 px-2")
+                  div(class="bg-slate-700 rounded-full px-3 py-1")
+                    span(class="text-white font-black text-sm") VS
 
                 //- Team 2 (Desktop)
-                .flex.items-center.justify-between
+                div(class="flex-1 flex items-center justify-between bg-slate-750 rounded-lg p-3")
                   div(class="text-left")
                     div(class="text-white font-black text-3xl") {{ matchup[1].points?.toFixed(2) || '0.00' }}
-                    .mt-2(v-if="isWeekComplete(matchup)")
-                      .text-green-400.text-xs.font-bold.uppercase(v-if="matchup[1].points > matchup[0].points") W
-                      .text-red-400.text-xs.font-bold.uppercase(v-else-if="matchup[1].points < matchup[0].points") L
-                  div(class="flex items-center gap-3 flex-1 justify-end")
-                    .text-right
+                    div(v-if="isWeekComplete(matchup)" class="mt-2")
+                      span(class="text-green-400 text-xs font-bold uppercase" v-if="matchup[1].points > matchup[0].points") W
+                      span(class="text-red-400 text-xs font-bold uppercase" v-else-if="matchup[1].points < matchup[0].points") L
+                  div(class="flex items-center gap-3")
+                    div(class="text-right")
                       div(class="text-white font-bold text-lg") {{ getTeamInfo(matchup[1].roster?.user?.display_name).aiModel }}
                       div(class="text-blue-400 text-sm font-semibold") {{ getTeamInfo(matchup[1].roster?.user?.display_name).owner }}
                       div(:class="getRecordColor(getRecordThroughWeek(matchup[1].roster_id, selectedWeek - 1).wins, getRecordThroughWeek(matchup[1].roster_id, selectedWeek - 1).losses)" class="text-xs font-bold") {{ getRecordThroughWeek(matchup[1].roster_id, selectedWeek - 1).wins }}-{{ getRecordThroughWeek(matchup[1].roster_id, selectedWeek - 1).losses }}
@@ -145,10 +150,6 @@
                       :alt="getTeamInfo(matchup[1].roster?.user?.display_name).aiModel"
                       :class="getTeamInfo(matchup[1].roster?.user?.display_name).invertLogo ? 'invert brightness-200' : ''"
                     )
-
-                //- VS Separator (Desktop)
-                div(class="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-slate-700 rounded-full px-3 py-1 z-10")
-                  span.text-white.font-black.text-sm VS
 
               //- Point Margin Bar Chart
               .mt-4.pt-4.border-t.border-slate-700(v-if="(matchup[0].points || 0) !== (matchup[1].points || 0)")

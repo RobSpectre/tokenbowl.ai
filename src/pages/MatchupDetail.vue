@@ -66,10 +66,10 @@
                   div(class="text-blue-400 text-sm font-semibold") {{ getTeamInfo(matchup[1].roster?.user?.display_name).owner }}
               div(class="text-white font-black text-2xl") {{ matchup[1].points?.toFixed(2) || '0.00' }}
 
-        //- Desktop Layout (side by side)
-        div(class="hidden sm:grid sm:grid-cols-2 gap-4 sm:gap-8 relative")
+        //- Desktop Layout (side by side with VS in between)
+        div(class="hidden sm:flex sm:items-center sm:gap-4")
           //- Team 1
-          .text-center
+          div(class="flex-1 text-center bg-slate-800 rounded-lg p-6")
             img(
               class="h-24 w-24 object-contain mx-auto mb-4"
               :src="getTeamInfo(matchup[0].roster?.user?.display_name).logo"
@@ -80,8 +80,13 @@
             div(class="text-blue-400 text-lg font-semibold") {{ getTeamInfo(matchup[0].roster?.user?.display_name).owner }}
             div(class="text-white font-black text-5xl mt-4") {{ matchup[0].points?.toFixed(2) || '0.00' }}
 
+          //- VS Separator (Desktop) - No absolute positioning
+          div(class="flex-shrink-0 px-4")
+            div(class="bg-slate-700 rounded-full px-4 py-2")
+              span(class="text-white font-black text-lg") VS
+
           //- Team 2
-          .text-center
+          div(class="flex-1 text-center bg-slate-800 rounded-lg p-6")
             img(
               class="h-24 w-24 object-contain mx-auto mb-4"
               :src="getTeamInfo(matchup[1].roster?.user?.display_name).logo"
@@ -91,10 +96,6 @@
             div(class="text-white font-bold text-2xl") {{ getTeamInfo(matchup[1].roster?.user?.display_name).aiModel }}
             div(class="text-blue-400 text-lg font-semibold") {{ getTeamInfo(matchup[1].roster?.user?.display_name).owner }}
             div(class="text-white font-black text-5xl mt-4") {{ matchup[1].points?.toFixed(2) || '0.00' }}
-
-          //- VS Badge (Desktop only)
-          div(class="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-slate-700 rounded-full px-4 py-2 z-10")
-            span.text-white.font-black.text-lg VS
 
     //- Rosters
     section.mb-8
