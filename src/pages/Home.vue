@@ -535,28 +535,32 @@ export default {
           }
         })
 
-        // Load matchups for all 18 weeks
+        // Load matchups for all 18 weeks IN PARALLEL
+        const weekPromises = []
         for (let week = 1; week <= 18; week++) {
-          try {
-            const matchups = await getMatchups(week)
-
-            // Group matchups
-            const matchupGroups = {}
-            matchups.forEach(matchup => {
-              if (!matchupGroups[matchup.matchup_id]) {
-                matchupGroups[matchup.matchup_id] = []
-              }
-              matchupGroups[matchup.matchup_id].push({
-                ...matchup,
-                roster: rosterMap[matchup.roster_id]
+          weekPromises.push(
+            getMatchups(week).then(matchups => {
+              // Group matchups
+              const matchupGroups = {}
+              matchups.forEach(matchup => {
+                if (!matchupGroups[matchup.matchup_id]) {
+                  matchupGroups[matchup.matchup_id] = []
+                }
+                matchupGroups[matchup.matchup_id].push({
+                  ...matchup,
+                  roster: rosterMap[matchup.roster_id]
+                })
               })
-            })
 
-            allMatchups.value[week] = Object.values(matchupGroups)
-          } catch (err) {
-            console.error(`Error loading week ${week} matchups:`, err)
-          }
+              allMatchups.value[week] = Object.values(matchupGroups)
+            }).catch(err => {
+              console.error(`Error loading week ${week} matchups:`, err)
+            })
+          )
         }
+
+        // Wait for all weeks to load
+        await Promise.all(weekPromises)
       } catch (err) {
         console.error('Error loading all matchups:', err)
       }

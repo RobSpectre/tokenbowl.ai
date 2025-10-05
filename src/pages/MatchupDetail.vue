@@ -149,6 +149,7 @@
                     .text-white.font-semibold.text-sm {{ getPlayerName(playerId) }}
                     .text-gray-400.text-xs {{ getPlayerTeam(playerId) }}
                   .text-right.flex-shrink-0
+                    .text-blue-400.font-bold.text-lg {{ getPlayerPoints(matchup[0], playerId) }}
                     .text-gray-400.text-xs VORP: {{ getPlayerVORP(playerId) }}
                     .text-gray-400.text-xs ROS: {{ getPlayerROS(playerId) }}
 
@@ -198,6 +199,7 @@
                     .text-white.font-semibold.text-sm {{ getPlayerName(playerId) }}
                     .text-gray-400.text-xs {{ getPlayerTeam(playerId) }}
                   .text-right.flex-shrink-0
+                    .text-blue-400.font-bold.text-lg {{ getPlayerPoints(matchup[1], playerId) }}
                     .text-gray-400.text-xs VORP: {{ getPlayerVORP(playerId) }}
                     .text-gray-400.text-xs ROS: {{ getPlayerROS(playerId) }}
 
