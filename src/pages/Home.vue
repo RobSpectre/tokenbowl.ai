@@ -18,7 +18,7 @@
       .container.mx-auto.px-4.max-w-7xl
         div(class="flex items-center justify-center gap-3 mb-3")
           button(class="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-700 disabled:text-slate-500 text-white font-bold rounded-lg transition-all duration-200 disabled:cursor-not-allowed"
-            @click="selectedWeek = Math.max(1, selectedWeek - 1)"
+            @click="handleWeekChange('prev')"
             :disabled="selectedWeek === 1"
           ) ← PREV
           select(class="px-4 py-2 bg-slate-800 text-white font-black text-xl rounded-lg border-2 border-blue-600 focus:outline-none focus:border-yellow-400 transition-colors uppercase"
@@ -26,7 +26,7 @@
           )
             option(v-for="week in 18" :key="week" :value="week") Week {{ week }}
           button(class="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-700 disabled:text-slate-500 text-white font-bold rounded-lg transition-all duration-200 disabled:cursor-not-allowed"
-            @click="selectedWeek = Math.min(18, selectedWeek + 1)"
+            @click="handleWeekChange('next')"
             :disabled="selectedWeek === 18"
           ) NEXT →
 
@@ -416,6 +416,7 @@ import { getLeagueData, getMatchups, getRosters, getLeagueUsers, getTransactions
 import { getTeamInfo } from '../teamMappings.js'
 import { getLatestVideoAndShorts } from '../youtubeApi.js'
 import * as echarts from 'echarts'
+import { trackButtonClick } from '../analytics.js'
 
 export default {
   name: 'Home',
@@ -563,7 +564,21 @@ export default {
 
     const goToMatchupDetail = (matchup) => {
       if (matchup && matchup.length > 0 && matchup[0].matchup_id) {
+        trackButtonClick('matchup_click', {
+          week: selectedWeek.value,
+          matchup_id: matchup[0].matchup_id
+        })
         router.push(`/matchup/${selectedWeek.value}/${matchup[0].matchup_id}`)
+      }
+    }
+
+    const handleWeekChange = (direction) => {
+      if (direction === 'prev' && selectedWeek.value > 1) {
+        selectedWeek.value = Math.max(1, selectedWeek.value - 1)
+        trackButtonClick('week_navigation', { direction: 'previous', week: selectedWeek.value })
+      } else if (direction === 'next' && selectedWeek.value < 18) {
+        selectedWeek.value = Math.min(18, selectedWeek.value + 1)
+        trackButtonClick('week_navigation', { direction: 'next', week: selectedWeek.value })
       }
     }
 
@@ -1066,6 +1081,7 @@ export default {
       latestShorts,
       getTeamInfo,
       goToMatchupDetail,
+      handleWeekChange,
       isWeekComplete,
       getTransactionType,
       getPlayerNameFromId,

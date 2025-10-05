@@ -34,7 +34,7 @@
           ) Scoring
 
         //- Mobile Menu Button
-        button(class="md:hidden text-white p-2" @click="mobileMenuOpen = !mobileMenuOpen")
+        button(class="md:hidden text-white p-2" @click="toggleMobileMenu")
           svg.w-6.h-6(v-if="!mobileMenuOpen" fill="none" stroke="currentColor" viewBox="0 0 24 24")
             path(stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16")
           svg.w-6.h-6(v-else fill="none" stroke="currentColor" viewBox="0 0 24 24")
@@ -46,27 +46,27 @@
         router-link.px-4.py-3.font-bold.uppercase.text-sm.tracking-wide.transition-all.duration-200.border-b.border-slate-800(
           to="/"
           :class="$route.path === '/' ? 'bg-blue-600 text-white' : 'text-gray-300'"
-          @click="mobileMenuOpen = false"
+          @click="handleNavClick('season')"
         ) Season
         router-link.px-4.py-3.font-bold.uppercase.text-sm.tracking-wide.transition-all.duration-200.border-b.border-slate-800(
           to="/videos"
           :class="$route.path === '/videos' ? 'bg-blue-600 text-white' : 'text-gray-300'"
-          @click="mobileMenuOpen = false"
+          @click="handleNavClick('videos')"
         ) Videos
         router-link.px-4.py-3.font-bold.uppercase.text-sm.tracking-wide.transition-all.duration-200.border-b.border-slate-800(
           to="/teams"
           :class="$route.path === '/teams' ? 'bg-blue-600 text-white' : 'text-gray-300'"
-          @click="mobileMenuOpen = false"
+          @click="handleNavClick('teams')"
         ) Teams
         router-link.px-4.py-3.font-bold.uppercase.text-sm.tracking-wide.transition-all.duration-200.border-b.border-slate-800(
           to="/draft"
           :class="$route.path === '/draft' ? 'bg-blue-600 text-white' : 'text-gray-300'"
-          @click="mobileMenuOpen = false"
+          @click="handleNavClick('draft')"
         ) Draft
         router-link.px-4.py-3.font-bold.uppercase.text-sm.tracking-wide.transition-all.duration-200(
           to="/scoring"
           :class="$route.path === '/scoring' ? 'bg-blue-600 text-white' : 'text-gray-300'"
-          @click="mobileMenuOpen = false"
+          @click="handleNavClick('scoring')"
         ) Scoring
 
   //- Router View
@@ -91,6 +91,7 @@
 <script>
 import { ref, onMounted } from 'vue'
 import { getLeagueData } from './sleeperApi.js'
+import { trackButtonClick } from './analytics.js'
 
 export default {
   name: 'App',
@@ -107,13 +108,25 @@ export default {
       }
     }
 
+    const toggleMobileMenu = () => {
+      mobileMenuOpen.value = !mobileMenuOpen.value
+      trackButtonClick('mobile_menu_toggle', { is_open: mobileMenuOpen.value })
+    }
+
+    const handleNavClick = (page) => {
+      mobileMenuOpen.value = false
+      trackButtonClick('navigation', { page })
+    }
+
     onMounted(() => {
       loadLeagueInfo()
     })
 
     return {
       leagueData,
-      mobileMenuOpen
+      mobileMenuOpen,
+      toggleMobileMenu,
+      handleNavClick
     }
   }
 }

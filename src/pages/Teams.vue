@@ -189,6 +189,7 @@
 import { ref, onMounted, computed, watch } from 'vue'
 import { getRosters, getLeagueUsers, getPlayers, getMatchups, getTransactions, getLeague } from '../sleeperApi.js'
 import { getTeamInfo } from '../teamMappings.js'
+import { trackButtonClick } from '../analytics.js'
 
 export default {
   name: 'Teams',
@@ -432,6 +433,10 @@ export default {
 
     const selectTeam = async (team) => {
       selectedTeam.value = team
+      trackButtonClick('team_select', {
+        team_name: team.teamInfo.aiModel,
+        roster_id: team.roster_id
+      })
 
       // Load current week matchup for this team
       try {
