@@ -85,6 +85,9 @@
             rel="noopener noreferrer"
           ) Rob Spectre
         span(class="hidden sm:inline text-gray-600") •
+        span
+          | Made with ❤️ in New York
+        span(class="hidden sm:inline text-gray-600") •
         a.flex.items-center.gap-2.text-gray-400.hover_text-blue-400.transition-colors(
           href="https://github.com/RobSpectre/tokenbowl.ai"
           target="_blank"
