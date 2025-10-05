@@ -168,8 +168,8 @@
         span(class="text-2xl sm:text-3xl") 👥
         | Roster Settings
       div(class="bg-white/5 backdrop-blur-lg rounded-xl border border-white/10 p-6")
-        div(class="grid grid-cols-2 md:grid-cols-4 gap-4")
-          div(v-for="(count, position) in rosterPositions" :key="position").text-center
+        div(class="flex flex-wrap justify-center gap-4 sm:gap-6")
+          div(v-for="(count, position) in rosterPositions" :key="position" class="text-center min-w-16")
             .text-gray-400.text-sm.mb-1 {{ position }}
             .text-white.font-bold.text-2xl {{ count }}
 </template>
