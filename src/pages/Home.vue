@@ -322,7 +322,16 @@
                   .text-gray-400.text-xs Δ ROS
 
               //- Transaction Type
-              .text-white.font-bold.text-sm {{ getTransactionType(transaction.type) }}
+              div
+                .text-white.font-bold.text-sm {{ getTransactionType(transaction.type) }}
+                div(v-if="transaction.counterpartyInfo" class="flex items-center gap-1 mt-1")
+                  .text-gray-400.text-xs with
+                  img(class="h-4 w-4 object-contain"
+                    :src="transaction.counterpartyInfo.logo"
+                    :alt="transaction.counterpartyInfo.aiModel"
+                    :class="transaction.counterpartyInfo.invertLogo ? 'invert brightness-200' : ''"
+                  )
+                  .text-blue-400.text-xs.font-semibold {{ transaction.counterpartyInfo.aiModel }}
 
               //- Players
               div(class="grid grid-cols-1 gap-2")
@@ -360,7 +369,16 @@
                   .text-blue-400.text-sm {{ transaction.teamInfo.owner }}
 
               .flex-1
-                .text-white.font-bold {{ getTransactionType(transaction.type) }}
+                div
+                  .text-white.font-bold {{ getTransactionType(transaction.type) }}
+                  div(v-if="transaction.counterpartyInfo" class="flex items-center gap-2 mt-1")
+                    .text-gray-400.text-sm with
+                    img(class="h-5 w-5 object-contain"
+                      :src="transaction.counterpartyInfo.logo"
+                      :alt="transaction.counterpartyInfo.aiModel"
+                      :class="transaction.counterpartyInfo.invertLogo ? 'invert brightness-200' : ''"
+                    )
+                    .text-blue-400.text-sm.font-semibold {{ transaction.counterpartyInfo.aiModel }}
                 .flex.items-start.gap-6.mt-3
                   .flex-1(v-if="transaction.adds")
                     .text-green-400.text-sm.font-semibold.mb-2 Added:
@@ -474,10 +492,21 @@ export default {
           const rosterId = transaction.roster_ids?.[0]
           const roster = rosterId ? rosterMap[rosterId] : null
 
+          // For trades, get the counterparty (second roster)
+          let counterpartyInfo = null
+          if (transaction.type === 'trade' && transaction.roster_ids?.length > 1) {
+            const counterpartyRosterId = transaction.roster_ids[1]
+            const counterpartyRoster = counterpartyRosterId ? rosterMap[counterpartyRosterId] : null
+            if (counterpartyRoster?.user?.display_name) {
+              counterpartyInfo = getTeamInfo(counterpartyRoster.user.display_name)
+            }
+          }
+
           return {
             ...transaction,
             roster,
-            teamInfo: roster?.user?.display_name ? getTeamInfo(roster.user.display_name) : null
+            teamInfo: roster?.user?.display_name ? getTeamInfo(roster.user.display_name) : null,
+            counterpartyInfo
           }
         })
       } catch (err) {
