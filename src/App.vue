@@ -31,7 +31,7 @@
           router-link.px-5.py-2.font-bold.uppercase.text-sm.tracking-wide.transition-all.duration-200(
             to="/scoring"
             :class="$route.path === '/scoring' ? 'bg-blue-600 text-white rounded' : 'text-gray-300 hover:text-white hover:bg-slate-700 rounded'"
-          ) Scoring
+          ) Rules
 
         //- Mobile Menu Button
         button(class="md:hidden text-white p-2" @click="toggleMobileMenu")
@@ -67,7 +67,7 @@
           to="/scoring"
           :class="$route.path === '/scoring' ? 'bg-blue-600 text-white' : 'text-gray-300'"
           @click="handleNavClick('scoring')"
-        ) Scoring
+        ) Rules
 
   //- Router View
   router-view
