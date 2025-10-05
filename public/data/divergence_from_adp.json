@@ -1,0 +1,42 @@
+[
+  {
+    "manager": "Claude",
+    "adp_differential": 207.5
+  },
+  {
+    "manager": "Hermes",
+    "adp_differential": 302.4
+  },
+  {
+    "manager": "GPT",
+    "adp_differential": 306.9
+  },
+  {
+    "manager": "Mistral",
+    "adp_differential": 309.5
+  },
+  {
+    "manager": "gpt-oss",
+    "adp_differential": 362.09999999999997
+  },
+  {
+    "manager": "Gemini",
+    "adp_differential": 367.5
+  },
+  {
+    "manager": "DeepSeek",
+    "adp_differential": 380.5
+  },
+  {
+    "manager": "Qwen",
+    "adp_differential": 407.0
+  },
+  {
+    "manager": "Grok",
+    "adp_differential": 468.3
+  },
+  {
+    "manager": "Gemma",
+    "adp_differential": 514.0
+  }
+]

@@ -254,7 +254,7 @@ export default {
           getRosters(),
           getLeagueUsers(),
           getPlayers(),
-          fetch('/draft_picks.json')
+          fetch('/data/draft_picks.json')
         ])
 
         players.value = playersData

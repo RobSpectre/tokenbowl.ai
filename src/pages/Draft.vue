@@ -56,6 +56,15 @@
       .bg-slate-900.rounded-b-lg.p-6
         div(ref="adpChartRef" style="width: 100%; height: 400px")
 
+    //- Divergence Chart
+    section.mb-8
+      .bg-gradient-to-r.from-purple-600.to-indigo-800.rounded-t-lg.px-6.py-4.border-b-4.border-yellow-400
+        h2.text-white.text-2xl.font-black.uppercase.tracking-wide.flex.items-center.gap-3
+          span.text-yellow-400 📈
+          | Draft Efficiency by Model
+      .bg-slate-900.rounded-b-lg.p-6
+        div(ref="divergenceChartRef" style="width: 100%; height: 450px")
+
     //- Draft Board
     section
       .bg-slate-900.rounded-lg.overflow-hidden
@@ -170,7 +179,7 @@
 </template>
 
 <script>
-import { ref, onMounted, computed, nextTick } from 'vue'
+import { ref, onMounted, onUnmounted, computed, nextTick } from 'vue'
 import { getTeamInfoByAiModel } from '../teamMappings.js'
 import { getRosters, getLeagueUsers, getPlayers } from '../sleeperApi.js'
 import * as echarts from 'echarts'
@@ -185,7 +194,10 @@ export default {
     const error = ref(null)
     const adpChartRef = ref(null)
     const adpData = ref([])
+    const divergenceChartRef = ref(null)
+    const divergenceData = ref([])
     let adpChart = null
+    let divergenceChart = null
 
     const loadDraftData = async () => {
       try {
@@ -193,7 +205,7 @@ export default {
         error.value = null
 
         const [draftResponse, rostersData, usersData, playersData] = await Promise.all([
-          fetch('/draft_picks.json'),
+          fetch('/data/draft_picks.json'),
           getRosters(),
           getLeagueUsers(),
           getPlayers()
@@ -323,24 +335,11 @@ export default {
 
     const loadADPData = async () => {
       try {
-        const response = await fetch('/picks_by_adp.csv')
-        const text = await response.text()
+        const response = await fetch('/data/picks_by_adp.json')
+        const data = await response.json()
 
-        // Parse CSV
-        const lines = text.trim().split('\n')
-        const headers = lines[0].split(',')
-
-        const data = lines.slice(1).map(line => {
-          const values = line.split(',')
-          return {
-            manager: values[1],
-            draft_position: parseFloat(values[2]),
-            adp: values[3] ? parseFloat(values[3]) : null
-          }
-        })
-
-        adpData.value = data.filter(d => d.adp !== null)
-        renderADPChart()
+        const filtered = data.filter(d => d.adp !== null)
+        adpData.value = filtered
       } catch (err) {
         console.error('Error loading ADP data:', err)
       }
@@ -358,102 +357,292 @@ export default {
       const draftPositions = adpData.value.map(d => d.draft_position)
       const adpValues = adpData.value.map(d => d.adp)
 
+      // Get logos for each pick
+      const pickLogos = adpData.value.map(d => {
+        const teamInfo = getTeamInfoByAiModel(d.manager)
+        return teamInfo.logo
+      })
+
+      let currentView = 0 // 0 = line, 1 = points
+
+      const updateChart = () => {
+        const option = {
+          backgroundColor: '#1e293b',
+          animation: true,
+          animationDuration: 1000,
+          animationEasing: 'cubicOut',
+          tooltip: {
+            trigger: 'axis',
+            backgroundColor: 'rgba(15, 23, 42, 0.9)',
+            borderColor: '#3b82f6',
+            textStyle: { color: '#fff' },
+            formatter: (params) => {
+              const pickIndex = params[0].dataIndex
+              const manager = adpData.value[pickIndex]?.manager || ''
+              let result = `<div style="font-weight: bold; margin-bottom: 4px;">Pick ${params[0].axisValue}</div>`
+              if (manager) {
+                result += `<div style="color: #facc15; font-size: 11px; margin-bottom: 4px;">${manager}</div>`
+              }
+              params.forEach(param => {
+                result += `<div style="margin-top: 4px;">${param.marker} ${param.seriesName}: ${param.value?.toFixed(1) || 'N/A'}</div>`
+              })
+              return result
+            }
+          },
+          legend: {
+            data: ['Ideal Average Draft Position', 'Token Bowl Picks'],
+            top: 10,
+            textStyle: { color: '#e2e8f0' },
+            itemGap: 20
+          },
+          grid: {
+            left: '50',
+            right: '40',
+            bottom: '50',
+            top: '60'
+          },
+          xAxis: {
+            type: 'category',
+            data: draftPositions,
+            name: 'Draft Position',
+            nameLocation: 'middle',
+            nameGap: 30,
+            nameTextStyle: { color: '#e2e8f0', fontSize: 14 },
+            axisLabel: {
+              color: '#94a3b8',
+              interval: 'auto',
+              rotate: 0
+            },
+            axisLine: { lineStyle: { color: '#475569' } }
+          },
+          yAxis: {
+            type: 'value',
+            name: 'ADP Value',
+            nameTextStyle: { color: '#e2e8f0', fontSize: 14 },
+            axisLabel: { color: '#94a3b8' },
+            axisLine: { lineStyle: { color: '#475569' } },
+            splitLine: { lineStyle: { color: '#334155', type: 'dashed' } }
+          },
+          series: [
+            {
+              name: 'Ideal Average Draft Position',
+              type: 'line',
+              data: draftPositions,
+              smooth: true,
+              lineStyle: {
+                width: 2,
+                color: '#3b82f6'
+              },
+              itemStyle: {
+                color: '#3b82f6'
+              },
+              symbol: 'none'
+            },
+            currentView === 0 ? {
+              // Line view
+              name: 'Token Bowl Picks',
+              type: 'line',
+              data: adpValues,
+              smooth: true,
+              lineStyle: {
+                width: 3,
+                color: '#facc15'
+              },
+              itemStyle: {
+                color: '#facc15'
+              },
+              symbol: 'circle',
+              symbolSize: 4
+            } : {
+              // Point view with logos
+              name: 'Token Bowl Picks',
+              type: 'scatter',
+              data: adpValues,
+              symbolSize: 30,
+              symbol: (value, params) => {
+                return `image://${pickLogos[params.dataIndex]}`
+              },
+              itemStyle: {
+                opacity: 1
+              }
+            }
+          ]
+        }
+
+        adpChart.setOption(option, true)
+      }
+
+      // Initial render
+      updateChart()
+
+      // Cycle between views every 2.5 seconds
+      setInterval(() => {
+        currentView = (currentView + 1) % 2
+        updateChart()
+      }, 5000)
+    }
+
+    const loadDivergenceData = async () => {
+      try {
+        const response = await fetch('/data/divergence_from_adp.json')
+        const data = await response.json()
+
+        divergenceData.value = data
+      } catch (err) {
+        console.error('Error loading divergence data:', err)
+      }
+    }
+
+    const renderDivergenceChart = async () => {
+      if (!divergenceChartRef.value || divergenceData.value.length === 0) return
+
+      await nextTick()
+
+      if (!divergenceChart) {
+        divergenceChart = echarts.init(divergenceChartRef.value)
+      }
+
+      const teams = divergenceData.value.map(d => {
+        const teamInfo = getTeamInfoByAiModel(d.manager)
+        return {
+          name: d.manager,
+          value: d.adp_differential,
+          logo: teamInfo.logo,
+          invertLogo: teamInfo.invertLogo || false
+        }
+      })
+
       const option = {
-        backgroundColor: 'transparent',
+        backgroundColor: '#1e293b',
         animation: true,
         animationDuration: 1000,
         animationEasing: 'cubicOut',
+        title: {
+          text: 'Draft Efficiency by Model',
+          subtext: 'Lower is better (drafted closer to actual ADP)',
+          left: 'center',
+          top: 10,
+          textStyle: {
+            color: '#e2e8f0',
+            fontSize: 18,
+            fontWeight: 'bold'
+          },
+          subtextStyle: {
+            color: '#94a3b8',
+            fontSize: 12
+          }
+        },
         tooltip: {
           trigger: 'axis',
+          axisPointer: {
+            type: 'shadow'
+          },
           backgroundColor: 'rgba(15, 23, 42, 0.9)',
           borderColor: '#3b82f6',
           textStyle: { color: '#fff' },
           formatter: (params) => {
-            let result = `<div style="font-weight: bold; margin-bottom: 4px;">Pick ${params[0].axisValue}</div>`
-            params.forEach(param => {
-              result += `<div style="margin-top: 4px;">${param.marker} ${param.seriesName}: ${param.value.toFixed(1)}</div>`
-            })
-            return result
+            const param = params[0]
+            return `<div style="font-weight: bold; margin-bottom: 4px;">${param.name}</div>
+                    <div>ADP Differential: ${param.value.toFixed(1)}</div>`
           }
         },
-        legend: {
-          data: ['Ideal Average Draft Position', 'Token Bowl Picks'],
-          top: 10,
-          textStyle: { color: '#9ca3af' }
-        },
         grid: {
-          left: '3%',
-          right: '4%',
-          bottom: '3%',
-          top: 60,
-          containLabel: true
+          left: '80',
+          right: '40',
+          bottom: '40',
+          top: '80'
         },
         xAxis: {
-          type: 'category',
-          data: draftPositions,
-          name: 'Draft Position',
+          type: 'value',
+          name: 'ADP Differential',
           nameLocation: 'middle',
-          nameGap: 30,
-          nameTextStyle: { color: '#9ca3af', fontSize: 12 },
-          axisLabel: { color: '#9ca3af', interval: 9 },
-          axisLine: { lineStyle: { color: '#475569' } }
+          nameGap: 25,
+          nameTextStyle: { color: '#e2e8f0', fontSize: 14 },
+          axisLabel: { color: '#94a3b8' },
+          axisLine: { lineStyle: { color: '#475569' } },
+          splitLine: { lineStyle: { color: '#334155', type: 'dashed' } }
         },
         yAxis: {
-          type: 'value',
-          name: 'ADP Value',
-          nameTextStyle: { color: '#9ca3af', fontSize: 12 },
-          axisLabel: { color: '#9ca3af' },
-          axisLine: { lineStyle: { color: '#475569' } },
-          splitLine: { lineStyle: { color: '#334155' } }
+          type: 'category',
+          data: teams.map(t => t.name),
+          axisLabel: {
+            color: '#94a3b8',
+            fontSize: 12
+          },
+          axisLine: { lineStyle: { color: '#475569' } }
         },
         series: [
           {
-            name: 'Ideal Average Draft Position',
-            type: 'line',
-            data: draftPositions,
-            smooth: true,
-            lineStyle: {
-              width: 3,
-              color: '#3b82f6'
-            },
-            itemStyle: {
-              color: '#3b82f6'
-            },
-            areaStyle: {
-              color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-                { offset: 0, color: 'rgba(59, 130, 246, 0.3)' },
-                { offset: 1, color: 'rgba(59, 130, 246, 0.05)' }
-              ])
-            }
-          },
-          {
-            name: 'Token Bowl Picks',
-            type: 'line',
-            data: adpValues,
-            smooth: true,
-            lineStyle: {
-              width: 3,
-              color: '#facc15'
-            },
-            itemStyle: {
-              color: '#facc15'
-            },
-            areaStyle: {
-              color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-                { offset: 0, color: 'rgba(250, 204, 21, 0.3)' },
-                { offset: 1, color: 'rgba(250, 204, 21, 0.05)' }
-              ])
+            type: 'bar',
+            data: teams.map((t, index) => ({
+              value: t.value,
+              itemStyle: {
+                color: new echarts.graphic.LinearGradient(0, 0, 1, 0, [
+                  { offset: 0, color: '#3b82f6' },
+                  { offset: 1, color: '#8b5cf6' }
+                ]),
+                borderRadius: [0, 4, 4, 0]
+              }
+            })),
+            label: {
+              show: true,
+              position: 'right',
+              color: '#e2e8f0',
+              fontSize: 11,
+              formatter: (params) => {
+                const team = teams[params.dataIndex]
+                return `{logo${params.dataIndex}|} ${params.value.toFixed(1)}`
+              },
+              rich: teams.reduce((acc, team, index) => {
+                acc[`logo${index}`] = {
+                  height: 20,
+                  width: 20,
+                  backgroundColor: {
+                    image: team.logo
+                  }
+                }
+                return acc
+              }, {})
             }
           }
         ]
       }
 
-      adpChart.setOption(option)
+      divergenceChart.setOption(option)
     }
 
-    onMounted(() => {
-      loadDraftData()
-      loadADPData()
+    // Handle window resize for responsive charts
+    const handleResize = () => {
+      if (adpChart) {
+        adpChart.resize()
+      }
+      if (divergenceChart) {
+        divergenceChart.resize()
+      }
+    }
+
+    onMounted(async () => {
+      await loadDraftData()
+      await loadADPData()
+      await loadDivergenceData()
+      // Render charts after both data and DOM are ready
+      await nextTick()
+      renderADPChart()
+      renderDivergenceChart()
+
+      // Add resize listener
+      window.addEventListener('resize', handleResize)
+    })
+
+    // Clean up on unmount
+    onUnmounted(() => {
+      window.removeEventListener('resize', handleResize)
+      if (adpChart) {
+        adpChart.dispose()
+      }
+      if (divergenceChart) {
+        divergenceChart.dispose()
+      }
     })
 
     return {
@@ -470,7 +659,8 @@ export default {
       getPlayerPosition,
       getPlayerTeam,
       draftedTeams,
-      adpChartRef
+      adpChartRef,
+      divergenceChartRef
     }
   }
 }

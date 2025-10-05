@@ -1,0 +1,752 @@
+[
+  {
+    "manager": "Gemma",
+    "draft_position": 1,
+    "adp": 1.0
+  },
+  {
+    "manager": "Hermes",
+    "draft_position": 2,
+    "adp": 2.0
+  },
+  {
+    "manager": "Mistral",
+    "draft_position": 3,
+    "adp": 3.0
+  },
+  {
+    "manager": "gpt-oss",
+    "draft_position": 4,
+    "adp": 4.0
+  },
+  {
+    "manager": "Claude",
+    "draft_position": 5,
+    "adp": 5.0
+  },
+  {
+    "manager": "DeepSeek",
+    "draft_position": 6,
+    "adp": 6.0
+  },
+  {
+    "manager": "Qwen",
+    "draft_position": 7,
+    "adp": 7.0
+  },
+  {
+    "manager": "Gemini",
+    "draft_position": 8,
+    "adp": 8.0
+  },
+  {
+    "manager": "Grok",
+    "draft_position": 9,
+    "adp": 9.0
+  },
+  {
+    "manager": "GPT",
+    "draft_position": 10,
+    "adp": 10.0
+  },
+  {
+    "manager": "GPT",
+    "draft_position": 11,
+    "adp": 11.0
+  },
+  {
+    "manager": "Grok",
+    "draft_position": 12,
+    "adp": 12.0
+  },
+  {
+    "manager": "Gemini",
+    "draft_position": 13,
+    "adp": 13.0
+  },
+  {
+    "manager": "Qwen",
+    "draft_position": 14,
+    "adp": 14.0
+  },
+  {
+    "manager": "DeepSeek",
+    "draft_position": 15,
+    "adp": 15.0
+  },
+  {
+    "manager": "Claude",
+    "draft_position": 16,
+    "adp": 16.0
+  },
+  {
+    "manager": "gpt-oss",
+    "draft_position": 17,
+    "adp": 17.0
+  },
+  {
+    "manager": "Mistral",
+    "draft_position": 18,
+    "adp": 18.0
+  },
+  {
+    "manager": "Hermes",
+    "draft_position": 19,
+    "adp": 19.0
+  },
+  {
+    "manager": "Gemma",
+    "draft_position": 20,
+    "adp": 20.0
+  },
+  {
+    "manager": "Gemma",
+    "draft_position": 21,
+    "adp": 29.1
+  },
+  {
+    "manager": "Hermes",
+    "draft_position": 22,
+    "adp": 2.6
+  },
+  {
+    "manager": "Mistral",
+    "draft_position": 23,
+    "adp": 121.7
+  },
+  {
+    "manager": "gpt-oss",
+    "draft_position": 24,
+    "adp": 50.4
+  },
+  {
+    "manager": "Claude",
+    "draft_position": 25,
+    "adp": 30.3
+  },
+  {
+    "manager": "DeepSeek",
+    "draft_position": 26,
+    "adp": 20.0
+  },
+  {
+    "manager": "Qwen",
+    "draft_position": 27,
+    "adp": 98.4
+  },
+  {
+    "manager": "Gemini",
+    "draft_position": 28,
+    "adp": 12.1
+  },
+  {
+    "manager": "Grok",
+    "draft_position": 29,
+    "adp": 152.9
+  },
+  {
+    "manager": "GPT",
+    "draft_position": 30,
+    "adp": 15.9
+  },
+  {
+    "manager": "GPT",
+    "draft_position": 31,
+    "adp": 66.7
+  },
+  {
+    "manager": "Grok",
+    "draft_position": 32,
+    "adp": 90.5
+  },
+  {
+    "manager": "Gemini",
+    "draft_position": 33,
+    "adp": 91.9
+  },
+  {
+    "manager": "Qwen",
+    "draft_position": 34,
+    "adp": 37.3
+  },
+  {
+    "manager": "DeepSeek",
+    "draft_position": 35,
+    "adp": 44.2
+  },
+  {
+    "manager": "Claude",
+    "draft_position": 36,
+    "adp": 14.5
+  },
+  {
+    "manager": "gpt-oss",
+    "draft_position": 37,
+    "adp": 29.4
+  },
+  {
+    "manager": "Mistral",
+    "draft_position": 38,
+    "adp": 99.2
+  },
+  {
+    "manager": "Hermes",
+    "draft_position": 39,
+    "adp": 33.5
+  },
+  {
+    "manager": "Gemma",
+    "draft_position": 40,
+    "adp": 35.0
+  },
+  {
+    "manager": "Gemma",
+    "draft_position": 41,
+    "adp": 97.7
+  },
+  {
+    "manager": "Hermes",
+    "draft_position": 42,
+    "adp": 59.7
+  },
+  {
+    "manager": "Mistral",
+    "draft_position": 43,
+    "adp": 70.2
+  },
+  {
+    "manager": "gpt-oss",
+    "draft_position": 44,
+    "adp": 30.8
+  },
+  {
+    "manager": "Claude",
+    "draft_position": 45,
+    "adp": 43.7
+  },
+  {
+    "manager": "DeepSeek",
+    "draft_position": 46,
+    "adp": 2.2
+  },
+  {
+    "manager": "Qwen",
+    "draft_position": 47,
+    "adp": 46.0
+  },
+  {
+    "manager": "Gemini",
+    "draft_position": 48,
+    "adp": 32.3
+  },
+  {
+    "manager": "Grok",
+    "draft_position": 49,
+    "adp": 51.8
+  },
+  {
+    "manager": "GPT",
+    "draft_position": 50,
+    "adp": 35.6
+  },
+  {
+    "manager": "GPT",
+    "draft_position": 51,
+    "adp": 40.7
+  },
+  {
+    "manager": "Grok",
+    "draft_position": 52,
+    "adp": 110.8
+  },
+  {
+    "manager": "Gemini",
+    "draft_position": 53,
+    "adp": 59.8
+  },
+  {
+    "manager": "Qwen",
+    "draft_position": 54,
+    "adp": 108.8
+  },
+  {
+    "manager": "DeepSeek",
+    "draft_position": 55,
+    "adp": 17.6
+  },
+  {
+    "manager": "Claude",
+    "draft_position": 56,
+    "adp": 38.3
+  },
+  {
+    "manager": "gpt-oss",
+    "draft_position": 57,
+    "adp": 54.6
+  },
+  {
+    "manager": "Mistral",
+    "draft_position": 58,
+    "adp": 47.6
+  },
+  {
+    "manager": "Hermes",
+    "draft_position": 59,
+    "adp": 56.8
+  },
+  {
+    "manager": "Gemma",
+    "draft_position": 60,
+    "adp": 19.8
+  },
+  {
+    "manager": "Gemma",
+    "draft_position": 61,
+    "adp": 274.0
+  },
+  {
+    "manager": "Hermes",
+    "draft_position": 62,
+    "adp": 64.2
+  },
+  {
+    "manager": "Mistral",
+    "draft_position": 63,
+    "adp": 81.9
+  },
+  {
+    "manager": "gpt-oss",
+    "draft_position": 64,
+    "adp": 60.0
+  },
+  {
+    "manager": "Claude",
+    "draft_position": 65,
+    "adp": 74.7
+  },
+  {
+    "manager": "DeepSeek",
+    "draft_position": 66,
+    "adp": 46.0
+  },
+  {
+    "manager": "Qwen",
+    "draft_position": 67,
+    "adp": 118.7
+  },
+  {
+    "manager": "Gemini",
+    "draft_position": 68,
+    "adp": 24.4
+  },
+  {
+    "manager": "Grok",
+    "draft_position": 69,
+    "adp": 177.5
+  },
+  {
+    "manager": "GPT",
+    "draft_position": 70,
+    "adp": 81.7
+  },
+  {
+    "manager": "GPT",
+    "draft_position": 71,
+    "adp": 107.8
+  },
+  {
+    "manager": "Grok",
+    "draft_position": 72,
+    "adp": 79.5
+  },
+  {
+    "manager": "Gemini",
+    "draft_position": 73,
+    "adp": 55.0
+  },
+  {
+    "manager": "Qwen",
+    "draft_position": 74,
+    "adp": null
+  },
+  {
+    "manager": "DeepSeek",
+    "draft_position": 75,
+    "adp": 41.2
+  },
+  {
+    "manager": "Claude",
+    "draft_position": 76,
+    "adp": 26.2
+  },
+  {
+    "manager": "gpt-oss",
+    "draft_position": 77,
+    "adp": 132.9
+  },
+  {
+    "manager": "Mistral",
+    "draft_position": 78,
+    "adp": 88.0
+  },
+  {
+    "manager": "Hermes",
+    "draft_position": 79,
+    "adp": 56.5
+  },
+  {
+    "manager": "Gemma",
+    "draft_position": 80,
+    "adp": 103.0
+  },
+  {
+    "manager": "Gemma",
+    "draft_position": 81,
+    "adp": 156.0
+  },
+  {
+    "manager": "Hermes",
+    "draft_position": 82,
+    "adp": 62.0
+  },
+  {
+    "manager": "Mistral",
+    "draft_position": 83,
+    "adp": 75.0
+  },
+  {
+    "manager": "gpt-oss",
+    "draft_position": 84,
+    "adp": 23.0
+  },
+  {
+    "manager": "Claude",
+    "draft_position": 85,
+    "adp": 89.2
+  },
+  {
+    "manager": "DeepSeek",
+    "draft_position": 86,
+    "adp": 94.3
+  },
+  {
+    "manager": "Qwen",
+    "draft_position": 87,
+    "adp": 4.9
+  },
+  {
+    "manager": "Gemini",
+    "draft_position": 88,
+    "adp": 85.0
+  },
+  {
+    "manager": "Grok",
+    "draft_position": 89,
+    "adp": 79.6
+  },
+  {
+    "manager": "GPT",
+    "draft_position": 90,
+    "adp": 105.7
+  },
+  {
+    "manager": "GPT",
+    "draft_position": 91,
+    "adp": 108.0
+  },
+  {
+    "manager": "Grok",
+    "draft_position": 92,
+    "adp": null
+  },
+  {
+    "manager": "Gemini",
+    "draft_position": 93,
+    "adp": 79.0
+  },
+  {
+    "manager": "Qwen",
+    "draft_position": 94,
+    "adp": 131.7
+  },
+  {
+    "manager": "DeepSeek",
+    "draft_position": 95,
+    "adp": 18.9
+  },
+  {
+    "manager": "Claude",
+    "draft_position": 96,
+    "adp": 117.4
+  },
+  {
+    "manager": "gpt-oss",
+    "draft_position": 97,
+    "adp": 101.1
+  },
+  {
+    "manager": "Mistral",
+    "draft_position": 98,
+    "adp": 79.6
+  },
+  {
+    "manager": "Hermes",
+    "draft_position": 99,
+    "adp": 65.0
+  },
+  {
+    "manager": "Gemma",
+    "draft_position": 100,
+    "adp": 41.8
+  },
+  {
+    "manager": "Gemma",
+    "draft_position": 101,
+    "adp": 114.6
+  },
+  {
+    "manager": "Hermes",
+    "draft_position": 102,
+    "adp": 68.4
+  },
+  {
+    "manager": "Mistral",
+    "draft_position": 103,
+    "adp": 134.7
+  },
+  {
+    "manager": "gpt-oss",
+    "draft_position": 104,
+    "adp": 130.7
+  },
+  {
+    "manager": "Claude",
+    "draft_position": 105,
+    "adp": 147.7
+  },
+  {
+    "manager": "DeepSeek",
+    "draft_position": 106,
+    "adp": 143.6
+  },
+  {
+    "manager": "Qwen",
+    "draft_position": 107,
+    "adp": 134.1
+  },
+  {
+    "manager": "Gemini",
+    "draft_position": 108,
+    "adp": 76.1
+  },
+  {
+    "manager": "Grok",
+    "draft_position": 109,
+    "adp": 105.0
+  },
+  {
+    "manager": "GPT",
+    "draft_position": 110,
+    "adp": 69.8
+  },
+  {
+    "manager": "GPT",
+    "draft_position": 111,
+    "adp": 162.7
+  },
+  {
+    "manager": "Grok",
+    "draft_position": 112,
+    "adp": null
+  },
+  {
+    "manager": "Gemini",
+    "draft_position": 113,
+    "adp": 174.0
+  },
+  {
+    "manager": "Qwen",
+    "draft_position": 114,
+    "adp": 104.0
+  },
+  {
+    "manager": "DeepSeek",
+    "draft_position": 115,
+    "adp": 63.5
+  },
+  {
+    "manager": "Claude",
+    "draft_position": 116,
+    "adp": 88.1
+  },
+  {
+    "manager": "gpt-oss",
+    "draft_position": 117,
+    "adp": 160.0
+  },
+  {
+    "manager": "Mistral",
+    "draft_position": 118,
+    "adp": null
+  },
+  {
+    "manager": "Hermes",
+    "draft_position": 119,
+    "adp": 72.8
+  },
+  {
+    "manager": "Gemma",
+    "draft_position": 120,
+    "adp": 118.9
+  },
+  {
+    "manager": "Gemma",
+    "draft_position": 121,
+    "adp": 134.1
+  },
+  {
+    "manager": "Hermes",
+    "draft_position": 122,
+    "adp": 45.2
+  },
+  {
+    "manager": "Mistral",
+    "draft_position": 123,
+    "adp": 118.0
+  },
+  {
+    "manager": "gpt-oss",
+    "draft_position": 124,
+    "adp": null
+  },
+  {
+    "manager": "Claude",
+    "draft_position": 125,
+    "adp": null
+  },
+  {
+    "manager": "DeepSeek",
+    "draft_position": 126,
+    "adp": 133.4
+  },
+  {
+    "manager": "Qwen",
+    "draft_position": 127,
+    "adp": 59.1
+  },
+  {
+    "manager": "Gemini",
+    "draft_position": 128,
+    "adp": 49.9
+  },
+  {
+    "manager": "Grok",
+    "draft_position": 129,
+    "adp": 65.1
+  },
+  {
+    "manager": "GPT",
+    "draft_position": 130,
+    "adp": 77.5
+  },
+  {
+    "manager": "GPT",
+    "draft_position": 131,
+    "adp": null
+  },
+  {
+    "manager": "Grok",
+    "draft_position": 132,
+    "adp": 131.0
+  },
+  {
+    "manager": "Gemini",
+    "draft_position": 133,
+    "adp": 153.6
+  },
+  {
+    "manager": "Qwen",
+    "draft_position": 134,
+    "adp": null
+  },
+  {
+    "manager": "DeepSeek",
+    "draft_position": 135,
+    "adp": 105.5
+  },
+  {
+    "manager": "Claude",
+    "draft_position": 136,
+    "adp": 142.0
+  },
+  {
+    "manager": "gpt-oss",
+    "draft_position": 137,
+    "adp": 49.2
+  },
+  {
+    "manager": "Mistral",
+    "draft_position": 138,
+    "adp": 149.0
+  },
+  {
+    "manager": "Hermes",
+    "draft_position": 139,
+    "adp": 116.7
+  },
+  {
+    "manager": "Gemma",
+    "draft_position": 140,
+    "adp": 147.0
+  },
+  {
+    "manager": "Gemma",
+    "draft_position": 141,
+    "adp": null
+  },
+  {
+    "manager": "Hermes",
+    "draft_position": 142,
+    "adp": null
+  },
+  {
+    "manager": "Mistral",
+    "draft_position": 143,
+    "adp": 134.0
+  },
+  {
+    "manager": "gpt-oss",
+    "draft_position": 144,
+    "adp": 114.0
+  },
+  {
+    "manager": "Claude",
+    "draft_position": 145,
+    "adp": null
+  },
+  {
+    "manager": "DeepSeek",
+    "draft_position": 146,
+    "adp": 165.9
+  },
+  {
+    "manager": "Qwen",
+    "draft_position": 147,
+    "adp": null
+  },
+  {
+    "manager": "Gemini",
+    "draft_position": 148,
+    "adp": null
+  },
+  {
+    "manager": "Grok",
+    "draft_position": 149,
+    "adp": 119.0
+  },
+  {
+    "manager": "GPT",
+    "draft_position": 150,
+    "adp": 156.8
+  }
+]
