@@ -28,34 +28,43 @@
       //- Score Summary
       div(class="bg-slate-900 rounded-b-lg p-4 sm:p-6")
         //- Mobile Layout (stacked)
-        div(class="flex flex-col gap-4 sm:hidden")
+        div(class="flex flex-col gap-3 sm:hidden")
           //- Team 1
-          .text-center
-            img(
-              class="h-16 w-16 object-contain mx-auto mb-2"
-              :src="getTeamInfo(matchup[0].roster?.user?.display_name).logo"
-              :alt="getTeamInfo(matchup[0].roster?.user?.display_name).aiModel"
-              :class="getTeamInfo(matchup[0].roster?.user?.display_name).invertLogo ? 'invert brightness-200' : ''"
-            )
-            div(class="text-white font-bold text-lg") {{ getTeamInfo(matchup[0].roster?.user?.display_name).aiModel }}
-            div(class="text-blue-400 text-sm font-semibold") {{ getTeamInfo(matchup[0].roster?.user?.display_name).owner }}
-            div(class="text-white font-black text-3xl mt-2") {{ matchup[0].points?.toFixed(2) || '0.00' }}
+          .bg-slate-800.rounded-lg.p-4
+            .flex.items-center.justify-between
+              div(class="flex items-center gap-3")
+                img(
+                  class="h-14 w-14 object-contain"
+                  :src="getTeamInfo(matchup[0].roster?.user?.display_name).logo"
+                  :alt="getTeamInfo(matchup[0].roster?.user?.display_name).aiModel"
+                  :class="getTeamInfo(matchup[0].roster?.user?.display_name).invertLogo ? 'invert brightness-200' : ''"
+                )
+                div
+                  div(class="text-white font-bold text-base") {{ getTeamInfo(matchup[0].roster?.user?.display_name).aiModel }}
+                  div(class="text-blue-400 text-sm font-semibold") {{ getTeamInfo(matchup[0].roster?.user?.display_name).owner }}
+              div(class="text-white font-black text-2xl") {{ matchup[0].points?.toFixed(2) || '0.00' }}
 
-          //- VS Separator (Mobile)
-          div(class="flex items-center justify-center")
-            span.text-white.font-black.text-sm.bg-slate-700.rounded-full.px-3.py-1 VS
+          //- VS Separator (Mobile) - subtle design
+          div(class="relative flex items-center justify-center")
+            div(class="absolute inset-0 flex items-center")
+              div(class="w-full border-t border-slate-600")
+            div(class="relative bg-slate-900 px-3")
+              span(class="text-gray-400 font-semibold text-xs uppercase") vs
 
           //- Team 2
-          .text-center
-            img(
-              class="h-16 w-16 object-contain mx-auto mb-2"
-              :src="getTeamInfo(matchup[1].roster?.user?.display_name).logo"
-              :alt="getTeamInfo(matchup[1].roster?.user?.display_name).aiModel"
-              :class="getTeamInfo(matchup[1].roster?.user?.display_name).invertLogo ? 'invert brightness-200' : ''"
-            )
-            div(class="text-white font-bold text-lg") {{ getTeamInfo(matchup[1].roster?.user?.display_name).aiModel }}
-            div(class="text-blue-400 text-sm font-semibold") {{ getTeamInfo(matchup[1].roster?.user?.display_name).owner }}
-            div(class="text-white font-black text-3xl mt-2") {{ matchup[1].points?.toFixed(2) || '0.00' }}
+          .bg-slate-800.rounded-lg.p-4
+            .flex.items-center.justify-between
+              div(class="flex items-center gap-3")
+                img(
+                  class="h-14 w-14 object-contain"
+                  :src="getTeamInfo(matchup[1].roster?.user?.display_name).logo"
+                  :alt="getTeamInfo(matchup[1].roster?.user?.display_name).aiModel"
+                  :class="getTeamInfo(matchup[1].roster?.user?.display_name).invertLogo ? 'invert brightness-200' : ''"
+                )
+                div
+                  div(class="text-white font-bold text-base") {{ getTeamInfo(matchup[1].roster?.user?.display_name).aiModel }}
+                  div(class="text-blue-400 text-sm font-semibold") {{ getTeamInfo(matchup[1].roster?.user?.display_name).owner }}
+              div(class="text-white font-black text-2xl") {{ matchup[1].points?.toFixed(2) || '0.00' }}
 
         //- Desktop Layout (side by side)
         div(class="hidden sm:grid sm:grid-cols-2 gap-4 sm:gap-8 relative")
