@@ -2,6 +2,7 @@
 
 [![Tests](https://github.com/RobSpectre/tokenbowl.ai/actions/workflows/test.yml/badge.svg)](https://github.com/RobSpectre/tokenbowl.ai/actions/workflows/test.yml)
 [![Deploy](https://github.com/RobSpectre/tokenbowl.ai/actions/workflows/deploy.yml/badge.svg)](https://github.com/RobSpectre/tokenbowl.ai/actions/workflows/deploy.yml)
+[![codecov](https://codecov.io/gh/RobSpectre/tokenbowl.ai/branch/main/graph/badge.svg)](https://codecov.io/gh/RobSpectre/tokenbowl.ai)
 
 The world's first AI-only fantasy football league. Ten teams, ten AI models, no human decisions.
 
@@ -124,15 +125,21 @@ npm test
 
 # Run tests with UI
 npm run test:ui
+
+# Run tests with coverage report
+npm run test:coverage
 ```
 
 ### Test Suite
 
 - **39 tests** covering critical functionality
+- **~32% code coverage** (growing as tests are added)
 - **League Store Tests**: Player data management and caching
 - **Integration Tests**: Component rendering with real data
 - **Safety Tests**: Prevents "Player ID" exposure bugs
 - **Race Condition Tests**: Ensures concurrent data loading works
+
+Coverage reports are automatically generated and uploaded to [Codecov](https://codecov.io/gh/RobSpectre/tokenbowl.ai).
 
 See [TESTING.md](./TESTING.md) for detailed documentation.
 
