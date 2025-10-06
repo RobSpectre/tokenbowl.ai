@@ -40,8 +40,20 @@
               :style="{ width: `${(selectedWeek / 18) * 100}%` }"
             )
 
-    //- Spacer for fixed nav
-    div(style="height: 192px")
+        //- Last Updated Indicator (only shown during active games)
+        div(v-if="lastUpdated && isAutoRefreshActive" class="flex flex-col items-center gap-2 mt-3")
+          div(class="flex items-center gap-2 text-xs text-gray-500")
+            div(class="w-2 h-2 rounded-full bg-green-500 animate-pulse")
+            span(class="text-green-400") Auto-updating every 2 minutes
+            span(class="text-gray-600") •
+            span Last updated: {{ lastUpdated.toLocaleTimeString() }}
+          button(
+            @click="refreshMatchups"
+            class="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-gray-400 hover:text-white text-xs rounded transition-colors"
+          ) Refresh Now
+
+    //- Spacer for fixed nav (dynamic height based on auto-refresh indicator)
+    div(:style="{ height: isAutoRefreshActive ? '240px' : '192px' }")
 
     //- Week Matchups
     .mb-12
@@ -435,6 +447,54 @@ export default {
     const pointsChartRef = ref(null)
     let standingsChart = null
     let pointsChart = null
+    const lastUpdated = ref(null)
+    const autoRefreshInterval = ref(null)
+    const autoRefreshCheckInterval = ref(null)
+    const isAutoRefreshActive = ref(false)
+
+    // Check if current time is during NFL game hours
+    const isNFLGameTime = () => {
+      const now = new Date()
+      const day = now.getDay() // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+      const hours = now.getHours()
+      const minutes = now.getMinutes()
+      const timeInMinutes = hours * 60 + minutes
+
+      // Convert to ET (assuming server might be in different timezone)
+      // For simplicity, we'll use local time and assume user is watching in their timezone
+
+      // Thursday Night Football (Thursday 7:00 PM - 11:30 PM ET)
+      if (day === 4 && timeInMinutes >= 19 * 60 && timeInMinutes <= 23 * 60 + 30) {
+        return true
+      }
+
+      // Sunday games (12:00 PM - 12:00 AM ET - covers early, late, and SNF)
+      if (day === 0 && timeInMinutes >= 12 * 60 && timeInMinutes <= 24 * 60) {
+        return true
+      }
+
+      // Monday Night Football (Monday 7:00 PM - 12:00 AM ET)
+      if (day === 1 && timeInMinutes >= 19 * 60 && timeInMinutes <= 24 * 60) {
+        return true
+      }
+
+      // Saturday games (late season, playoffs - 12:00 PM - 12:00 AM ET)
+      if (day === 6 && timeInMinutes >= 12 * 60 && timeInMinutes <= 24 * 60) {
+        return true
+      }
+
+      return false
+    }
+
+    // Check if we should auto-refresh (during game time and not viewing future weeks)
+    const shouldAutoRefresh = () => {
+      if (!leagueData.value) return false
+
+      const currentWeek = leagueData.value.league?.settings?.leg || 1
+      const viewingCurrentWeek = selectedWeek.value <= currentWeek
+
+      return isNFLGameTime() && viewingCurrentWeek
+    }
 
     const loadData = async () => {
       try {
@@ -457,11 +517,62 @@ export default {
 
         // Load transactions for current week
         await loadTransactions(selectedWeek.value)
+
+        // Set last updated timestamp
+        lastUpdated.value = new Date()
       } catch (err) {
         error.value = 'Failed to load league data. Please try again later.'
         console.error(err)
       } finally {
         loading.value = false
+      }
+    }
+
+    // Refresh matchups data without showing loading state
+    const refreshMatchups = async () => {
+      try {
+        await loadAllMatchups()
+        await loadTransactions(selectedWeek.value)
+        lastUpdated.value = new Date()
+        console.log('Matchups refreshed at', lastUpdated.value.toLocaleTimeString())
+      } catch (err) {
+        console.error('Error refreshing matchups:', err)
+      }
+    }
+
+    // Set up auto-refresh
+    const startAutoRefresh = () => {
+      // Only start if we should be auto-refreshing
+      if (!shouldAutoRefresh()) {
+        isAutoRefreshActive.value = false
+        return
+      }
+
+      isAutoRefreshActive.value = true
+      // Refresh every 2 minutes (120000ms)
+      autoRefreshInterval.value = setInterval(refreshMatchups, 120000)
+    }
+
+    const stopAutoRefresh = () => {
+      if (autoRefreshInterval.value) {
+        clearInterval(autoRefreshInterval.value)
+        autoRefreshInterval.value = null
+      }
+      isAutoRefreshActive.value = false
+    }
+
+    // Check periodically if we should start/stop auto-refresh
+    const checkAutoRefreshStatus = () => {
+      const shouldRefresh = shouldAutoRefresh()
+
+      if (shouldRefresh && !autoRefreshInterval.value) {
+        // Should be refreshing but not currently - start it
+        startAutoRefresh()
+        console.log('Auto-refresh started - NFL game time detected')
+      } else if (!shouldRefresh && autoRefreshInterval.value) {
+        // Shouldn't be refreshing but currently is - stop it
+        stopAutoRefresh()
+        console.log('Auto-refresh stopped - outside NFL game time')
       }
     }
 
@@ -668,10 +779,12 @@ export default {
       return `${day} ${month} ${year}`
     }
 
-    // Watch for week changes to reload transactions
+    // Watch for week changes to reload transactions and check auto-refresh
     watch(selectedWeek, (newWeek) => {
       if (newWeek) {
         loadTransactions(newWeek)
+        // Re-evaluate auto-refresh when week changes
+        checkAutoRefreshStatus()
       }
     })
 
@@ -1055,6 +1168,10 @@ export default {
       loadData().then(() => {
         renderStandingsChart()
         renderPointsChart()
+        // Check if we should start auto-refresh
+        checkAutoRefreshStatus()
+        // Check every minute if we should start/stop auto-refresh
+        autoRefreshCheckInterval.value = setInterval(checkAutoRefreshStatus, 60000)
       })
       loadVideos()
 
@@ -1064,6 +1181,10 @@ export default {
 
     // Clean up on unmount
     onUnmounted(() => {
+      stopAutoRefresh()
+      if (autoRefreshCheckInterval.value) {
+        clearInterval(autoRefreshCheckInterval.value)
+      }
       window.removeEventListener('resize', handleResize)
       if (standingsChart) {
         standingsChart.dispose()
@@ -1083,6 +1204,8 @@ export default {
       transactions,
       latestVideo,
       latestShorts,
+      lastUpdated,
+      isAutoRefreshActive,
       getTeamInfo,
       goToMatchupDetail,
       handleWeekChange,
@@ -1098,7 +1221,8 @@ export default {
       getRecordColor,
       historicalStandings,
       standingsChartRef,
-      pointsChartRef
+      pointsChartRef,
+      refreshMatchups
     }
   }
 }
