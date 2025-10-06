@@ -417,55 +417,50 @@
 
 <script>
 import { ref, onMounted, computed, watch } from 'vue'
-import { getRosters, getLeagueUsers, getPlayers, getMatchups, getTransactions, getLeague } from '../sleeperApi.js'
+import { useLeagueStore } from '../stores/league.js'
 import { getTeamInfo } from '../teamMappings.js'
 import { trackButtonClick } from '../analytics.js'
 
 export default {
   name: 'Teams',
   setup() {
-    const teams = ref([])
+    const leagueStore = useLeagueStore()
     const selectedTeam = ref(null)
-    const players = ref({})
-    const currentWeek = ref(5)
     const currentMatchup = ref(null)
-    const allTransactions = ref([])
     const teamHistory = ref(null)
     const loading = ref(true)
     const error = ref(null)
     const mobileDropdownOpen = ref(false)
-    const draftPicksData = ref([])
+
+    // Computed properties from store
+    const players = computed(() => leagueStore.players)
+    const currentWeek = computed(() => leagueStore.league?.settings?.leg || 5)
+    const draftPicksData = computed(() => leagueStore.draftPicks)
+    const allMatchups = computed(() => leagueStore.allMatchups)
+
+    // Computed property for teams from store
+    const teams = computed(() => {
+      if (!leagueStore.rosters || !leagueStore.users) return []
+
+      return leagueStore.rosters.map(roster => ({
+        ...roster,
+        teamInfo: getTeamInfo(roster.user?.display_name),
+        modelInfo: null // Will be populated by fetchModelInfo
+      })).sort((a, b) => a.teamInfo.aiModel.localeCompare(b.teamInfo.aiModel))
+    })
 
     const loadTeamsData = async () => {
       try {
         loading.value = true
         error.value = null
 
-        const [rostersData, usersData, playersData, league, draftData] = await Promise.all([
-          getRosters(),
-          getLeagueUsers(),
-          getPlayers(),
-          getLeague(),
-          fetch('/data/draft_picks.json').then(r => r.json())
+        // Load all data from store
+        await Promise.all([
+          leagueStore.fetchLeagueData(),
+          leagueStore.fetchPlayers(),
+          leagueStore.fetchDraft(),
+          leagueStore.fetchAllMatchups()
         ])
-
-        players.value = playersData
-        currentWeek.value = league.settings.leg || 5
-        draftPicksData.value = draftData || []
-
-        // Create user map
-        const userMap = {}
-        usersData.forEach(user => {
-          userMap[user.user_id] = user
-        })
-
-        // Enhance rosters with user and team info
-        teams.value = rostersData.map(roster => ({
-          ...roster,
-          user: userMap[roster.owner_id],
-          teamInfo: getTeamInfo(userMap[roster.owner_id]?.display_name),
-          modelInfo: null // Will be populated by OpenRouter API
-        })).sort((a, b) => a.teamInfo.aiModel.localeCompare(b.teamInfo.aiModel))
 
         // Select first team by default
         if (teams.value.length > 0) {
@@ -485,17 +480,25 @@ export default {
       }
     }
 
+    // Computed property for all transactions from store
+    const allTransactions = computed(() => {
+      const transactions = []
+      for (let week = 1; week <= 18; week++) {
+        const weekTransactions = leagueStore.getTransactionsForWeek(week)
+        transactions.push(...weekTransactions)
+      }
+      return transactions
+    })
+
     const loadAllTransactions = async () => {
       try {
         const transPromises = []
         for (let week = 1; week <= 18; week++) {
-          transPromises.push(getTransactions(week))
+          transPromises.push(leagueStore.fetchTransactionsForWeek(week))
         }
-        const results = await Promise.all(transPromises)
-        allTransactions.value = results.flat().filter(t => t !== null)
+        await Promise.all(transPromises)
       } catch (err) {
         console.error('Error loading transactions:', err)
-        allTransactions.value = []
       }
     }
 
@@ -673,10 +676,22 @@ export default {
         roster_id: team.roster_id
       })
 
-      // Load current week matchup for this team
+      // Get current week matchup for this team from store
       try {
-        const matchups = await getMatchups(currentWeek.value)
-        currentMatchup.value = matchups.find(m => m.roster_id === team.roster_id)
+        const weekMatchups = allMatchups.value[currentWeek.value]
+        if (weekMatchups) {
+          // Find the matchup group that contains this team
+          const matchupGroup = weekMatchups.find(group =>
+            group.some(m => m.roster_id === team.roster_id)
+          )
+          if (matchupGroup) {
+            currentMatchup.value = matchupGroup.find(m => m.roster_id === team.roster_id)
+          } else {
+            currentMatchup.value = null
+          }
+        } else {
+          currentMatchup.value = null
+        }
       } catch (err) {
         console.error('Error loading matchup:', err)
         currentMatchup.value = null
@@ -706,31 +721,31 @@ export default {
       try {
         teamHistory.value = null
 
-        // Fetch all matchups for all weeks
-        const matchupPromises = []
-        for (let week = 1; week <= currentWeek.value; week++) {
-          matchupPromises.push(getMatchups(week))
-        }
-        const allMatchups = await Promise.all(matchupPromises)
-
-        // Calculate stats
+        // Calculate stats from store's allMatchups
         let totalPoints = 0
         let totalPointsAgainst = 0
         const playerPoints = {}
         const matchups = []
 
-        allMatchups.forEach((weekMatchups, weekIndex) => {
-          const week = weekIndex + 1
-          const teamMatchup = weekMatchups.find(m => m.roster_id === team.roster_id)
-          if (!teamMatchup) return
+        // Iterate through weeks 1 to currentWeek from store data
+        for (let week = 1; week <= currentWeek.value; week++) {
+          const weekMatchups = allMatchups.value[week]
+          if (!weekMatchups) continue
+
+          // Find the matchup group that contains this team
+          const matchupGroup = weekMatchups.find(group =>
+            group.some(m => m.roster_id === team.roster_id)
+          )
+          if (!matchupGroup) continue
+
+          const teamMatchup = matchupGroup.find(m => m.roster_id === team.roster_id)
+          if (!teamMatchup) continue
 
           const teamScore = teamMatchup.points || 0
           totalPoints += teamScore
 
-          // Find opponent matchup
-          const opponentMatchup = weekMatchups.find(
-            m => m.matchup_id === teamMatchup.matchup_id && m.roster_id !== team.roster_id
-          )
+          // Find opponent matchup in the same group
+          const opponentMatchup = matchupGroup.find(m => m.roster_id !== team.roster_id)
 
           let opponentScore = 0
           let opponentInfo = null
@@ -764,7 +779,7 @@ export default {
               playerPoints[playerId] += points
             })
           }
-        })
+        }
 
         // Get top 3 players
         const topPlayers = Object.entries(playerPoints)

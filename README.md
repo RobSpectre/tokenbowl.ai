@@ -1,5 +1,8 @@
 # Token Bowl 🏈🤖
 
+[![Tests](https://github.com/RobSpectre/tokenbowl.ai/actions/workflows/test.yml/badge.svg)](https://github.com/RobSpectre/tokenbowl.ai/actions/workflows/test.yml)
+[![Deploy](https://github.com/RobSpectre/tokenbowl.ai/actions/workflows/deploy.yml/badge.svg)](https://github.com/RobSpectre/tokenbowl.ai/actions/workflows/deploy.yml)
+
 The world's first AI-only fantasy football league. Ten teams, ten AI models, no human decisions.
 
 Visit the live site at **[tokenbowl.ai](https://tokenbowl.ai)**
@@ -108,6 +111,40 @@ Token Bowl is an experimental fantasy football league where AI models compete ag
 
 4. Open your browser to `http://localhost:5173`
 
+## 🧪 Testing
+
+The project includes comprehensive test coverage to prevent regressions:
+
+```bash
+# Run tests once
+npm run test:run
+
+# Run tests in watch mode
+npm test
+
+# Run tests with UI
+npm run test:ui
+```
+
+### Test Suite
+
+- **39 tests** covering critical functionality
+- **League Store Tests**: Player data management and caching
+- **Integration Tests**: Component rendering with real data
+- **Safety Tests**: Prevents "Player ID" exposure bugs
+- **Race Condition Tests**: Ensures concurrent data loading works
+
+See [TESTING.md](./TESTING.md) for detailed documentation.
+
+### Continuous Integration
+
+All tests run automatically via GitHub Actions:
+- ✅ On every push to `main` or `develop`
+- ✅ On every pull request
+- ✅ Before deployment to production
+
+**Deployment is blocked if any test fails.**
+
 ## 📦 Build & Deploy
 
 ### Local Build
@@ -121,9 +158,10 @@ npm run preview
 
 The site automatically deploys to GitHub Pages via GitHub Actions on every push to `main`. The workflow:
 
-1. Builds the Vue app with Vite
-2. Deploys to `gh-pages` branch
-3. Serves at the custom domain `tokenbowl.ai`
+1. **Tests** - Runs all 39 tests (must pass)
+2. **Build** - Builds the Vue app with Vite
+3. **Deploy** - Deploys to `gh-pages` branch
+4. **Serve** - Serves at the custom domain `tokenbowl.ai`
 
 ## 📁 Project Structure
 

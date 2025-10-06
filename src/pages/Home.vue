@@ -88,7 +88,10 @@
                       div(class="text-blue-400 text-xs font-semibold truncate") {{ getTeamInfo(matchup[0].roster?.user?.display_name).owner }}
                       div(:class="getRecordColor(getRecordThroughWeek(matchup[0].roster_id, selectedWeek - 1).wins, getRecordThroughWeek(matchup[0].roster_id, selectedWeek - 1).losses)" class="text-xs font-bold") {{ getRecordThroughWeek(matchup[0].roster_id, selectedWeek - 1).wins }}-{{ getRecordThroughWeek(matchup[0].roster_id, selectedWeek - 1).losses }}
                   div(class="flex flex-col items-end flex-shrink-0 ml-2")
-                    div(class="text-white font-black text-xl") {{ matchup[0].points?.toFixed(2) || '0.00' }}
+                    div(
+                      class="text-white font-black text-xl transition-all duration-300"
+                      :class="{ 'score-pulse': isScoreAnimating(selectedWeek, matchup[0].matchup_id, matchup[0].roster_id) }"
+                    ) {{ matchup[0].points?.toFixed(2) || '0.00' }}
                     div(v-if="isWeekComplete(matchup)")
                       span.text-green-400.text-xs.font-bold.uppercase(v-if="matchup[0].points > matchup[1].points") W
                       span.text-red-400.text-xs.font-bold.uppercase(v-else-if="matchup[0].points < matchup[1].points") L
@@ -114,7 +117,10 @@
                       div(class="text-blue-400 text-xs font-semibold truncate") {{ getTeamInfo(matchup[1].roster?.user?.display_name).owner }}
                       div(:class="getRecordColor(getRecordThroughWeek(matchup[1].roster_id, selectedWeek - 1).wins, getRecordThroughWeek(matchup[1].roster_id, selectedWeek - 1).losses)" class="text-xs font-bold") {{ getRecordThroughWeek(matchup[1].roster_id, selectedWeek - 1).wins }}-{{ getRecordThroughWeek(matchup[1].roster_id, selectedWeek - 1).losses }}
                   div(class="flex flex-col items-end flex-shrink-0 ml-2")
-                    div(class="text-white font-black text-xl") {{ matchup[1].points?.toFixed(2) || '0.00' }}
+                    div(
+                      class="text-white font-black text-xl transition-all duration-300"
+                      :class="{ 'score-pulse': isScoreAnimating(selectedWeek, matchup[1].matchup_id, matchup[1].roster_id) }"
+                    ) {{ matchup[1].points?.toFixed(2) || '0.00' }}
                     div(v-if="isWeekComplete(matchup)")
                       span.text-green-400.text-xs.font-bold.uppercase(v-if="matchup[1].points > matchup[0].points") W
                       span.text-red-400.text-xs.font-bold.uppercase(v-else-if="matchup[1].points < matchup[0].points") L
@@ -134,7 +140,10 @@
                       div(class="text-blue-400 text-sm font-semibold") {{ getTeamInfo(matchup[0].roster?.user?.display_name).owner }}
                       div(:class="getRecordColor(getRecordThroughWeek(matchup[0].roster_id, selectedWeek - 1).wins, getRecordThroughWeek(matchup[0].roster_id, selectedWeek - 1).losses)" class="text-xs font-bold") {{ getRecordThroughWeek(matchup[0].roster_id, selectedWeek - 1).wins }}-{{ getRecordThroughWeek(matchup[0].roster_id, selectedWeek - 1).losses }}
                   div(class="text-right")
-                    div(class="text-white font-black text-3xl") {{ matchup[0].points?.toFixed(2) || '0.00' }}
+                    div(
+                      class="text-white font-black text-3xl transition-all duration-300"
+                      :class="{ 'score-pulse': isScoreAnimating(selectedWeek, matchup[0].matchup_id, matchup[0].roster_id) }"
+                    ) {{ matchup[0].points?.toFixed(2) || '0.00' }}
                     div(v-if="isWeekComplete(matchup)" class="mt-2")
                       span(class="text-green-400 text-xs font-bold uppercase" v-if="matchup[0].points > matchup[1].points") W
                       span(class="text-red-400 text-xs font-bold uppercase" v-else-if="matchup[0].points < matchup[1].points") L
@@ -147,7 +156,10 @@
                 //- Team 2 (Desktop)
                 div(class="flex-1 flex items-center justify-between bg-slate-750 rounded-lg p-3")
                   div(class="text-left")
-                    div(class="text-white font-black text-3xl") {{ matchup[1].points?.toFixed(2) || '0.00' }}
+                    div(
+                      class="text-white font-black text-3xl transition-all duration-300"
+                      :class="{ 'score-pulse': isScoreAnimating(selectedWeek, matchup[1].matchup_id, matchup[1].roster_id) }"
+                    ) {{ matchup[1].points?.toFixed(2) || '0.00' }}
                     div(v-if="isWeekComplete(matchup)" class="mt-2")
                       span(class="text-green-400 text-xs font-bold uppercase" v-if="matchup[1].points > matchup[0].points") W
                       span(class="text-red-400 text-xs font-bold uppercase" v-else-if="matchup[1].points < matchup[0].points") L
@@ -424,9 +436,8 @@
 <script>
 import { ref, onMounted, onUnmounted, watch, computed, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
-import { getLeagueData, getMatchups, getRosters, getLeagueUsers, getTransactions, getPlayers } from '../sleeperApi.js'
+import { useLeagueStore } from '../stores/league.js'
 import { getTeamInfo } from '../teamMappings.js'
-import { getLatestVideoAndShorts } from '../youtubeApi.js'
 import * as echarts from 'echarts'
 import { trackButtonClick } from '../analytics.js'
 
@@ -434,15 +445,10 @@ export default {
   name: 'Home',
   setup() {
     const router = useRouter()
-    const leagueData = ref(null)
-    const allMatchups = ref({})
+    const leagueStore = useLeagueStore()
     const loading = ref(true)
     const error = ref(null)
     const selectedWeek = ref(null)
-    const transactions = ref([])
-    const players = ref({})
-    const latestVideo = ref(null)
-    const latestShorts = ref([])
     const standingsChartRef = ref(null)
     const pointsChartRef = ref(null)
     let standingsChart = null
@@ -451,6 +457,23 @@ export default {
     const autoRefreshInterval = ref(null)
     const autoRefreshCheckInterval = ref(null)
     const isAutoRefreshActive = ref(false)
+
+    // Score animation tracking
+    const animatingScores = ref(new Set())
+    const previousScores = ref({})
+
+    // Computed properties from store
+    const leagueData = computed(() => ({
+      league: leagueStore.league,
+      rosters: leagueStore.rosters,
+      users: leagueStore.users
+    }))
+
+    const allMatchups = computed(() => leagueStore.allMatchups)
+    const players = computed(() => leagueStore.players)
+    const transactions = computed(() => leagueStore.getTransactionsForWeek(selectedWeek.value))
+    const latestVideo = computed(() => leagueStore.latestVideo)
+    const latestShorts = computed(() => leagueStore.latestShorts)
 
     // Check if current time is during NFL game hours
     const isNFLGameTime = () => {
@@ -501,22 +524,14 @@ export default {
         loading.value = true
         error.value = null
 
-        const [league, playersData] = await Promise.all([
-          getLeagueData(),
-          getPlayers()
-        ])
-
-        leagueData.value = league
-        players.value = playersData
+        // Use the store to fetch all data (with caching)
+        await leagueStore.fetchAllData()
 
         // Set current week from league data
-        selectedWeek.value = league.league.settings.leg || 5
-
-        // Load matchups for all weeks
-        await loadAllMatchups()
+        selectedWeek.value = leagueStore.league?.settings?.leg || 5
 
         // Load transactions for current week
-        await loadTransactions(selectedWeek.value)
+        await leagueStore.fetchTransactionsForWeek(selectedWeek.value)
 
         // Set last updated timestamp
         lastUpdated.value = new Date()
@@ -531,8 +546,12 @@ export default {
     // Refresh matchups data without showing loading state
     const refreshMatchups = async () => {
       try {
-        await loadAllMatchups()
-        await loadTransactions(selectedWeek.value)
+        // Force refresh all data from API
+        await Promise.all([
+          leagueStore.fetchLeagueData(true),
+          leagueStore.fetchAllMatchups(true),
+          leagueStore.fetchTransactionsForWeek(selectedWeek.value, true)
+        ])
         lastUpdated.value = new Date()
         console.log('Matchups refreshed at', lastUpdated.value.toLocaleTimeString())
       } catch (err) {
@@ -576,107 +595,6 @@ export default {
       }
     }
 
-    const loadTransactions = async (week) => {
-      try {
-        const [trans, rosters, users] = await Promise.all([
-          getTransactions(week),
-          getRosters(),
-          getLeagueUsers()
-        ])
-
-        // Create user map
-        const userMap = {}
-        users.forEach(user => {
-          userMap[user.user_id] = user
-        })
-
-        // Create roster map
-        const rosterMap = {}
-        rosters.forEach(roster => {
-          rosterMap[roster.roster_id] = {
-            ...roster,
-            user: userMap[roster.owner_id]
-          }
-        })
-
-        // Enhance transactions with roster/user info
-        transactions.value = (trans || []).map(transaction => {
-          const rosterId = transaction.roster_ids?.[0]
-          const roster = rosterId ? rosterMap[rosterId] : null
-
-          // For trades, get the counterparty (second roster)
-          let counterpartyInfo = null
-          if (transaction.type === 'trade' && transaction.roster_ids?.length > 1) {
-            const counterpartyRosterId = transaction.roster_ids[1]
-            const counterpartyRoster = counterpartyRosterId ? rosterMap[counterpartyRosterId] : null
-            if (counterpartyRoster?.user?.display_name) {
-              counterpartyInfo = getTeamInfo(counterpartyRoster.user.display_name)
-            }
-          }
-
-          return {
-            ...transaction,
-            roster,
-            teamInfo: roster?.user?.display_name ? getTeamInfo(roster.user.display_name) : null,
-            counterpartyInfo
-          }
-        })
-      } catch (err) {
-        console.error('Error loading transactions:', err)
-        transactions.value = []
-      }
-    }
-
-    const loadAllMatchups = async () => {
-      try {
-        const rosters = await getRosters()
-        const users = await getLeagueUsers()
-
-        // Create maps
-        const userMap = {}
-        users.forEach(user => {
-          userMap[user.user_id] = user
-        })
-
-        const rosterMap = {}
-        rosters.forEach(roster => {
-          rosterMap[roster.roster_id] = {
-            ...roster,
-            user: userMap[roster.owner_id]
-          }
-        })
-
-        // Load matchups for all 18 weeks IN PARALLEL
-        const weekPromises = []
-        for (let week = 1; week <= 18; week++) {
-          weekPromises.push(
-            getMatchups(week).then(matchups => {
-              // Group matchups
-              const matchupGroups = {}
-              matchups.forEach(matchup => {
-                if (!matchupGroups[matchup.matchup_id]) {
-                  matchupGroups[matchup.matchup_id] = []
-                }
-                matchupGroups[matchup.matchup_id].push({
-                  ...matchup,
-                  roster: rosterMap[matchup.roster_id]
-                })
-              })
-
-              allMatchups.value[week] = Object.values(matchupGroups)
-            }).catch(err => {
-              console.error(`Error loading week ${week} matchups:`, err)
-            })
-          )
-        }
-
-        // Wait for all weeks to load
-        await Promise.all(weekPromises)
-      } catch (err) {
-        console.error('Error loading all matchups:', err)
-      }
-    }
-
     const goToMatchupDetail = (matchup) => {
       if (matchup && matchup.length > 0 && matchup[0].matchup_id) {
         trackButtonClick('matchup_click', {
@@ -716,19 +634,19 @@ export default {
     }
 
     const getPlayerNameFromId = (playerId) => {
-      const player = players.value[playerId]
+      const player = players.value?.[playerId]
       if (!player) return `Player ${playerId}`
       return `${player.first_name} ${player.last_name}`
     }
 
     const getPlayerPosition = (playerId) => {
-      const player = players.value[playerId]
+      const player = players.value?.[playerId]
       if (!player || !player.position) return 'N/A'
       return player.position
     }
 
     const getPlayerImageUrl = (playerId) => {
-      const player = players.value[playerId]
+      const player = players.value?.[playerId]
       if (!player) return `https://sleepercdn.com/content/nfl/players/thumb/${playerId}.jpg`
 
       // For defenses, use team logo instead of player portrait
@@ -740,7 +658,7 @@ export default {
     }
 
     const getPlayerRankECR = (playerId) => {
-      const player = players.value[playerId]
+      const player = players.value?.[playerId]
       if (!player) return null
       // Sleeper provides fantasy_positions array and search_rank
       // Use search_rank as ROS ranking if available
@@ -779,10 +697,83 @@ export default {
       return `${day} ${month} ${year}`
     }
 
+    // Play sound effect
+    const playHitSound = () => {
+      try {
+        const audio = new Audio('/sounds/hit.wav')
+        audio.volume = 0.3 // Set volume to 30%
+        audio.play().catch(err => console.error('Error playing sound:', err))
+      } catch (err) {
+        console.error('Error creating audio:', err)
+      }
+    }
+
+    // Check if a score is currently animating
+    const isScoreAnimating = (week, matchupId, rosterId) => {
+      const key = `${week}-${matchupId}-${rosterId}`
+      return animatingScores.value.has(key)
+    }
+
+    // Trigger score animation
+    const animateScore = (week, matchupId, rosterId) => {
+      const key = `${week}-${matchupId}-${rosterId}`
+      animatingScores.value.add(key)
+
+      // Remove animation after 1 second
+      setTimeout(() => {
+        animatingScores.value.delete(key)
+      }, 1000)
+    }
+
+    // Watch for score changes in allMatchups
+    watch(() => allMatchups.value, (newMatchups, oldMatchups) => {
+      if (!newMatchups || !oldMatchups) return
+      if (!selectedWeek.value) return
+
+      let scoreChanged = false
+
+      // Check current week's matchups for score changes
+      const currentWeekMatchups = newMatchups[selectedWeek.value]
+      const oldWeekMatchups = oldMatchups[selectedWeek.value]
+
+      if (!currentWeekMatchups || !oldWeekMatchups) return
+
+      currentWeekMatchups.forEach((matchup, matchupIndex) => {
+        if (matchup.length !== 2) return
+
+        const oldMatchup = oldWeekMatchups[matchupIndex]
+        if (!oldMatchup || oldMatchup.length !== 2) return
+
+        // Check each team's score
+        matchup.forEach((team, teamIndex) => {
+          const oldTeam = oldMatchup[teamIndex]
+          const scoreKey = `${selectedWeek.value}-${team.matchup_id}-${team.roster_id}`
+
+          // Get previous score from our tracking
+          const prevScore = previousScores.value[scoreKey]
+          const newScore = team.points || 0
+
+          // If score changed and we have a previous score
+          if (prevScore !== undefined && prevScore !== newScore && newScore > 0) {
+            animateScore(selectedWeek.value, team.matchup_id, team.roster_id)
+            scoreChanged = true
+          }
+
+          // Update previous score
+          previousScores.value[scoreKey] = newScore
+        })
+      })
+
+      // Play sound if any score changed
+      if (scoreChanged) {
+        playHitSound()
+      }
+    }, { deep: true })
+
     // Watch for week changes to reload transactions and check auto-refresh
     watch(selectedWeek, (newWeek) => {
       if (newWeek) {
-        loadTransactions(newWeek)
+        leagueStore.fetchTransactionsForWeek(newWeek)
         // Re-evaluate auto-refresh when week changes
         checkAutoRefreshStatus()
       }
@@ -790,9 +781,7 @@ export default {
 
     const loadVideos = async () => {
       try {
-        const videoData = await getLatestVideoAndShorts()
-        latestVideo.value = videoData.latestVideo
-        latestShorts.value = videoData.latestShorts
+        await leagueStore.fetchYoutube()
       } catch (err) {
         console.error('Error loading YouTube videos:', err)
       }
@@ -1222,8 +1211,42 @@ export default {
       historicalStandings,
       standingsChartRef,
       pointsChartRef,
-      refreshMatchups
+      refreshMatchups,
+      isScoreAnimating
     }
   }
 }
 </script>
+
+<style scoped>
+@keyframes scorePulse {
+  0% {
+    transform: scale(1);
+    color: rgb(255, 255, 255);
+  }
+  25% {
+    transform: scale(1.2);
+    color: rgb(34, 197, 94);
+    text-shadow: 0 0 20px rgba(34, 197, 94, 0.8);
+  }
+  50% {
+    transform: scale(1.1);
+    color: rgb(34, 197, 94);
+    text-shadow: 0 0 15px rgba(34, 197, 94, 0.6);
+  }
+  75% {
+    transform: scale(1.05);
+    color: rgb(34, 197, 94);
+    text-shadow: 0 0 10px rgba(34, 197, 94, 0.4);
+  }
+  100% {
+    transform: scale(1);
+    color: rgb(255, 255, 255);
+    text-shadow: none;
+  }
+}
+
+.score-pulse {
+  animation: scorePulse 1s ease-out;
+}
+</style>

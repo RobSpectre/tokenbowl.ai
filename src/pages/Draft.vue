@@ -180,16 +180,14 @@
 
 <script>
 import { ref, onMounted, onUnmounted, computed, nextTick } from 'vue'
+import { useLeagueStore } from '../stores/league.js'
 import { getTeamInfoByAiModel } from '../teamMappings.js'
-import { getRosters, getLeagueUsers, getPlayers } from '../sleeperApi.js'
 import * as echarts from 'echarts'
 
 export default {
   name: 'Draft',
   setup() {
-    const draftPicks = ref([])
-    const rosters = ref([])
-    const players = ref({})
+    const leagueStore = useLeagueStore()
     const loading = ref(true)
     const error = ref(null)
     const adpChartRef = ref(null)
@@ -199,38 +197,22 @@ export default {
     let adpChart = null
     let divergenceChart = null
 
+    // Computed properties from store
+    const draftPicks = computed(() => leagueStore.draftPicks)
+    const rosters = computed(() => leagueStore.rosters)
+    const players = computed(() => leagueStore.players)
+
     const loadDraftData = async () => {
       try {
         loading.value = true
         error.value = null
 
-        const [draftResponse, rostersData, usersData, playersData] = await Promise.all([
-          fetch('/data/draft_picks.json'),
-          getRosters(),
-          getLeagueUsers(),
-          getPlayers()
+        // Load all necessary data from store
+        await Promise.all([
+          leagueStore.fetchDraft(),
+          leagueStore.fetchLeagueData(),
+          leagueStore.fetchPlayers()
         ])
-
-        if (!draftResponse.ok) {
-          throw new Error('Failed to load draft picks')
-        }
-
-        const draftData = await draftResponse.json()
-        draftPicks.value = draftData
-
-        players.value = playersData
-
-        // Create user map
-        const userMap = {}
-        usersData.forEach(user => {
-          userMap[user.user_id] = user
-        })
-
-        // Enhance rosters with user information
-        rosters.value = rostersData.map(roster => ({
-          ...roster,
-          user: userMap[roster.owner_id]
-        }))
       } catch (err) {
         error.value = 'Failed to load draft data. Please try again later.'
         console.error(err)

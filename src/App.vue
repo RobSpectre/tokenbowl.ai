@@ -111,19 +111,19 @@
 
 <script>
 import { ref, onMounted } from 'vue'
-import { getLeagueData } from './sleeperApi.js'
+import { useLeagueStore } from './stores/league.js'
 import { trackButtonClick } from './analytics.js'
 
 export default {
   name: 'App',
   setup() {
-    const leagueData = ref(null)
+    const leagueStore = useLeagueStore()
     const mobileMenuOpen = ref(false)
 
     const loadLeagueInfo = async () => {
       try {
-        const data = await getLeagueData()
-        leagueData.value = data
+        // Use the store to fetch league data (with caching)
+        await leagueStore.fetchLeagueData()
       } catch (err) {
         console.error('Error loading league info:', err)
       }
@@ -144,7 +144,6 @@ export default {
     })
 
     return {
-      leagueData,
       mobileMenuOpen,
       toggleMobileMenu,
       handleNavClick
