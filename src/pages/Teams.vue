@@ -166,7 +166,8 @@
             div(v-if="getBenchPlayers(currentMatchup).length > 0")
               h4.text-gray-400.font-bold.text-sm.uppercase.tracking-wider.mb-3 Bench
               .space-y-2
-                div(class="bg-slate-800/50 rounded p-3")(
+                div(
+                  class="bg-slate-800/50 rounded p-3"
                   v-for="playerId in getBenchPlayers(currentMatchup)"
                   :key="playerId"
                 )
@@ -1009,8 +1010,18 @@ export default {
 
       await nextTick()
 
+      // Check if DOM element has valid dimensions before initializing
+      if (!weeklyChartRef.value.clientWidth || !weeklyChartRef.value.clientHeight) {
+        return
+      }
+
       if (!weeklyChart) {
-        weeklyChart = echarts.init(weeklyChartRef.value)
+        try {
+          weeklyChart = echarts.init(weeklyChartRef.value)
+        } catch (e) {
+          console.warn('Failed to initialize chart:', e)
+          return
+        }
       }
 
       const teamColor = selectedTeam.value.teamInfo.gradient.includes('blue') ? '#3b82f6' : '#8b5cf6'
@@ -1176,8 +1187,13 @@ export default {
 
     onUnmounted(() => {
       window.removeEventListener('resize', handleResize)
-      if (weeklyChart) {
-        weeklyChart.dispose()
+      if (weeklyChart && !weeklyChart.isDisposed()) {
+        try {
+          weeklyChart.dispose()
+        } catch (e) {
+          // Ignore disposal errors in test environment
+          console.warn('Error disposing chart:', e)
+        }
       }
     })
 
