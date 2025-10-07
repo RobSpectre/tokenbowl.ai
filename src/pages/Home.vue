@@ -1301,34 +1301,52 @@ export default {
       }
 
       const targetWeek = selectedWeek.value || leagueData.value.league?.settings?.leg || 5
-
-      // Get all teams with their transaction counts for the selected week
-      const teamTransactions = {}
-      const allTransactions = leagueStore.getTransactionsForWeek(targetWeek)
+      const currentWeek = leagueData.value.league?.settings?.leg || 5
 
       // Initialize counts for all teams
+      const teamWeeklyTransactions = {}
+      const teamSeasonTransactions = {}
+
       if (leagueData.value.rosters) {
         leagueData.value.rosters.forEach(roster => {
           const teamInfo = getTeamInfo(roster.user?.display_name)
-          teamTransactions[teamInfo.aiModel] = 0
+          teamWeeklyTransactions[teamInfo.aiModel] = 0
+          teamSeasonTransactions[teamInfo.aiModel] = 0
         })
       }
 
-      // Count transactions by team
-      allTransactions.forEach(transaction => {
+      // Count transactions for selected week
+      const weekTransactions = leagueStore.getTransactionsForWeek(targetWeek)
+      weekTransactions.forEach(transaction => {
         if (transaction.roster_ids && transaction.roster_ids.length > 0) {
           transaction.roster_ids.forEach(rosterId => {
             const roster = leagueData.value.rosters?.find(r => r.roster_id === rosterId)
             if (roster) {
               const teamInfo = getTeamInfo(roster.user?.display_name)
-              teamTransactions[teamInfo.aiModel] = (teamTransactions[teamInfo.aiModel] || 0) + 1
+              teamWeeklyTransactions[teamInfo.aiModel] = (teamWeeklyTransactions[teamInfo.aiModel] || 0) + 1
             }
           })
         }
       })
 
-      // Sort teams by transaction count
-      const sortedTeams = Object.entries(teamTransactions)
+      // Count season total transactions (all weeks up to current week)
+      for (let week = 1; week <= Math.min(currentWeek, 18); week++) {
+        const allTransactions = leagueStore.getTransactionsForWeek(week)
+        allTransactions.forEach(transaction => {
+          if (transaction.roster_ids && transaction.roster_ids.length > 0) {
+            transaction.roster_ids.forEach(rosterId => {
+              const roster = leagueData.value.rosters?.find(r => r.roster_id === rosterId)
+              if (roster) {
+                const teamInfo = getTeamInfo(roster.user?.display_name)
+                teamSeasonTransactions[teamInfo.aiModel] = (teamSeasonTransactions[teamInfo.aiModel] || 0) + 1
+              }
+            })
+          }
+        })
+      }
+
+      // Sort teams by season total transaction count
+      const sortedTeams = Object.entries(teamSeasonTransactions)
         .sort((a, b) => b[1] - a[1])
 
       const option = {
@@ -1336,6 +1354,11 @@ export default {
         animation: true,
         animationDuration: 1000,
         animationEasing: 'cubicOut',
+        legend: {
+          data: ['Week ' + targetWeek, 'Season Total'],
+          textStyle: { color: '#9ca3af' },
+          top: 10
+        },
         tooltip: {
           trigger: 'axis',
           axisPointer: { type: 'shadow' },
@@ -1343,15 +1366,18 @@ export default {
           borderColor: '#a855f7',
           textStyle: { color: '#fff' },
           formatter: function(params) {
-            const param = params[0]
-            return `${param.name}<br/>${param.marker}${param.value} transaction${param.value !== 1 ? 's' : ''}`
+            let result = `${params[0].name}<br/>`
+            params.forEach(param => {
+              result += `${param.marker}${param.seriesName}: ${param.value}<br/>`
+            })
+            return result
           }
         },
         grid: {
           left: '3%',
-          right: '4%',
+          right: '8%',
           bottom: '3%',
-          top: 40,
+          top: 60,
           containLabel: true
         },
         xAxis: {
@@ -1364,34 +1390,58 @@ export default {
           },
           axisLine: { lineStyle: { color: '#475569' } }
         },
-        yAxis: {
-          type: 'value',
-          minInterval: 1,
-          axisLabel: {
-            color: '#9ca3af',
-            formatter: '{value}'
+        yAxis: [
+          {
+            type: 'value',
+            name: 'Week ' + targetWeek,
+            nameTextStyle: { color: '#a855f7' },
+            minInterval: 1,
+            axisLabel: {
+              color: '#9ca3af',
+              formatter: '{value}'
+            },
+            axisLine: { lineStyle: { color: '#475569' } },
+            splitLine: { lineStyle: { color: '#334155' } }
           },
-          axisLine: { lineStyle: { color: '#475569' } },
-          splitLine: { lineStyle: { color: '#334155' } }
-        },
-        series: [{
-          type: 'bar',
-          data: sortedTeams.map(([_, count]) => count),
-          itemStyle: {
-            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-              { offset: 0, color: '#a855f7' },
-              { offset: 1, color: '#7c3aed' }
-            ])
+          {
+            type: 'value',
+            name: 'Season Total',
+            nameTextStyle: { color: '#14b8a6' },
+            minInterval: 1,
+            axisLabel: {
+              color: '#9ca3af',
+              formatter: '{value}'
+            },
+            axisLine: { lineStyle: { color: '#475569' } },
+            splitLine: { show: false }
+          }
+        ],
+        series: [
+          {
+            name: 'Week ' + targetWeek,
+            type: 'bar',
+            yAxisIndex: 0,
+            data: sortedTeams.map(([model]) => teamWeeklyTransactions[model]),
+            itemStyle: {
+              color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                { offset: 0, color: '#a855f7' },
+                { offset: 1, color: '#7c3aed' }
+              ])
+            }
           },
-          label: {
-            show: true,
-            position: 'top',
-            color: '#fff',
-            formatter: function(params) {
-              return params.value
+          {
+            name: 'Season Total',
+            type: 'bar',
+            yAxisIndex: 1,
+            data: sortedTeams.map(([_, count]) => count),
+            itemStyle: {
+              color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                { offset: 0, color: '#14b8a6' },
+                { offset: 1, color: '#0d9488' }
+              ])
             }
           }
-        }]
+        ]
       }
 
       modelTransactionsChart.setOption(option)
