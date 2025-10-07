@@ -343,6 +343,16 @@
           div(class="bg-slate-900 rounded-b-lg p-4 sm:p-6 overflow-x-auto")
             div(:ref="setTransactionsChartRef" class="w-full min-w-[350px] h-[300px] sm:h-[400px]")
 
+        //- Injury Status by Week Chart
+        section(class="mb-4 sm:mb-8" v-if="teamInjuries.length > 0")
+          div(class="bg-gradient-to-r from-red-600 to-red-800 rounded-t-lg px-4 sm:px-6 py-3 sm:py-4 border-b-4 border-yellow-400")
+            h3(class="text-white text-lg sm:text-2xl font-black uppercase tracking-wide flex items-center gap-2 sm:gap-3")
+              span.text-yellow-400 🏥
+              | Injury Status by Week
+
+          div(class="bg-slate-900 rounded-b-lg p-4 sm:p-6 overflow-x-auto")
+            div(:ref="setInjuriesChartRef" class="w-full min-w-[350px] h-[300px] sm:h-[400px]")
+
       //- Sidebar
       div(class="lg:col-span-1 space-y-8")
         //- Season History
@@ -460,6 +470,9 @@ export default {
     let weeklyChart = null
     const transactionsChartRef = ref(null)
     let transactionsChart = null
+    const injuriesChartRef = ref(null)
+    let injuriesChart = null
+    const injuriesData = ref(null)
 
     // Set the ref function
     const setWeeklyChartRef = (el) => {
@@ -476,6 +489,15 @@ export default {
       if (el && selectedTeam.value && teamTransactions.value.length > 0) {
         nextTick(() => {
           renderTransactionsChart()
+        })
+      }
+    }
+
+    const setInjuriesChartRef = (el) => {
+      injuriesChartRef.value = el
+      if (el && selectedTeam.value && teamInjuries.value.length > 0) {
+        nextTick(() => {
+          renderInjuriesChart()
         })
       }
     }
@@ -537,6 +559,14 @@ export default {
 
         // Load all transactions
         await loadAllTransactions()
+
+        // Load injury data
+        try {
+          const response = await fetch('/data/injuries_by_team.json')
+          injuriesData.value = await response.json()
+        } catch (err) {
+          console.error('Failed to load injury data:', err)
+        }
 
         // Fetch model info from OpenRouter
         await fetchModelInfo()
@@ -886,6 +916,28 @@ export default {
       return allTransactions.value
         .filter(t => t.roster_ids && t.roster_ids.includes(selectedTeam.value.roster_id))
         .sort((a, b) => b.created - a.created)
+    })
+
+    const teamInjuries = computed(() => {
+      if (!selectedTeam.value || !injuriesData.value) return []
+
+      const teamName = selectedTeam.value.teamInfo.aiModel
+      const injuries = []
+
+      // Collect injuries from all weeks
+      Object.entries(injuriesData.value).forEach(([weekKey, weekData]) => {
+        const week = weekData.week
+        if (weekData.injuries && weekData.injuries[teamName]) {
+          weekData.injuries[teamName].forEach(injury => {
+            injuries.push({
+              ...injury,
+              week
+            })
+          })
+        }
+      })
+
+      return injuries
     })
 
     const getPlayerName = (playerId) => {
@@ -1315,6 +1367,149 @@ export default {
       transactionsChart.setOption(option)
     }
 
+    const renderInjuriesChart = async () => {
+      if (!injuriesChartRef.value || !selectedTeam.value || teamInjuries.value.length === 0) return
+
+      await nextTick()
+
+      // Check if DOM element has valid dimensions before initializing
+      if (!injuriesChartRef.value.clientWidth || !injuriesChartRef.value.clientHeight) {
+        return
+      }
+
+      if (!injuriesChart) {
+        try {
+          injuriesChart = echarts.init(injuriesChartRef.value)
+        } catch (e) {
+          console.warn('Failed to initialize injuries chart:', e)
+          return
+        }
+      }
+
+      // Organize injuries by week and status
+      const injuriesByWeek = {}
+      const statusTypes = new Set()
+      const currentWeekNum = currentWeek.value
+
+      // Initialize all weeks up to current week
+      for (let week = 1; week <= Math.min(currentWeekNum, 18); week++) {
+        injuriesByWeek[week] = {}
+      }
+
+      // Categorize injuries by status
+      teamInjuries.value.forEach(injury => {
+        const week = injury.week
+        if (week && week >= 1 && week <= Math.min(currentWeekNum, 18)) {
+          // Extract status from gameStatus (e.g., "Questionable", "Out", "IR")
+          let status = 'Unknown'
+          if (injury.gameStatus) {
+            const statusLower = injury.gameStatus.toLowerCase()
+            if (statusLower.includes('questionable')) {
+              status = 'Questionable'
+            } else if (statusLower.includes('doubtful')) {
+              status = 'Doubtful'
+            } else if (statusLower.includes('out')) {
+              status = 'Out'
+            } else if (statusLower.includes('ir') || statusLower.includes('injured reserve')) {
+              status = 'IR'
+            } else if (statusLower.includes('probable')) {
+              status = 'Probable'
+            }
+          }
+
+          statusTypes.add(status)
+          if (!injuriesByWeek[week][status]) {
+            injuriesByWeek[week][status] = 0
+          }
+          injuriesByWeek[week][status]++
+        }
+      })
+
+      const weeks = Object.keys(injuriesByWeek).sort((a, b) => parseInt(a) - parseInt(b))
+      const statuses = Array.from(statusTypes).sort()
+
+      // Status colors
+      const statusColors = {
+        'Questionable': '#eab308',
+        'Doubtful': '#f97316',
+        'Out': '#ef4444',
+        'IR': '#dc2626',
+        'Probable': '#84cc16',
+        'Unknown': '#6b7280'
+      }
+
+      // Create series for each status
+      const series = statuses.map(status => ({
+        name: status,
+        type: 'bar',
+        stack: 'total',
+        data: weeks.map(week => injuriesByWeek[week][status] || 0),
+        itemStyle: {
+          color: statusColors[status] || '#6b7280'
+        }
+      }))
+
+      const option = {
+        backgroundColor: 'transparent',
+        animation: true,
+        animationDuration: 1000,
+        animationEasing: 'cubicOut',
+        legend: {
+          data: statuses,
+          textStyle: { color: '#9ca3af' },
+          top: 10
+        },
+        tooltip: {
+          trigger: 'axis',
+          axisPointer: { type: 'shadow' },
+          backgroundColor: 'rgba(15, 23, 42, 0.9)',
+          borderColor: '#ef4444',
+          textStyle: { color: '#fff' },
+          formatter: function(params) {
+            let result = `Week ${params[0].name}<br/>`
+            let total = 0
+            params.forEach(param => {
+              if (param.value > 0) {
+                result += `${param.marker}${param.seriesName}: ${param.value}<br/>`
+                total += param.value
+              }
+            })
+            result += `<strong>Total: ${total}</strong>`
+            return result
+          }
+        },
+        grid: {
+          left: '3%',
+          right: '4%',
+          bottom: '3%',
+          top: 60,
+          containLabel: true
+        },
+        xAxis: {
+          type: 'category',
+          data: weeks,
+          axisLabel: {
+            color: '#9ca3af',
+            formatter: (value) => `Week ${value}`
+          },
+          axisLine: { lineStyle: { color: '#475569' } }
+        },
+        yAxis: {
+          type: 'value',
+          minInterval: 1,
+          axisLabel: {
+            color: '#9ca3af',
+            formatter: '{value}'
+          },
+          axisLine: { lineStyle: { color: '#475569' } },
+          splitLine: { lineStyle: { color: '#334155' } }
+        },
+        series
+      }
+
+      injuriesChart.setOption(option)
+    }
+
     // Helper function to determine week from Unix timestamp
     const determineWeekFromTimestamp = (timestamp) => {
       // NFL 2024 season start: September 5, 2024 (Week 1)
@@ -1332,6 +1527,9 @@ export default {
       if (transactionsChart) {
         transactionsChart.resize()
       }
+      if (injuriesChart) {
+        injuriesChart.resize()
+      }
     }
 
     // Watch for selectedTeam changes to re-render chart
@@ -1346,6 +1544,11 @@ export default {
           renderTransactionsChart()
         })
       }
+      if (selectedTeam.value && teamInjuries.value.length > 0) {
+        nextTick(() => {
+          renderInjuriesChart()
+        })
+      }
     })
 
     // Watch for teamHistory changes to re-render chart
@@ -1358,6 +1561,11 @@ export default {
       if (selectedTeam.value && teamTransactions.value.length > 0) {
         nextTick(() => {
           renderTransactionsChart()
+        })
+      }
+      if (selectedTeam.value && teamInjuries.value.length > 0) {
+        nextTick(() => {
+          renderInjuriesChart()
         })
       }
     })
@@ -1393,6 +1601,14 @@ export default {
         } catch (e) {
           // Ignore disposal errors in test environment
           console.warn('Error disposing transactions chart:', e)
+        }
+      }
+      if (injuriesChart && !injuriesChart.isDisposed()) {
+        try {
+          injuriesChart.dispose()
+        } catch (e) {
+          // Ignore disposal errors in test environment
+          console.warn('Error disposing injuries chart:', e)
         }
       }
     })
@@ -1434,7 +1650,10 @@ export default {
       weeklyChartRef,
       setWeeklyChartRef,
       transactionsChartRef,
-      setTransactionsChartRef
+      setTransactionsChartRef,
+      injuriesChartRef,
+      setInjuriesChartRef,
+      teamInjuries
     }
   }
 }

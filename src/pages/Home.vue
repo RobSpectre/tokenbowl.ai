@@ -345,6 +345,26 @@
       div(class="bg-slate-900 rounded-b-lg p-3 sm:p-6")
         div(ref="modelTransactionsChartRef" class="w-full h-[300px] sm:h-[400px]")
 
+    //- Injuries Volume by Week
+    section.mb-12
+      .bg-gradient-to-r.from-red-600.to-red-800.rounded-t-lg.px-6.py-4.border-b-4.border-yellow-400
+        h2(class="text-white text-xl sm:text-3xl font-black uppercase tracking-wide flex items-center gap-2 sm:gap-3")
+          span.text-yellow-400 🚑
+          | Injuries Volume by Week
+
+      div(class="bg-slate-900 rounded-b-lg p-3 sm:p-6")
+        div(ref="injuriesChartRef" class="w-full h-[300px] sm:h-[400px]")
+
+    //- Injury Volume by Model
+    section.mb-12
+      .bg-gradient-to-r.from-orange-600.to-orange-800.rounded-t-lg.px-6.py-4.border-b-4.border-yellow-400
+        h2(class="text-white text-xl sm:text-3xl font-black uppercase tracking-wide flex items-center gap-2 sm:gap-3")
+          span.text-yellow-400 🏥
+          | Injury Volume by Model
+
+      div(class="bg-slate-900 rounded-b-lg p-3 sm:p-6")
+        div(ref="modelInjuriesChartRef" class="w-full h-[300px] sm:h-[400px]")
+
     //- Transactions
     section.mb-12
       div(class="bg-gradient-to-r from-orange-600 to-orange-800 rounded-t-lg px-4 sm:px-6 py-3 sm:py-4 border-b-4 border-yellow-400")
@@ -483,10 +503,15 @@ export default {
     const pointsChartRef = ref(null)
     const transactionsChartRef = ref(null)
     const modelTransactionsChartRef = ref(null)
+    const injuriesChartRef = ref(null)
+    const modelInjuriesChartRef = ref(null)
     let standingsChart = null
     let pointsChart = null
     let transactionsChart = null
     let modelTransactionsChart = null
+    let injuriesChart = null
+    let modelInjuriesChart = null
+    const injuriesData = ref(null)
     const lastUpdated = ref(null)
     const autoRefreshInterval = ref(null)
     const autoRefreshCheckInterval = ref(null)
@@ -566,6 +591,14 @@ export default {
 
         // Load transactions for current week
         await leagueStore.fetchTransactionsForWeek(selectedWeek.value)
+
+        // Load injury data
+        try {
+          const response = await fetch('/data/injuries_by_team.json')
+          injuriesData.value = await response.json()
+        } catch (err) {
+          console.error('Failed to load injury data:', err)
+        }
 
         // Set last updated timestamp
         lastUpdated.value = new Date()
@@ -1476,12 +1509,290 @@ export default {
       modelTransactionsChart.setOption(option)
     }
 
+    // Render injuries volume by week line chart
+    const renderInjuriesChart = async () => {
+      if (!injuriesChartRef.value || !leagueData.value || !injuriesData.value) return
+
+      await nextTick()
+
+      if (!injuriesChart) {
+        injuriesChart = echarts.init(injuriesChartRef.value)
+      }
+
+      const targetWeek = selectedWeek.value || leagueData.value.league?.settings?.leg || 5
+
+      // Count injuries for all weeks up to selected week
+      const injuryCounts = []
+      for (let week = 1; week <= Math.min(targetWeek, 18); week++) {
+        const weekKey = `week${week}`
+        const weekData = injuriesData.value[weekKey]
+        if (weekData && weekData.injuries) {
+          let count = 0
+          Object.values(weekData.injuries).forEach(teamInjuries => {
+            count += teamInjuries.length
+          })
+          injuryCounts.push({
+            week,
+            count
+          })
+        } else {
+          injuryCounts.push({ week, count: 0 })
+        }
+      }
+
+      const option = {
+        backgroundColor: 'transparent',
+        animation: true,
+        animationDuration: 1000,
+        animationEasing: 'cubicOut',
+        tooltip: {
+          trigger: 'axis',
+          axisPointer: { type: 'cross' },
+          backgroundColor: 'rgba(15, 23, 42, 0.9)',
+          borderColor: '#ef4444',
+          textStyle: { color: '#fff' },
+          formatter: function(params) {
+            const param = params[0]
+            return `Week ${param.name}<br/>${param.marker}${param.value} injuries`
+          }
+        },
+        grid: {
+          left: '3%',
+          right: '4%',
+          bottom: '3%',
+          top: 40,
+          containLabel: true
+        },
+        xAxis: {
+          type: 'category',
+          data: injuryCounts.map(d => `Week ${d.week}`),
+          axisLabel: {
+            color: '#9ca3af',
+            rotate: 45
+          },
+          axisLine: { lineStyle: { color: '#475569' } }
+        },
+        yAxis: {
+          type: 'value',
+          minInterval: 1,
+          axisLabel: {
+            color: '#9ca3af',
+            formatter: '{value}'
+          },
+          axisLine: { lineStyle: { color: '#475569' } },
+          splitLine: { lineStyle: { color: '#334155' } }
+        },
+        series: [{
+          type: 'line',
+          data: injuryCounts.map(d => d.count),
+          smooth: true,
+          lineStyle: {
+            width: 3,
+            color: new echarts.graphic.LinearGradient(0, 0, 1, 0, [
+              { offset: 0, color: '#ef4444' },
+              { offset: 1, color: '#dc2626' }
+            ])
+          },
+          itemStyle: {
+            color: '#ef4444'
+          },
+          symbol: 'circle',
+          symbolSize: 8,
+          areaStyle: {
+            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+              { offset: 0, color: '#ef444440' },
+              { offset: 1, color: '#ef444410' }
+            ])
+          }
+        }]
+      }
+
+      injuriesChart.setOption(option)
+    }
+
+    // Render injury volume by model chart
+    const renderModelInjuriesChart = async () => {
+      if (!modelInjuriesChartRef.value || !leagueData.value || !injuriesData.value) return
+
+      await nextTick()
+
+      if (!modelInjuriesChart) {
+        modelInjuriesChart = echarts.init(modelInjuriesChartRef.value)
+      }
+
+      const targetWeek = selectedWeek.value || leagueData.value.league?.settings?.leg || 5
+
+      // Initialize counts for all teams
+      const teamWeeklyInjuries = {}
+      const teamSeasonInjuries = {}
+
+      if (leagueData.value.rosters) {
+        leagueData.value.rosters.forEach(roster => {
+          const teamInfo = getTeamInfo(roster.user?.display_name)
+          teamWeeklyInjuries[teamInfo.aiModel] = 0
+          teamSeasonInjuries[teamInfo.aiModel] = 0
+        })
+      }
+
+      // Count injuries for selected week
+      const targetWeekKey = `week${targetWeek}`
+      const targetWeekData = injuriesData.value[targetWeekKey]
+      if (targetWeekData && targetWeekData.injuries) {
+        Object.entries(targetWeekData.injuries).forEach(([teamName, injuries]) => {
+          teamWeeklyInjuries[teamName] = injuries.length
+        })
+      }
+
+      // Count season total injuries (all weeks up to selected week)
+      for (let week = 1; week <= Math.min(targetWeek, 18); week++) {
+        const weekKey = `week${week}`
+        const weekData = injuriesData.value[weekKey]
+        if (weekData && weekData.injuries) {
+          Object.entries(weekData.injuries).forEach(([teamName, injuries]) => {
+            teamSeasonInjuries[teamName] = (teamSeasonInjuries[teamName] || 0) + injuries.length
+          })
+        }
+      }
+
+      // Sort teams by season total injury count and get team info with logos
+      const sortedTeamsWithInfo = Object.entries(teamSeasonInjuries)
+        .sort((a, b) => b[1] - a[1])
+        .map(([modelName]) => {
+          // Find the roster for this model to get team info
+          const roster = leagueData.value.rosters?.find(r => {
+            const info = getTeamInfo(r.user?.display_name)
+            return info.aiModel === modelName
+          })
+          if (roster) {
+            return getTeamInfo(roster.user?.display_name)
+          }
+          return { aiModel: modelName, logo: '' }
+        })
+
+      const option = {
+        backgroundColor: 'transparent',
+        animation: true,
+        animationDuration: 1000,
+        animationEasing: 'cubicOut',
+        legend: {
+          data: ['Week ' + targetWeek, 'Through Week ' + targetWeek],
+          textStyle: { color: '#9ca3af' },
+          top: 10
+        },
+        tooltip: {
+          trigger: 'axis',
+          axisPointer: { type: 'shadow' },
+          backgroundColor: 'rgba(15, 23, 42, 0.9)',
+          borderColor: '#ef4444',
+          textStyle: { color: '#fff' },
+          formatter: function(params) {
+            let result = `${params[0].name}<br/>`
+            params.forEach(param => {
+              result += `${param.marker}${param.seriesName}: ${param.value}<br/>`
+            })
+            return result
+          }
+        },
+        grid: {
+          left: 140,
+          right: '10%',
+          bottom: '3%',
+          top: 60,
+          containLabel: false
+        },
+        xAxis: [
+          {
+            type: 'value',
+            name: 'Week ' + targetWeek,
+            nameTextStyle: { color: '#ef4444' },
+            minInterval: 1,
+            axisLabel: {
+              color: '#9ca3af',
+              formatter: '{value}'
+            },
+            axisLine: { lineStyle: { color: '#475569' } },
+            splitLine: { lineStyle: { color: '#334155' } }
+          },
+          {
+            type: 'value',
+            name: 'Through Week ' + targetWeek,
+            nameTextStyle: { color: '#f97316' },
+            minInterval: 1,
+            axisLabel: {
+              color: '#9ca3af',
+              formatter: '{value}'
+            },
+            axisLine: { lineStyle: { color: '#475569' } },
+            splitLine: { show: false }
+          }
+        ],
+        yAxis: {
+          type: 'category',
+          data: sortedTeamsWithInfo.map(info => info.aiModel),
+          axisLabel: {
+            color: '#9ca3af',
+            interval: 0,
+            formatter: function(value, index) {
+              const teamInfo = sortedTeamsWithInfo[index]
+              return `{logo${index}|} {name|${value}}`
+            },
+            rich: sortedTeamsWithInfo.reduce((acc, info, index) => {
+              acc[`logo${index}`] = {
+                backgroundColor: {
+                  image: info.logo
+                },
+                height: 20,
+                width: 20
+              }
+              acc.name = {
+                color: '#9ca3af',
+                padding: [0, 0, 0, 5]
+              }
+              return acc
+            }, {})
+          },
+          axisLine: { lineStyle: { color: '#475569' } },
+          inverse: true
+        },
+        series: [
+          {
+            name: 'Week ' + targetWeek,
+            type: 'bar',
+            xAxisIndex: 0,
+            data: sortedTeamsWithInfo.map(info => teamWeeklyInjuries[info.aiModel]),
+            itemStyle: {
+              color: new echarts.graphic.LinearGradient(1, 0, 0, 0, [
+                { offset: 0, color: '#ef4444' },
+                { offset: 1, color: '#dc2626' }
+              ])
+            }
+          },
+          {
+            name: 'Through Week ' + targetWeek,
+            type: 'bar',
+            xAxisIndex: 1,
+            data: sortedTeamsWithInfo.map(info => teamSeasonInjuries[info.aiModel]),
+            itemStyle: {
+              color: new echarts.graphic.LinearGradient(1, 0, 0, 0, [
+                { offset: 0, color: '#f97316' },
+                { offset: 1, color: '#ea580c' }
+              ])
+            }
+          }
+        ]
+      }
+
+      modelInjuriesChart.setOption(option)
+    }
+
     // Watch for week changes and re-render charts
     watch(selectedWeek, () => {
       renderStandingsChart()
       renderPointsChart()
       renderTransactionsChart()
       renderModelTransactionsChart()
+      renderInjuriesChart()
+      renderModelInjuriesChart()
     })
 
     // Handle window resize for responsive charts
@@ -1498,6 +1809,12 @@ export default {
       if (modelTransactionsChart) {
         modelTransactionsChart.resize()
       }
+      if (injuriesChart) {
+        injuriesChart.resize()
+      }
+      if (modelInjuriesChart) {
+        modelInjuriesChart.resize()
+      }
     }
 
     onMounted(() => {
@@ -1506,6 +1823,8 @@ export default {
         renderPointsChart()
         renderTransactionsChart()
         renderModelTransactionsChart()
+        renderInjuriesChart()
+        renderModelInjuriesChart()
         // Check if we should start auto-refresh
         checkAutoRefreshStatus()
         // Check every minute if we should start/stop auto-refresh
@@ -1535,6 +1854,12 @@ export default {
       }
       if (modelTransactionsChart) {
         modelTransactionsChart.dispose()
+      }
+      if (injuriesChart) {
+        injuriesChart.dispose()
+      }
+      if (modelInjuriesChart) {
+        modelInjuriesChart.dispose()
       }
     })
 
@@ -1568,6 +1893,8 @@ export default {
       pointsChartRef,
       transactionsChartRef,
       modelTransactionsChartRef,
+      injuriesChartRef,
+      modelInjuriesChartRef,
       refreshMatchups,
       isScoreAnimating
     }
