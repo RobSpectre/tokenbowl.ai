@@ -1329,8 +1329,8 @@ export default {
         }
       })
 
-      // Count season total transactions (all weeks up to current week)
-      for (let week = 1; week <= Math.min(currentWeek, 18); week++) {
+      // Count season total transactions (all weeks up to selected week)
+      for (let week = 1; week <= Math.min(targetWeek, 18); week++) {
         const allTransactions = leagueStore.getTransactionsForWeek(week)
         allTransactions.forEach(transaction => {
           if (transaction.roster_ids && transaction.roster_ids.length > 0) {
@@ -1345,9 +1345,20 @@ export default {
         })
       }
 
-      // Sort teams by season total transaction count
-      const sortedTeams = Object.entries(teamSeasonTransactions)
+      // Sort teams by season total transaction count and get team info with logos
+      const sortedTeamsWithInfo = Object.entries(teamSeasonTransactions)
         .sort((a, b) => b[1] - a[1])
+        .map(([modelName]) => {
+          // Find the roster for this model to get team info
+          const roster = leagueData.value.rosters?.find(r => {
+            const info = getTeamInfo(r.user?.display_name)
+            return info.aiModel === modelName
+          })
+          if (roster) {
+            return getTeamInfo(roster.user?.display_name)
+          }
+          return { aiModel: modelName, logo: '' }
+        })
 
       const option = {
         backgroundColor: 'transparent',
@@ -1355,7 +1366,7 @@ export default {
         animationDuration: 1000,
         animationEasing: 'cubicOut',
         legend: {
-          data: ['Week ' + targetWeek, 'Season Total'],
+          data: ['Week ' + targetWeek, 'Through Week ' + targetWeek],
           textStyle: { color: '#9ca3af' },
           top: 10
         },
@@ -1374,23 +1385,13 @@ export default {
           }
         },
         grid: {
-          left: '3%',
-          right: '8%',
+          left: 140,
+          right: '10%',
           bottom: '3%',
           top: 60,
-          containLabel: true
+          containLabel: false
         },
-        xAxis: {
-          type: 'category',
-          data: sortedTeams.map(([model]) => model),
-          axisLabel: {
-            color: '#9ca3af',
-            rotate: 45,
-            interval: 0
-          },
-          axisLine: { lineStyle: { color: '#475569' } }
-        },
-        yAxis: [
+        xAxis: [
           {
             type: 'value',
             name: 'Week ' + targetWeek,
@@ -1405,7 +1406,7 @@ export default {
           },
           {
             type: 'value',
-            name: 'Season Total',
+            name: 'Through Week ' + targetWeek,
             nameTextStyle: { color: '#14b8a6' },
             minInterval: 1,
             axisLabel: {
@@ -1416,26 +1417,54 @@ export default {
             splitLine: { show: false }
           }
         ],
+        yAxis: {
+          type: 'category',
+          data: sortedTeamsWithInfo.map(info => info.aiModel),
+          axisLabel: {
+            color: '#9ca3af',
+            interval: 0,
+            formatter: function(value, index) {
+              const teamInfo = sortedTeamsWithInfo[index]
+              return `{logo${index}|} {name|${value}}`
+            },
+            rich: sortedTeamsWithInfo.reduce((acc, info, index) => {
+              acc[`logo${index}`] = {
+                backgroundColor: {
+                  image: info.logo
+                },
+                height: 20,
+                width: 20
+              }
+              acc.name = {
+                color: '#9ca3af',
+                padding: [0, 0, 0, 5]
+              }
+              return acc
+            }, {})
+          },
+          axisLine: { lineStyle: { color: '#475569' } },
+          inverse: true
+        },
         series: [
           {
             name: 'Week ' + targetWeek,
             type: 'bar',
-            yAxisIndex: 0,
-            data: sortedTeams.map(([model]) => teamWeeklyTransactions[model]),
+            xAxisIndex: 0,
+            data: sortedTeamsWithInfo.map(info => teamWeeklyTransactions[info.aiModel]),
             itemStyle: {
-              color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+              color: new echarts.graphic.LinearGradient(1, 0, 0, 0, [
                 { offset: 0, color: '#a855f7' },
                 { offset: 1, color: '#7c3aed' }
               ])
             }
           },
           {
-            name: 'Season Total',
+            name: 'Through Week ' + targetWeek,
             type: 'bar',
-            yAxisIndex: 1,
-            data: sortedTeams.map(([_, count]) => count),
+            xAxisIndex: 1,
+            data: sortedTeamsWithInfo.map(info => teamSeasonTransactions[info.aiModel]),
             itemStyle: {
-              color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+              color: new echarts.graphic.LinearGradient(1, 0, 0, 0, [
                 { offset: 0, color: '#14b8a6' },
                 { offset: 1, color: '#0d9488' }
               ])
