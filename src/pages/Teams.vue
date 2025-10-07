@@ -322,6 +322,16 @@
                 div(class="p-8 text-center" v-else)
                   .text-gray-500.text-lg.font-bold BYE WEEK
 
+        //- Weekly Performance Chart
+        section(class="mb-4 sm:mb-8" v-if="teamHistory")
+          div(class="bg-gradient-to-r from-indigo-600 to-indigo-800 rounded-t-lg px-4 sm:px-6 py-3 sm:py-4 border-b-4 border-yellow-400")
+            h3(class="text-white text-lg sm:text-2xl font-black uppercase tracking-wide flex items-center gap-2 sm:gap-3")
+              span.text-yellow-400 ⚡
+              | Weekly Performance
+
+          div(class="bg-slate-900 rounded-b-lg p-4 sm:p-6 overflow-x-auto")
+            div(:ref="setWeeklyChartRef" class="w-full min-w-[350px] h-[300px] sm:h-[500px]")
+
       //- Sidebar
       div(class="lg:col-span-1 space-y-8")
         //- Season History
@@ -416,10 +426,11 @@
 </template>
 
 <script>
-import { ref, onMounted, computed, watch } from 'vue'
+import { ref, onMounted, onUnmounted, computed, watch, nextTick } from 'vue'
 import { useLeagueStore } from '../stores/league.js'
 import { getTeamInfo } from '../teamMappings.js'
 import { trackButtonClick } from '../analytics.js'
+import * as echarts from 'echarts'
 
 export default {
   name: 'Teams',
@@ -431,6 +442,18 @@ export default {
     const loading = ref(true)
     const error = ref(null)
     const mobileDropdownOpen = ref(false)
+    const weeklyChartRef = ref(null)
+    let weeklyChart = null
+
+    // Set the ref function
+    const setWeeklyChartRef = (el) => {
+      weeklyChartRef.value = el
+      if (el && selectedTeam.value && teamHistory.value) {
+        nextTick(() => {
+          renderWeeklyChart()
+        })
+      }
+    }
 
     // Computed properties from store
     const players = computed(() => leagueStore.players)
@@ -980,8 +1003,182 @@ export default {
       return `linear-gradient(to right, ${colorMap[fromColor] || '#6366f1'}, ${colorMap[toColor] || '#8b5cf6'})`
     }
 
+    // Render weekly performance chart for selected team
+    const renderWeeklyChart = async () => {
+      if (!weeklyChartRef.value || !selectedTeam.value || !teamHistory.value) return
+
+      await nextTick()
+
+      if (!weeklyChart) {
+        weeklyChart = echarts.init(weeklyChartRef.value)
+      }
+
+      const teamColor = selectedTeam.value.teamInfo.gradient.includes('blue') ? '#3b82f6' : '#8b5cf6'
+
+      // Prepare data: track this team's weekly scores and differentials
+      const weeklyScores = []
+      const weeklyDifferentials = []
+      const weeks = []
+
+      // Sort matchups by week in ascending order
+      const sortedMatchups = [...teamHistory.value.matchups].sort((a, b) => a.week - b.week)
+
+      sortedMatchups.forEach(matchup => {
+        weeks.push(`Week ${matchup.week}`)
+        weeklyScores.push(matchup.teamScore || 0)
+        weeklyDifferentials.push((matchup.teamScore || 0) - (matchup.opponentScore || 0))
+      })
+
+      const option = {
+        backgroundColor: 'transparent',
+        animation: true,
+        animationDuration: 1000,
+        animationEasing: 'cubicOut',
+        tooltip: {
+          trigger: 'axis',
+          backgroundColor: 'rgba(15, 23, 42, 0.9)',
+          borderColor: '#3b82f6',
+          textStyle: { color: '#fff' },
+          axisPointer: {
+            type: 'cross',
+            crossStyle: {
+              color: '#999'
+            }
+          }
+        },
+        legend: {
+          data: ['Score', 'Point Differential'],
+          top: 10,
+          textStyle: {
+            color: '#9ca3af'
+          }
+        },
+        grid: {
+          left: '3%',
+          right: '4%',
+          bottom: '3%',
+          top: 60,
+          containLabel: true
+        },
+        xAxis: {
+          type: 'category',
+          data: weeks,
+          axisLabel: { color: '#9ca3af', rotate: 45 },
+          axisLine: { lineStyle: { color: '#475569' } }
+        },
+        yAxis: [
+          {
+            type: 'value',
+            name: 'Score',
+            position: 'left',
+            min: 0,
+            axisLabel: {
+              color: '#9ca3af',
+              formatter: '{value}'
+            },
+            axisLine: { lineStyle: { color: '#475569' } },
+            splitLine: { lineStyle: { color: '#334155' } },
+            nameTextStyle: {
+              color: '#06b6d4',
+              fontSize: 14,
+              fontWeight: 'bold'
+            }
+          },
+          {
+            type: 'value',
+            name: 'Point Differential',
+            position: 'right',
+            axisLabel: {
+              color: '#9ca3af',
+              formatter: function(value) {
+                return value > 0 ? `+${value}` : value
+              }
+            },
+            axisLine: { lineStyle: { color: '#475569' } },
+            splitLine: { show: false },
+            nameTextStyle: {
+              color: '#8b5cf6',
+              fontSize: 14,
+              fontWeight: 'bold'
+            }
+          }
+        ],
+        series: [
+          {
+            name: 'Score',
+            type: 'line',
+            yAxisIndex: 0,
+            data: weeklyScores,
+            smooth: true,
+            lineStyle: {
+              width: 3,
+              color: teamColor
+            },
+            itemStyle: {
+              color: teamColor
+            },
+            symbol: 'circle',
+            symbolSize: 8,
+            areaStyle: {
+              color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                { offset: 0, color: teamColor + '40' },
+                { offset: 1, color: teamColor + '10' }
+              ])
+            }
+          },
+          {
+            name: 'Point Differential',
+            type: 'bar',
+            yAxisIndex: 1,
+            data: weeklyDifferentials,
+            itemStyle: {
+              color: function(params) {
+                return params.value >= 0 ? '#22c55e80' : '#ef444480'
+              }
+            },
+            barMaxWidth: 30
+          }
+        ]
+      }
+
+      weeklyChart.setOption(option)
+    }
+
+    // Handle window resize for responsive chart
+    const handleResize = () => {
+      if (weeklyChart) {
+        weeklyChart.resize()
+      }
+    }
+
+    // Watch for selectedTeam changes to re-render chart
+    watch(selectedTeam, () => {
+      if (selectedTeam.value && teamHistory.value) {
+        nextTick(() => {
+          renderWeeklyChart()
+        })
+      }
+    })
+
+    // Watch for teamHistory changes to re-render chart
+    watch(teamHistory, () => {
+      if (selectedTeam.value && teamHistory.value) {
+        nextTick(() => {
+          renderWeeklyChart()
+        })
+      }
+    })
+
     onMounted(() => {
       loadTeamsData()
+      window.addEventListener('resize', handleResize)
+    })
+
+    onUnmounted(() => {
+      window.removeEventListener('resize', handleResize)
+      if (weeklyChart) {
+        weeklyChart.dispose()
+      }
     })
 
     return {
@@ -1017,7 +1214,9 @@ export default {
       getTransactionDelta,
       formatTransactionDate,
       formatReleaseDate,
-      formatContextLength
+      formatContextLength,
+      weeklyChartRef,
+      setWeeklyChartRef
     }
   }
 }

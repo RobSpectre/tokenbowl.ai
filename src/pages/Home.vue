@@ -856,12 +856,21 @@ export default {
       if (!leagueData.value || !selectedWeek.value) return []
 
       // Determine which week to calculate standings through
-      // Past weeks: show standings through that week
-      // Current/future weeks: show standings through most recent completed week
+      // Check if current week is complete by looking at matchup data
       const currentWeek = leagueData.value.league?.settings?.leg || 1
+      const currentWeekMatchups = allMatchups.value[currentWeek]
+      const isCurrentWeekComplete = currentWeekMatchups?.every(matchup =>
+        matchup.every(team => team.points && team.points > 0)
+      )
+
+      // If viewing current week and it's complete, show through current week
+      // If viewing current week and it's not complete, show through previous week
+      // If viewing past weeks, show through that week
       const standingsWeek = selectedWeek.value < currentWeek
         ? selectedWeek.value
-        : Math.max(0, currentWeek - 1)
+        : (selectedWeek.value === currentWeek && isCurrentWeekComplete)
+          ? currentWeek
+          : Math.max(0, currentWeek - 1)
 
       const standings = leagueData.value.rosters.map(roster => {
         const record = getRecordThroughWeek(roster.roster_id, standingsWeek)
@@ -896,7 +905,16 @@ export default {
       }
 
       const currentWeek = leagueData.value.league?.settings?.leg || 1
-      const maxWeek = selectedWeek.value < currentWeek ? selectedWeek.value : Math.max(0, currentWeek - 1)
+      const currentWeekMatchups = allMatchups.value[currentWeek]
+      const isCurrentWeekComplete = currentWeekMatchups?.every(matchup =>
+        matchup.every(team => team.points && team.points > 0)
+      )
+
+      const maxWeek = selectedWeek.value < currentWeek
+        ? selectedWeek.value
+        : (selectedWeek.value === currentWeek && isCurrentWeekComplete)
+          ? currentWeek
+          : Math.max(0, currentWeek - 1)
 
       // Prepare data: track each team's rank over time
       const teamData = {}
@@ -1015,7 +1033,16 @@ export default {
       }
 
       const currentWeek = leagueData.value.league?.settings?.leg || 1
-      const maxWeek = selectedWeek.value < currentWeek ? selectedWeek.value : Math.max(0, currentWeek - 1)
+      const currentWeekMatchups = allMatchups.value[currentWeek]
+      const isCurrentWeekComplete = currentWeekMatchups?.every(matchup =>
+        matchup.every(team => team.points && team.points > 0)
+      )
+
+      const maxWeek = selectedWeek.value < currentWeek
+        ? selectedWeek.value
+        : (selectedWeek.value === currentWeek && isCurrentWeekComplete)
+          ? currentWeek
+          : Math.max(0, currentWeek - 1)
 
       // Get points for each team through the selected week
       const teamPoints = leagueData.value.rosters.map(roster => {
