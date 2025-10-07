@@ -204,7 +204,7 @@
                     .text-gray-400.text-xs ROS: {{ getPlayerROS(playerId) }}
 
     //- Tokens
-    section.mb-8(v-if="markdownContents.length > 0")
+    section.mb-8(v-if="markdownContents.length > 0" id="tokens")
       .bg-gradient-to-r.from-green-600.to-green-800.rounded-t-lg.px-6.py-4.border-b-4.border-yellow-400
         h2.text-white.text-2xl.font-black.uppercase.tracking-wide Tokens
       .bg-slate-900.rounded-b-lg.p-6.space-y-8

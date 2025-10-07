@@ -201,6 +201,16 @@
                   div(v-else class="absolute left-1/2 transform -translate-x-1/2 bg-yellow-500 rounded px-3 py-1")
                     span.text-white.text-xs.font-bold TIE
 
+              //- View Tokens Button
+              .mt-3.pt-3.border-t.border-slate-700.flex.justify-end
+                router-link(
+                  :to="`/matchup/${selectedWeek}/${matchup[0].matchup_id}#tokens`"
+                  @click.stop
+                  class="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-gray-300 hover:text-white text-xs rounded transition-colors duration-200 flex items-center gap-1.5"
+                )
+                  span 💬
+                  |  View tokens
+
       //- No Matchups
       .bg-slate-900.rounded-b-lg.p-8.text-center(v-else)
         p.text-gray-500.text-lg No matchups available for Week {{ selectedWeek }}
