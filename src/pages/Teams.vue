@@ -501,7 +501,7 @@ export default {
 
         // Select team based on route parameter or default to first team
         if (teams.value.length > 0) {
-          const teamSlug = route.params.teamSlug
+          const teamSlug = route?.params?.teamSlug
           let teamToSelect = teams.value[0]
 
           if (teamSlug) {
@@ -724,7 +724,7 @@ export default {
       })
 
       // Update URL if requested
-      if (updateUrl) {
+      if (updateUrl && router) {
         const teamSlug = createTeamSlug(team.teamInfo.aiModel)
         router.push({ name: 'TeamDetail', params: { teamSlug } })
       }
@@ -1210,7 +1210,7 @@ export default {
     })
 
     // Watch for route changes to select the correct team
-    watch(() => route.params.teamSlug, (newSlug) => {
+    watch(() => route?.params?.teamSlug, (newSlug) => {
       if (newSlug && teams.value.length > 0) {
         const team = findTeamBySlug(newSlug)
         if (team && selectedTeam.value?.roster_id !== team.roster_id) {

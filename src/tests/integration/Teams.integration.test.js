@@ -9,6 +9,8 @@ import Teams from '../../pages/Teams.vue'
  */
 
 describe('Teams.vue Integration Tests', () => {
+  let routerMock
+
   beforeEach(() => {
     // Create fresh pinia
     const pinia = createPinia()
@@ -17,6 +19,16 @@ describe('Teams.vue Integration Tests', () => {
     // Reset mocks
     vi.clearAllMocks()
     localStorage.clear()
+
+    // Mock router and route
+    routerMock = {
+      push: vi.fn(),
+      currentRoute: {
+        value: {
+          params: {}
+        }
+      }
+    }
 
     // Mock fetch globally
     global.fetch = vi.fn()
@@ -148,6 +160,10 @@ describe('Teams.vue Integration Tests', () => {
       // Mount component
       const wrapper = mount(Teams, {
         global: {
+          provide: {
+            router: routerMock,
+            route: routerMock.currentRoute.value
+          },
           stubs: {
             RouterLink: true
           }
@@ -203,6 +219,10 @@ describe('Teams.vue Integration Tests', () => {
 
       const wrapper = mount(Teams, {
         global: {
+          provide: {
+            router: routerMock,
+            route: routerMock.currentRoute.value
+          },
           stubs: { RouterLink: true }
         }
       })
@@ -235,6 +255,10 @@ describe('Teams.vue Integration Tests', () => {
 
       const wrapper = mount(Teams, {
         global: {
+          provide: {
+            router: routerMock,
+            route: routerMock.currentRoute.value
+          },
           stubs: { RouterLink: true }
         }
       })
@@ -267,6 +291,10 @@ describe('Teams.vue Integration Tests', () => {
 
       const wrapper = mount(Teams, {
         global: {
+          provide: {
+            router: routerMock,
+            route: routerMock.currentRoute.value
+          },
           stubs: { RouterLink: true }
         }
       })
@@ -296,6 +324,10 @@ describe('Teams.vue Integration Tests', () => {
 
       const wrapper = mount(Teams, {
         global: {
+          provide: {
+            router: routerMock,
+            route: routerMock.currentRoute.value
+          },
           stubs: { RouterLink: true }
         }
       })
