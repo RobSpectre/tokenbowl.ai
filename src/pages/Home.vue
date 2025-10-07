@@ -325,6 +325,16 @@
       div(class="bg-slate-900 rounded-b-lg p-3 sm:p-6 overflow-x-auto")
         div(ref="pointsChartRef" class="w-full min-w-[350px] h-[300px] sm:h-[500px]")
 
+    //- Transactions Activity
+    section.mb-12
+      .bg-gradient-to-r.from-teal-600.to-teal-800.rounded-t-lg.px-6.py-4.border-b-4.border-yellow-400
+        h2(class="text-white text-xl sm:text-3xl font-black uppercase tracking-wide flex items-center gap-2 sm:gap-3")
+          span.text-yellow-400 📊
+          | Transactions Activity
+
+      div(class="bg-slate-900 rounded-b-lg p-3 sm:p-6")
+        div(ref="transactionsChartRef" class="w-full h-[300px] sm:h-[400px]")
+
     //- Transactions
     section.mb-12
       div(class="bg-gradient-to-r from-orange-600 to-orange-800 rounded-t-lg px-4 sm:px-6 py-3 sm:py-4 border-b-4 border-yellow-400")
@@ -461,8 +471,10 @@ export default {
     const selectedWeek = ref(null)
     const standingsChartRef = ref(null)
     const pointsChartRef = ref(null)
+    const transactionsChartRef = ref(null)
     let standingsChart = null
     let pointsChart = null
+    let transactionsChart = null
     const lastUpdated = ref(null)
     const autoRefreshInterval = ref(null)
     const autoRefreshCheckInterval = ref(null)
@@ -1174,10 +1186,95 @@ export default {
       }, 100)
     }
 
+    // Render transactions bar chart
+    const renderTransactionsChart = async () => {
+      if (!transactionsChartRef.value || !leagueData.value) return
+
+      await nextTick()
+
+      if (!transactionsChart) {
+        transactionsChart = echarts.init(transactionsChartRef.value)
+      }
+
+      const currentWeek = leagueData.value.league?.settings?.leg || 5
+
+      // Fetch transactions for all weeks up to current week
+      const transactionCounts = []
+      for (let week = 1; week <= Math.min(currentWeek, 18); week++) {
+        const weekTransactions = leagueStore.getTransactionsForWeek(week)
+        transactionCounts.push({
+          week,
+          count: weekTransactions.length
+        })
+      }
+
+      const option = {
+        backgroundColor: 'transparent',
+        animation: true,
+        animationDuration: 1000,
+        animationEasing: 'cubicOut',
+        tooltip: {
+          trigger: 'axis',
+          axisPointer: { type: 'shadow' },
+          backgroundColor: 'rgba(15, 23, 42, 0.9)',
+          borderColor: '#3b82f6',
+          textStyle: { color: '#fff' },
+          formatter: function(params) {
+            const param = params[0]
+            return `Week ${param.name}<br/>${param.marker}${param.value} transactions`
+          }
+        },
+        grid: {
+          left: '5%',
+          right: '8%',
+          bottom: '3%',
+          top: '3%',
+          containLabel: true
+        },
+        xAxis: {
+          type: 'value',
+          axisLabel: { color: '#9ca3af' },
+          axisLine: { lineStyle: { color: '#475569' } },
+          splitLine: { lineStyle: { color: '#334155' } }
+        },
+        yAxis: {
+          type: 'category',
+          data: transactionCounts.map(d => d.week),
+          inverse: true,
+          axisLabel: {
+            color: '#9ca3af',
+            formatter: (value) => `Week ${value}`
+          },
+          axisLine: { lineStyle: { color: '#475569' } }
+        },
+        series: [{
+          type: 'bar',
+          data: transactionCounts.map(d => d.count),
+          itemStyle: {
+            color: new echarts.graphic.LinearGradient(0, 0, 1, 0, [
+              { offset: 0, color: '#14b8a6' },
+              { offset: 1, color: '#0d9488' }
+            ])
+          },
+          label: {
+            show: true,
+            position: 'right',
+            color: '#fff',
+            formatter: function(params) {
+              return params.value
+            }
+          }
+        }]
+      }
+
+      transactionsChart.setOption(option)
+    }
+
     // Watch for week changes and re-render charts
     watch(selectedWeek, () => {
       renderStandingsChart()
       renderPointsChart()
+      renderTransactionsChart()
     })
 
     // Handle window resize for responsive charts
@@ -1188,12 +1285,16 @@ export default {
       if (pointsChart) {
         pointsChart.resize()
       }
+      if (transactionsChart) {
+        transactionsChart.resize()
+      }
     }
 
     onMounted(() => {
       loadData().then(() => {
         renderStandingsChart()
         renderPointsChart()
+        renderTransactionsChart()
         // Check if we should start auto-refresh
         checkAutoRefreshStatus()
         // Check every minute if we should start/stop auto-refresh
@@ -1217,6 +1318,9 @@ export default {
       }
       if (pointsChart) {
         pointsChart.dispose()
+      }
+      if (transactionsChart) {
+        transactionsChart.dispose()
       }
     })
 
@@ -1248,6 +1352,7 @@ export default {
       historicalStandings,
       standingsChartRef,
       pointsChartRef,
+      transactionsChartRef,
       refreshMatchups,
       isScoreAnimating
     }

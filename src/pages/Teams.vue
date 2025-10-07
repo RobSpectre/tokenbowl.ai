@@ -333,6 +333,16 @@
           div(class="bg-slate-900 rounded-b-lg p-4 sm:p-6 overflow-x-auto")
             div(:ref="setWeeklyChartRef" class="w-full min-w-[350px] h-[300px] sm:h-[500px]")
 
+        //- Transactions Activity Chart
+        section(class="mb-4 sm:mb-8" v-if="teamTransactions.length > 0")
+          div(class="bg-gradient-to-r from-teal-600 to-teal-800 rounded-t-lg px-4 sm:px-6 py-3 sm:py-4 border-b-4 border-yellow-400")
+            h3(class="text-white text-lg sm:text-2xl font-black uppercase tracking-wide flex items-center gap-2 sm:gap-3")
+              span.text-yellow-400 💼
+              | Transactions Activity
+
+          div(class="bg-slate-900 rounded-b-lg p-4 sm:p-6 overflow-x-auto")
+            div(:ref="setTransactionsChartRef" class="w-full min-w-[350px] h-[300px] sm:h-[400px]")
+
       //- Sidebar
       div(class="lg:col-span-1 space-y-8")
         //- Season History
@@ -448,6 +458,8 @@ export default {
     const mobileDropdownOpen = ref(false)
     const weeklyChartRef = ref(null)
     let weeklyChart = null
+    const transactionsChartRef = ref(null)
+    let transactionsChart = null
 
     // Set the ref function
     const setWeeklyChartRef = (el) => {
@@ -455,6 +467,15 @@ export default {
       if (el && selectedTeam.value && teamHistory.value) {
         nextTick(() => {
           renderWeeklyChart()
+        })
+      }
+    }
+
+    const setTransactionsChartRef = (el) => {
+      transactionsChartRef.value = el
+      if (el && selectedTeam.value && teamTransactions.value.length > 0) {
+        nextTick(() => {
+          renderTransactionsChart()
         })
       }
     }
@@ -1184,10 +1205,132 @@ export default {
       weeklyChart.setOption(option)
     }
 
+    const renderTransactionsChart = async () => {
+      if (!transactionsChartRef.value || !selectedTeam.value || teamTransactions.value.length === 0) return
+
+      await nextTick()
+
+      // Check if DOM element has valid dimensions before initializing
+      if (!transactionsChartRef.value.clientWidth || !transactionsChartRef.value.clientHeight) {
+        return
+      }
+
+      if (!transactionsChart) {
+        try {
+          transactionsChart = echarts.init(transactionsChartRef.value)
+        } catch (e) {
+          console.warn('Failed to initialize transactions chart:', e)
+          return
+        }
+      }
+
+      // Organize transactions by week
+      const transactionsByWeek = {}
+      const currentWeekNum = currentWeek.value
+
+      // Initialize all weeks up to current week
+      for (let week = 1; week <= Math.min(currentWeekNum, 18); week++) {
+        transactionsByWeek[week] = 0
+      }
+
+      // Count transactions for this team by week
+      teamTransactions.value.forEach(transaction => {
+        // Sleeper API provides week number in transaction metadata
+        // If not available, we'll need to determine it from the created timestamp
+        const weekNum = transaction.leg || determineWeekFromTimestamp(transaction.created)
+        if (weekNum && weekNum >= 1 && weekNum <= Math.min(currentWeekNum, 18)) {
+          transactionsByWeek[weekNum] = (transactionsByWeek[weekNum] || 0) + 1
+        }
+      })
+
+      const weeks = Object.keys(transactionsByWeek).sort((a, b) => parseInt(a) - parseInt(b))
+      const counts = weeks.map(week => transactionsByWeek[week])
+
+      const option = {
+        backgroundColor: 'transparent',
+        animation: true,
+        animationDuration: 1000,
+        animationEasing: 'cubicOut',
+        tooltip: {
+          trigger: 'axis',
+          backgroundColor: 'rgba(15, 23, 42, 0.9)',
+          borderColor: '#14b8a6',
+          textStyle: { color: '#fff' },
+          formatter: function(params) {
+            const param = params[0]
+            return `Week ${param.name}<br/>${param.marker}${param.value} transaction${param.value !== 1 ? 's' : ''}`
+          }
+        },
+        grid: {
+          left: '3%',
+          right: '4%',
+          bottom: '3%',
+          top: 40,
+          containLabel: true
+        },
+        xAxis: {
+          type: 'category',
+          data: weeks,
+          axisLabel: {
+            color: '#9ca3af',
+            formatter: (value) => `Week ${value}`
+          },
+          axisLine: { lineStyle: { color: '#475569' } }
+        },
+        yAxis: {
+          type: 'value',
+          minInterval: 1,
+          axisLabel: {
+            color: '#9ca3af',
+            formatter: '{value}'
+          },
+          axisLine: { lineStyle: { color: '#475569' } },
+          splitLine: { lineStyle: { color: '#334155' } }
+        },
+        series: [{
+          type: 'line',
+          data: counts,
+          smooth: true,
+          lineStyle: {
+            width: 3,
+            color: new echarts.graphic.LinearGradient(0, 0, 1, 0, [
+              { offset: 0, color: '#14b8a6' },
+              { offset: 1, color: '#0d9488' }
+            ])
+          },
+          itemStyle: {
+            color: '#14b8a6'
+          },
+          symbol: 'circle',
+          symbolSize: 8,
+          areaStyle: {
+            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+              { offset: 0, color: '#14b8a640' },
+              { offset: 1, color: '#14b8a610' }
+            ])
+          }
+        }]
+      }
+
+      transactionsChart.setOption(option)
+    }
+
+    // Helper function to determine week from Unix timestamp
+    const determineWeekFromTimestamp = (timestamp) => {
+      // NFL 2024 season start: September 5, 2024 (Week 1)
+      const seasonStart = new Date('2024-09-05').getTime() / 1000
+      const weekInSeconds = 7 * 24 * 60 * 60
+      const weekNum = Math.floor((timestamp - seasonStart) / weekInSeconds) + 1
+      return weekNum > 0 && weekNum <= 18 ? weekNum : null
+    }
+
     // Handle window resize for responsive chart
     const handleResize = () => {
       if (weeklyChart) {
         weeklyChart.resize()
+      }
+      if (transactionsChart) {
+        transactionsChart.resize()
       }
     }
 
@@ -1198,6 +1341,11 @@ export default {
           renderWeeklyChart()
         })
       }
+      if (selectedTeam.value && teamTransactions.value.length > 0) {
+        nextTick(() => {
+          renderTransactionsChart()
+        })
+      }
     })
 
     // Watch for teamHistory changes to re-render chart
@@ -1205,6 +1353,11 @@ export default {
       if (selectedTeam.value && teamHistory.value) {
         nextTick(() => {
           renderWeeklyChart()
+        })
+      }
+      if (selectedTeam.value && teamTransactions.value.length > 0) {
+        nextTick(() => {
+          renderTransactionsChart()
         })
       }
     })
@@ -1232,6 +1385,14 @@ export default {
         } catch (e) {
           // Ignore disposal errors in test environment
           console.warn('Error disposing chart:', e)
+        }
+      }
+      if (transactionsChart && !transactionsChart.isDisposed()) {
+        try {
+          transactionsChart.dispose()
+        } catch (e) {
+          // Ignore disposal errors in test environment
+          console.warn('Error disposing transactions chart:', e)
         }
       }
     })
@@ -1271,7 +1432,9 @@ export default {
       formatReleaseDate,
       formatContextLength,
       weeklyChartRef,
-      setWeeklyChartRef
+      setWeeklyChartRef,
+      transactionsChartRef,
+      setTransactionsChartRef
     }
   }
 }
