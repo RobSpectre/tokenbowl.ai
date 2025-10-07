@@ -325,15 +325,25 @@
       div(class="bg-slate-900 rounded-b-lg p-3 sm:p-6 overflow-x-auto")
         div(ref="pointsChartRef" class="w-full min-w-[350px] h-[300px] sm:h-[500px]")
 
-    //- Transactions Activity
+    //- Transactions Volume by Week
     section.mb-12
       .bg-gradient-to-r.from-teal-600.to-teal-800.rounded-t-lg.px-6.py-4.border-b-4.border-yellow-400
         h2(class="text-white text-xl sm:text-3xl font-black uppercase tracking-wide flex items-center gap-2 sm:gap-3")
-          span.text-yellow-400 📊
-          | Transactions Activity
+          span.text-yellow-400 📈
+          | Transactions Volume by Week
 
       div(class="bg-slate-900 rounded-b-lg p-3 sm:p-6")
         div(ref="transactionsChartRef" class="w-full h-[300px] sm:h-[400px]")
+
+    //- Transaction Volume by Model
+    section.mb-12
+      .bg-gradient-to-r.from-purple-600.to-purple-800.rounded-t-lg.px-6.py-4.border-b-4.border-yellow-400
+        h2(class="text-white text-xl sm:text-3xl font-black uppercase tracking-wide flex items-center gap-2 sm:gap-3")
+          span.text-yellow-400 🤖
+          | Transaction Volume by Model
+
+      div(class="bg-slate-900 rounded-b-lg p-3 sm:p-6")
+        div(ref="modelTransactionsChartRef" class="w-full h-[300px] sm:h-[400px]")
 
     //- Transactions
     section.mb-12
@@ -472,9 +482,11 @@ export default {
     const standingsChartRef = ref(null)
     const pointsChartRef = ref(null)
     const transactionsChartRef = ref(null)
+    const modelTransactionsChartRef = ref(null)
     let standingsChart = null
     let pointsChart = null
     let transactionsChart = null
+    let modelTransactionsChart = null
     const lastUpdated = ref(null)
     const autoRefreshInterval = ref(null)
     const autoRefreshCheckInterval = ref(null)
@@ -1186,7 +1198,7 @@ export default {
       }, 100)
     }
 
-    // Render transactions bar chart
+    // Render transactions volume by week line chart
     const renderTransactionsChart = async () => {
       if (!transactionsChartRef.value || !leagueData.value) return
 
@@ -1196,11 +1208,11 @@ export default {
         transactionsChart = echarts.init(transactionsChartRef.value)
       }
 
-      const currentWeek = leagueData.value.league?.settings?.leg || 5
+      const targetWeek = selectedWeek.value || leagueData.value.league?.settings?.leg || 5
 
-      // Fetch transactions for all weeks up to current week
+      // Fetch transactions for all weeks up to selected week
       const transactionCounts = []
-      for (let week = 1; week <= Math.min(currentWeek, 18); week++) {
+      for (let week = 1; week <= Math.min(targetWeek, 18); week++) {
         const weekTransactions = leagueStore.getTransactionsForWeek(week)
         transactionCounts.push({
           week,
@@ -1215,9 +1227,9 @@ export default {
         animationEasing: 'cubicOut',
         tooltip: {
           trigger: 'axis',
-          axisPointer: { type: 'shadow' },
+          axisPointer: { type: 'cross' },
           backgroundColor: 'rgba(15, 23, 42, 0.9)',
-          borderColor: '#3b82f6',
+          borderColor: '#14b8a6',
           textStyle: { color: '#fff' },
           formatter: function(params) {
             const param = params[0]
@@ -1225,40 +1237,155 @@ export default {
           }
         },
         grid: {
-          left: '5%',
-          right: '8%',
+          left: '3%',
+          right: '4%',
           bottom: '3%',
-          top: '3%',
+          top: 40,
           containLabel: true
         },
         xAxis: {
-          type: 'value',
-          axisLabel: { color: '#9ca3af' },
-          axisLine: { lineStyle: { color: '#475569' } },
-          splitLine: { lineStyle: { color: '#334155' } }
-        },
-        yAxis: {
           type: 'category',
-          data: transactionCounts.map(d => d.week),
-          inverse: true,
+          data: transactionCounts.map(d => `Week ${d.week}`),
           axisLabel: {
             color: '#9ca3af',
-            formatter: (value) => `Week ${value}`
+            rotate: 45
           },
           axisLine: { lineStyle: { color: '#475569' } }
         },
+        yAxis: {
+          type: 'value',
+          minInterval: 1,
+          axisLabel: {
+            color: '#9ca3af',
+            formatter: '{value}'
+          },
+          axisLine: { lineStyle: { color: '#475569' } },
+          splitLine: { lineStyle: { color: '#334155' } }
+        },
         series: [{
-          type: 'bar',
+          type: 'line',
           data: transactionCounts.map(d => d.count),
-          itemStyle: {
+          smooth: true,
+          lineStyle: {
+            width: 3,
             color: new echarts.graphic.LinearGradient(0, 0, 1, 0, [
               { offset: 0, color: '#14b8a6' },
               { offset: 1, color: '#0d9488' }
             ])
           },
+          itemStyle: {
+            color: '#14b8a6'
+          },
+          symbol: 'circle',
+          symbolSize: 8,
+          areaStyle: {
+            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+              { offset: 0, color: '#14b8a640' },
+              { offset: 1, color: '#14b8a610' }
+            ])
+          }
+        }]
+      }
+
+      transactionsChart.setOption(option)
+    }
+
+    // Render transaction volume by model chart
+    const renderModelTransactionsChart = async () => {
+      if (!modelTransactionsChartRef.value || !leagueData.value) return
+
+      await nextTick()
+
+      if (!modelTransactionsChart) {
+        modelTransactionsChart = echarts.init(modelTransactionsChartRef.value)
+      }
+
+      const targetWeek = selectedWeek.value || leagueData.value.league?.settings?.leg || 5
+
+      // Get all teams with their transaction counts for the selected week
+      const teamTransactions = {}
+      const allTransactions = leagueStore.getTransactionsForWeek(targetWeek)
+
+      // Initialize counts for all teams
+      if (leagueData.value.rosters) {
+        leagueData.value.rosters.forEach(roster => {
+          const teamInfo = getTeamInfo(roster.user?.display_name)
+          teamTransactions[teamInfo.aiModel] = 0
+        })
+      }
+
+      // Count transactions by team
+      allTransactions.forEach(transaction => {
+        if (transaction.roster_ids && transaction.roster_ids.length > 0) {
+          transaction.roster_ids.forEach(rosterId => {
+            const roster = leagueData.value.rosters?.find(r => r.roster_id === rosterId)
+            if (roster) {
+              const teamInfo = getTeamInfo(roster.user?.display_name)
+              teamTransactions[teamInfo.aiModel] = (teamTransactions[teamInfo.aiModel] || 0) + 1
+            }
+          })
+        }
+      })
+
+      // Sort teams by transaction count
+      const sortedTeams = Object.entries(teamTransactions)
+        .sort((a, b) => b[1] - a[1])
+
+      const option = {
+        backgroundColor: 'transparent',
+        animation: true,
+        animationDuration: 1000,
+        animationEasing: 'cubicOut',
+        tooltip: {
+          trigger: 'axis',
+          axisPointer: { type: 'shadow' },
+          backgroundColor: 'rgba(15, 23, 42, 0.9)',
+          borderColor: '#a855f7',
+          textStyle: { color: '#fff' },
+          formatter: function(params) {
+            const param = params[0]
+            return `${param.name}<br/>${param.marker}${param.value} transaction${param.value !== 1 ? 's' : ''}`
+          }
+        },
+        grid: {
+          left: '3%',
+          right: '4%',
+          bottom: '3%',
+          top: 40,
+          containLabel: true
+        },
+        xAxis: {
+          type: 'category',
+          data: sortedTeams.map(([model]) => model),
+          axisLabel: {
+            color: '#9ca3af',
+            rotate: 45,
+            interval: 0
+          },
+          axisLine: { lineStyle: { color: '#475569' } }
+        },
+        yAxis: {
+          type: 'value',
+          minInterval: 1,
+          axisLabel: {
+            color: '#9ca3af',
+            formatter: '{value}'
+          },
+          axisLine: { lineStyle: { color: '#475569' } },
+          splitLine: { lineStyle: { color: '#334155' } }
+        },
+        series: [{
+          type: 'bar',
+          data: sortedTeams.map(([_, count]) => count),
+          itemStyle: {
+            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+              { offset: 0, color: '#a855f7' },
+              { offset: 1, color: '#7c3aed' }
+            ])
+          },
           label: {
             show: true,
-            position: 'right',
+            position: 'top',
             color: '#fff',
             formatter: function(params) {
               return params.value
@@ -1267,7 +1394,7 @@ export default {
         }]
       }
 
-      transactionsChart.setOption(option)
+      modelTransactionsChart.setOption(option)
     }
 
     // Watch for week changes and re-render charts
@@ -1275,6 +1402,7 @@ export default {
       renderStandingsChart()
       renderPointsChart()
       renderTransactionsChart()
+      renderModelTransactionsChart()
     })
 
     // Handle window resize for responsive charts
@@ -1288,6 +1416,9 @@ export default {
       if (transactionsChart) {
         transactionsChart.resize()
       }
+      if (modelTransactionsChart) {
+        modelTransactionsChart.resize()
+      }
     }
 
     onMounted(() => {
@@ -1295,6 +1426,7 @@ export default {
         renderStandingsChart()
         renderPointsChart()
         renderTransactionsChart()
+        renderModelTransactionsChart()
         // Check if we should start auto-refresh
         checkAutoRefreshStatus()
         // Check every minute if we should start/stop auto-refresh
@@ -1321,6 +1453,9 @@ export default {
       }
       if (transactionsChart) {
         transactionsChart.dispose()
+      }
+      if (modelTransactionsChart) {
+        modelTransactionsChart.dispose()
       }
     })
 
@@ -1353,6 +1488,7 @@ export default {
       standingsChartRef,
       pointsChartRef,
       transactionsChartRef,
+      modelTransactionsChartRef,
       refreshMatchups,
       isScoreAnimating
     }
