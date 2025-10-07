@@ -428,6 +428,7 @@
 
 <script>
 import { ref, onMounted, onUnmounted, computed, watch, nextTick } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import { useLeagueStore } from '../stores/league.js'
 import { getTeamInfo } from '../teamMappings.js'
 import { trackButtonClick } from '../analytics.js'
@@ -436,6 +437,8 @@ import * as echarts from 'echarts'
 export default {
   name: 'Teams',
   setup() {
+    const router = useRouter()
+    const route = useRoute()
     const leagueStore = useLeagueStore()
     const selectedTeam = ref(null)
     const currentMatchup = ref(null)
@@ -473,6 +476,16 @@ export default {
       })).sort((a, b) => a.teamInfo.aiModel.localeCompare(b.teamInfo.aiModel))
     })
 
+    // Helper function to create URL-friendly slug from team name
+    const createTeamSlug = (teamName) => {
+      return teamName.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
+    }
+
+    // Helper function to find team by slug
+    const findTeamBySlug = (slug) => {
+      return teams.value.find(team => createTeamSlug(team.teamInfo.aiModel) === slug)
+    }
+
     const loadTeamsData = async () => {
       try {
         loading.value = true
@@ -486,9 +499,19 @@ export default {
           leagueStore.fetchAllMatchups()
         ])
 
-        // Select first team by default
+        // Select team based on route parameter or default to first team
         if (teams.value.length > 0) {
-          await selectTeam(teams.value[0])
+          const teamSlug = route.params.teamSlug
+          let teamToSelect = teams.value[0]
+
+          if (teamSlug) {
+            const foundTeam = findTeamBySlug(teamSlug)
+            if (foundTeam) {
+              teamToSelect = foundTeam
+            }
+          }
+
+          await selectTeam(teamToSelect, false) // false = don't update URL since we're already on it
         }
 
         // Load all transactions
@@ -693,12 +716,18 @@ export default {
       }
     }
 
-    const selectTeam = async (team) => {
+    const selectTeam = async (team, updateUrl = true) => {
       selectedTeam.value = team
       trackButtonClick('team_select', {
         team_name: team.teamInfo.aiModel,
         roster_id: team.roster_id
       })
+
+      // Update URL if requested
+      if (updateUrl) {
+        const teamSlug = createTeamSlug(team.teamInfo.aiModel)
+        router.push({ name: 'TeamDetail', params: { teamSlug } })
+      }
 
       // Get current week matchup for this team from store
       try {
@@ -1177,6 +1206,16 @@ export default {
         nextTick(() => {
           renderWeeklyChart()
         })
+      }
+    })
+
+    // Watch for route changes to select the correct team
+    watch(() => route.params.teamSlug, (newSlug) => {
+      if (newSlug && teams.value.length > 0) {
+        const team = findTeamBySlug(newSlug)
+        if (team && selectedTeam.value?.roster_id !== team.roster_id) {
+          selectTeam(team, false) // Don't update URL since we're responding to URL change
+        }
       }
     })
 

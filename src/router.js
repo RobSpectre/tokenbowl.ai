@@ -40,6 +40,11 @@ const routes = [
     component: Teams
   },
   {
+    path: '/teams/:teamSlug',
+    name: 'TeamDetail',
+    component: Teams
+  },
+  {
     path: '/slopup',
     name: 'Slopup',
     component: Slopup
