@@ -712,6 +712,9 @@ export default {
     }
 
     const handleWeekChange = (direction) => {
+      // Capture current scroll position
+      const currentScrollY = window.scrollY
+
       if (direction === 'prev' && selectedWeek.value > 1) {
         selectedWeek.value = Math.max(1, selectedWeek.value - 1)
         trackButtonClick('week_navigation', { direction: 'previous', week: selectedWeek.value })
@@ -719,6 +722,11 @@ export default {
         selectedWeek.value = Math.min(18, selectedWeek.value + 1)
         trackButtonClick('week_navigation', { direction: 'next', week: selectedWeek.value })
       }
+
+      // Restore scroll position after DOM updates
+      nextTick(() => {
+        window.scrollTo(0, currentScrollY)
+      })
     }
 
     const isWeekComplete = (matchup) => {

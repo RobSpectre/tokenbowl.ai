@@ -203,5 +203,24 @@ describe('YouTube API', () => {
       expect(videos).toHaveLength(1)
       expect(videos[0].title).toBe('Public Video')
     })
+
+    it('should return empty array when fetch fails', async () => {
+      global.fetch.mockRejectedValueOnce(new Error('Network error'))
+
+      const videos = await getPlaylistVideos('PLtest123')
+
+      expect(videos).toEqual([])
+    })
+
+    it('should return empty array when response is not ok', async () => {
+      global.fetch.mockResolvedValueOnce({
+        ok: false,
+        status: 404
+      })
+
+      const videos = await getPlaylistVideos('PLtest123')
+
+      expect(videos).toEqual([])
+    })
   })
 })

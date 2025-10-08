@@ -297,4 +297,93 @@ describe('League Store - Player Data Management', () => {
       expect(global.fetch).toHaveBeenCalledTimes(2)
     })
   })
+
+  describe('Fetch All Data', () => {
+    it('should fetch all data in parallel', async () => {
+      const store = useLeagueStore()
+
+      // Mock all API responses based on URL
+      const mockPlayers = { '4984': { full_name: 'Josh Allen' } }
+      const mockRosters = [{ roster_id: 1, owner_id: 'user1', settings: { wins: 5, fpts: 100 } }]
+      const mockUsers = [{ user_id: 'user1', display_name: 'Test User' }]
+      const mockLeague = { name: 'Token Bowl', settings: { leg: 6 } }
+
+      // Mock fetch to return different responses based on URL
+      global.fetch.mockImplementation((url) => {
+        if (url.includes('/players/nfl') || url.includes('/players.json')) {
+          return Promise.resolve({ ok: true, json: async () => mockPlayers })
+        } else if (url.includes('/rosters')) {
+          return Promise.resolve({ ok: true, json: async () => mockRosters })
+        } else if (url.includes('/users')) {
+          return Promise.resolve({ ok: true, json: async () => mockUsers })
+        } else if (url.includes('/matchups/')) {
+          return Promise.resolve({ ok: true, json: async () => [] })
+        } else if (url.includes('/league/')) {
+          return Promise.resolve({ ok: true, json: async () => mockLeague })
+        }
+        return Promise.reject(new Error(`Unmocked URL: ${url}`))
+      })
+
+      const result = await store.fetchAllData()
+
+      expect(result).toHaveProperty('leagueData')
+      expect(result).toHaveProperty('matchupsData')
+      expect(result).toHaveProperty('players')
+      expect(result).toHaveProperty('allMatchups')
+    })
+
+    it('should throw error if any fetch fails', async () => {
+      const store = useLeagueStore()
+
+      global.fetch.mockRejectedValueOnce(new Error('Network error'))
+
+      await expect(store.fetchAllData()).rejects.toThrow()
+    })
+  })
+
+  describe('Clear Cache', () => {
+    it('should clear all cached data', () => {
+      const store = useLeagueStore()
+
+      // Set up some data
+      store.league = { id: '123' }
+      store.rosters = [{ roster_id: 1 }]
+      store.users = [{ user_id: '456' }]
+      store.currentMatchups = [{ matchup_id: 1 }]
+      store.currentWeek = 6
+      store.players = { '4984': { full_name: 'Josh Allen' } }
+      store.allMatchups = { 1: [] }
+      store.transactionsByWeek = { 1: [] }
+      store.draftPicks = [{ pick: 1 }]
+      store.latestVideo = { id: 'abc' }
+      store.latestShorts = [{ id: 'def' }]
+      store.leagueDataTimestamp = Date.now()
+      store.matchupsTimestamp = Date.now()
+      store.playersTimestamp = Date.now()
+      store.allMatchupsTimestamp = Date.now()
+      store.draftTimestamp = Date.now()
+      store.youtubeTimestamp = Date.now()
+
+      store.clearCache()
+
+      // Verify all data is cleared
+      expect(store.league).toBeNull()
+      expect(store.rosters).toEqual([])
+      expect(store.users).toEqual([])
+      expect(store.currentMatchups).toBeNull()
+      expect(store.currentWeek).toBeNull()
+      expect(store.players).toEqual({})
+      expect(store.allMatchups).toEqual({})
+      expect(store.transactionsByWeek).toEqual({})
+      expect(store.draftPicks).toEqual([])
+      expect(store.latestVideo).toBeNull()
+      expect(store.latestShorts).toEqual([])
+      expect(store.leagueDataTimestamp).toBeNull()
+      expect(store.matchupsTimestamp).toBeNull()
+      expect(store.playersTimestamp).toBeNull()
+      expect(store.allMatchupsTimestamp).toBeNull()
+      expect(store.draftTimestamp).toBeNull()
+      expect(store.youtubeTimestamp).toBeNull()
+    })
+  })
 })
