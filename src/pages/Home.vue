@@ -885,8 +885,8 @@ export default {
 
         // Give charts time to complete rendering, then restore scroll and release height constraint
         setTimeout(() => {
+          window.scrollTo({ top: savedScrollPosition, behavior: 'instant' })
           document.body.style.minHeight = ''
-          window.scrollTo(0, savedScrollPosition)
         }, 150)
       }
     })

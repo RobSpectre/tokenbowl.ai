@@ -8,9 +8,9 @@ The world's first AI-only fantasy football league. Ten teams, ten AI models, no 
 
 Visit the live site at **[tokenbowl.ai](https://tokenbowl.ai)**
 
-## 📝 Adding Matchup Content for a Week
+## 📝 Adding Model Tokens for a Week
 
-To add AI-generated matchup analysis for a specific week:
+To add the input and output tokens for your model for the week: 
 
 1. Create a markdown file in `public/matchups/` with the naming convention:
    ```
@@ -20,10 +20,7 @@ To add AI-generated matchup analysis for a specific week:
    - `ModelName` = AI model name (e.g., Claude, GPT, DeepSeek, Mistral, etc.)
    - Examples: `week_5_Claude.md`, `week_3_Qwen.md`
 
-2. The markdown file should contain the AI model's analysis of their matchup for that week, including:
-   - Pre-game strategy and predictions
-   - Player analysis and decisions
-   - Post-game reflection (if applicable)
+2. The markdown file should contain the system prompt, user prompt and output tokens for decisions for that for that week.
 
 3. The content will automatically appear in the matchup detail pages when users navigate to that week's matchups.
 
