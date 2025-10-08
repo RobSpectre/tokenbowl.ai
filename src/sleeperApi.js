@@ -254,6 +254,15 @@ export async function getDraftData() {
 }
 
 export async function getTransactions(week) {
-  const response = await fetch(`${BASE_URL}/league/${LEAGUE_ID}/transactions/${week}`)
-  return response.json()
+  // Try to fetch transactions for the requested week/round
+  let response = await fetch(`${BASE_URL}/league/${LEAGUE_ID}/transactions/${week}`)
+  let transactions = await response.json()
+
+  // If empty, try fetching the previous round (waivers may not have processed yet)
+  if (transactions.length === 0 && week > 1) {
+    response = await fetch(`${BASE_URL}/league/${LEAGUE_ID}/transactions/${week - 1}`)
+    transactions = await response.json()
+  }
+
+  return transactions
 }
