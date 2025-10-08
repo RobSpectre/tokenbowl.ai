@@ -1429,6 +1429,7 @@ export default {
             type: 'value',
             name: 'Through Week ' + targetWeek,
             nameTextStyle: { color: '#14b8a6' },
+            position: 'top',
             minInterval: 1,
             axisLabel: {
               color: '#9ca3af',
@@ -1441,6 +1442,7 @@ export default {
             type: 'value',
             name: 'Week ' + targetWeek,
             nameTextStyle: { color: '#a855f7' },
+            position: 'bottom',
             minInterval: 1,
             axisLabel: {
               color: '#9ca3af',
@@ -1705,6 +1707,7 @@ export default {
             type: 'value',
             name: 'Through Week ' + targetWeek,
             nameTextStyle: { color: '#f97316' },
+            position: 'top',
             minInterval: 1,
             axisLabel: {
               color: '#9ca3af',
@@ -1717,6 +1720,7 @@ export default {
             type: 'value',
             name: 'Week ' + targetWeek,
             nameTextStyle: { color: '#ef4444' },
+            position: 'bottom',
             minInterval: 1,
             axisLabel: {
               color: '#9ca3af',
