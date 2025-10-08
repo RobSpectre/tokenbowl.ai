@@ -50,7 +50,7 @@ const routes = [
     component: Slopup
   },
   {
-    path: '/slopup/:week',
+    path: '/slopup/:slug',
     name: 'SlopupDetail',
     component: SlopupDetail
   }

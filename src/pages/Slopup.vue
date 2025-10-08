@@ -56,7 +56,7 @@
             p.text-gray-200.leading-relaxed.whitespace-pre-line.text-base {{ episode.preview }}
           .flex.justify-end
             router-link(
-              :to="`/slopup/${episode.week}`"
+              :to="`/slopup/${episode.slug}`"
               class="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 text-white font-black uppercase tracking-wider rounded-lg transition-all transform hover:scale-105 shadow-lg"
             )
               span Full Analysis
@@ -67,6 +67,7 @@
 <script>
 import { ref, onMounted } from 'vue'
 import { marked } from 'marked'
+import { getAllEpisodes } from '../slopupEpisodes.js'
 
 export default {
   name: 'Slopup',
@@ -81,36 +82,18 @@ export default {
         loading.value = true
         error.value = null
 
-        // Custom episode titles and emojis
-        const episodeTitles = {
-          1: 'Week 1 - Josh Allen vs. The Algorithm',
-          2: 'Week 2 - The 78-Point Disaster',
-          3: 'Week 3 - 0.28 Points and Infinite Regret',
-          4: 'Week 4 - The 2-Catch Catastrophe',
-          5: 'Week 5 - The Calm Before the Injury Storm'
-        }
+        // Get episode metadata from centralized source
+        const episodeMetadata = getAllEpisodes()
 
-        const episodeEmojis = {
-          1: '⚔️',
-          2: '💥',
-          3: '😱',
-          4: '💔',
-          5: '🚑'
-        }
-
-        // Load all episodes (weeks 1-5)
+        // Load all episodes
         const episodeData = []
-        for (let week = 1; week <= 5; week++) {
+        for (const metadata of episodeMetadata) {
           try {
-            const mdResponse = await fetch(`/slopups/week_${week}_slopup.md`)
+            const mdResponse = await fetch(`/slopups/week_${metadata.week}_slopup.md`)
             const mdContent = await mdResponse.text()
 
             // Parse the markdown
             const htmlContent = marked.parse(mdContent)
-
-            // Use custom episode title and emoji
-            const title = episodeTitles[week] || `Week ${week} Recap`
-            const emoji = episodeEmojis[week] || '🎙️'
 
             // Extract preview content (much more content - ~10 lines)
             // Remove H1 and get everything after it
@@ -122,15 +105,13 @@ export default {
             const preview = paragraphs.slice(0, 5).join('\n\n').substring(0, 1200).trim() + (paragraphs.join('\n\n').length > 1200 ? '...' : '')
 
             episodeData.push({
-              week,
-              title,
-              emoji,
+              ...metadata,
               content: htmlContent,
               preview,
-              audioUrl: `/slopups/week_${week}_slopup.mp3`
+              audioUrl: `/slopups/week_${metadata.week}_slopup.mp3`
             })
           } catch (err) {
-            console.error(`Error loading week ${week}:`, err)
+            console.error(`Error loading week ${metadata.week}:`, err)
           }
         }
 

@@ -53,13 +53,15 @@
 
 <script>
 import { ref, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { marked } from 'marked'
+import { getEpisodeBySlug, getEpisodeByWeek } from '../slopupEpisodes.js'
 
 export default {
   name: 'SlopupDetail',
   setup() {
     const route = useRoute()
+    const router = useRouter()
     const episode = ref(null)
     const loading = ref(true)
     const error = ref(null)
@@ -69,22 +71,28 @@ export default {
         loading.value = true
         error.value = null
 
-        const week = route.params.week
+        const slug = route.params.slug
 
-        // Custom episode titles and emojis (matching Slopup.vue)
-        const episodeTitles = {
-          1: 'Week 1 - Josh Allen vs. The Algorithm',
-          2: 'Week 2 - The 78-Point Disaster',
-          3: 'Week 3 - 0.28 Points and Infinite Regret',
-          4: 'Week 4 - The 2-Catch Catastrophe'
+        // Check if slug is a number (old URL format) and redirect to new slug
+        if (/^\d+$/.test(slug)) {
+          const week = parseInt(slug)
+          const episodeMetadata = getEpisodeByWeek(week)
+          if (episodeMetadata) {
+            router.replace(`/slopup/${episodeMetadata.slug}`)
+            return
+          }
         }
 
-        const episodeEmojis = {
-          1: '⚔️',
-          2: '💥',
-          3: '😱',
-          4: '💔'
+        // Get episode metadata from slug
+        const episodeMetadata = getEpisodeBySlug(slug)
+
+        if (!episodeMetadata) {
+          error.value = 'Episode not found.'
+          loading.value = false
+          return
         }
+
+        const week = episodeMetadata.week
 
         const mdResponse = await fetch(`/slopups/week_${week}_slopup.md`)
         const mdContent = await mdResponse.text()
@@ -92,14 +100,8 @@ export default {
         // Parse the markdown
         const htmlContent = marked.parse(mdContent)
 
-        // Use custom episode title and emoji
-        const title = episodeTitles[week] || `Week ${week} Recap`
-        const emoji = episodeEmojis[week] || '🎙️'
-
         episode.value = {
-          week,
-          title,
-          emoji,
+          ...episodeMetadata,
           content: htmlContent,
           audioUrl: `/slopups/week_${week}_slopup.mp3`
         }
