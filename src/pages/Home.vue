@@ -872,7 +872,7 @@ export default {
         await nextTick()
         setTimeout(() => {
           window.scrollTo(0, savedScrollPosition)
-        }, 500)
+        }, 1500)
       }
     })
 
