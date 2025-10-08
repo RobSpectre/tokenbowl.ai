@@ -853,9 +853,6 @@ export default {
     // Watch for week changes to reload transactions and check auto-refresh
     watch(selectedWeek, async (newWeek, oldWeek) => {
       if (newWeek) {
-        // Save scroll position before any operations
-        const scrollY = window.scrollY
-
         // Fetch transactions for the new week
         await leagueStore.fetchTransactionsForWeek(newWeek)
 
@@ -865,15 +862,6 @@ export default {
         // Update URL when week changes (skip initial load to avoid duplicate navigation)
         if (oldWeek !== null) {
           router.replace({ query: { week: newWeek } }).catch(() => {})
-        }
-
-        // Wait for all DOM updates and chart re-renders to complete
-        await nextTick()
-        await nextTick() // Double nextTick to ensure charts have rendered
-
-        // Restore scroll position after all updates
-        if (oldWeek !== null) {
-          window.scrollTo(0, scrollY)
         }
       }
     })
