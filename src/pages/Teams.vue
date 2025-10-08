@@ -575,12 +575,21 @@ export default {
         loading.value = true
         error.value = null
 
-        // Load all data from store
+        // Load all data from store and injury data in parallel
         await Promise.all([
           leagueStore.fetchLeagueData(),
           leagueStore.fetchPlayers(),
           leagueStore.fetchDraft(),
-          leagueStore.fetchAllMatchups()
+          leagueStore.fetchAllMatchups(),
+          // Load injury data early so it's available for team history calculation
+          (async () => {
+            try {
+              const response = await fetch('/data/injuries_by_team.json')
+              injuriesData.value = await response.json()
+            } catch (err) {
+              console.error('Failed to load injury data:', err)
+            }
+          })()
         ])
 
         // Select team based on route parameter or default to first team
@@ -600,14 +609,6 @@ export default {
 
         // Load all transactions
         await loadAllTransactions()
-
-        // Load injury data
-        try {
-          const response = await fetch('/data/injuries_by_team.json')
-          injuriesData.value = await response.json()
-        } catch (err) {
-          console.error('Failed to load injury data:', err)
-        }
 
         // Fetch model info from OpenRouter
         await fetchModelInfo()
