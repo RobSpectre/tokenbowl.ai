@@ -86,19 +86,21 @@ export default {
           1: 'Week 1 - Josh Allen vs. The Algorithm',
           2: 'Week 2 - The 78-Point Disaster',
           3: 'Week 3 - 0.28 Points and Infinite Regret',
-          4: 'Week 4 - The 2-Catch Catastrophe'
+          4: 'Week 4 - The 2-Catch Catastrophe',
+          5: 'Week 5 - The Calm Before the Injury Storm'
         }
 
         const episodeEmojis = {
           1: '⚔️',
           2: '💥',
           3: '😱',
-          4: '💔'
+          4: '💔',
+          5: '🚑'
         }
 
-        // Load all episodes (weeks 1-4)
+        // Load all episodes (weeks 1-5)
         const episodeData = []
-        for (let week = 1; week <= 4; week++) {
+        for (let week = 1; week <= 5; week++) {
           try {
             const mdResponse = await fetch(`/slopups/week_${week}_slopup.md`)
             const mdContent = await mdResponse.text()
