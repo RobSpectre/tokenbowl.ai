@@ -397,6 +397,47 @@
                       .text-blue-400.font-bold.text-lg {{ player.totalPoints.toFixed(1) }}
                       .text-gray-500.text-xs pts
 
+              //- Injury Summary
+              .bg-slate-800.rounded-lg.p-4(v-if="teamHistory.injuryStats")
+                .text-gray-400.text-sm.mb-3.flex.items-center.gap-2
+                  span 🏥
+                  span Injuries This Season
+                .grid.grid-cols-2.gap-3
+                  div
+                    .text-white.font-black.text-2xl {{ teamHistory.injuryStats.total }}
+                    .text-gray-500.text-xs Total Injuries
+                  div(v-if="teamHistory.injuryStats.out > 0")
+                    .text-red-400.font-black.text-2xl {{ teamHistory.injuryStats.out }}
+                    .text-gray-500.text-xs Out
+                  div(v-if="teamHistory.injuryStats.ir > 0")
+                    .text-red-500.font-black.text-2xl {{ teamHistory.injuryStats.ir }}
+                    .text-gray-500.text-xs IR
+                  div(v-if="teamHistory.injuryStats.doubtful > 0")
+                    .text-orange-400.font-black.text-2xl {{ teamHistory.injuryStats.doubtful }}
+                    .text-gray-500.text-xs Doubtful
+                  div(v-if="teamHistory.injuryStats.questionable > 0")
+                    .text-yellow-400.font-black.text-2xl {{ teamHistory.injuryStats.questionable }}
+                    .text-gray-500.text-xs Questionable
+
+              //- Transaction Summary
+              .bg-slate-800.rounded-lg.p-4(v-if="teamHistory.transactionStats")
+                .text-gray-400.text-sm.mb-3.flex.items-center.gap-2
+                  span 💼
+                  span Transactions This Season
+                .grid.grid-cols-2.gap-3
+                  div
+                    .text-white.font-black.text-2xl {{ teamHistory.transactionStats.total }}
+                    .text-gray-500.text-xs Total Moves
+                  div
+                    .text-green-400.font-black.text-2xl {{ teamHistory.transactionStats.adds }}
+                    .text-gray-500.text-xs Players Added
+                  div
+                    .text-red-400.font-black.text-2xl {{ teamHistory.transactionStats.drops }}
+                    .text-gray-500.text-xs Players Dropped
+                  div(v-if="teamHistory.transactionStats.trades > 0")
+                    .text-purple-400.font-black.text-2xl {{ teamHistory.transactionStats.trades }}
+                    .text-gray-500.text-xs Trades
+
             .text-center.text-gray-500.py-4(v-else)
               p Loading history...
 
@@ -896,13 +937,36 @@ export default {
             totalPoints
           }))
 
+        // Calculate injury stats
+        const injuries = teamInjuries.value
+        const injuryStats = {
+          total: injuries.length,
+          out: injuries.filter(i => i.status === 'Out').length,
+          doubtful: injuries.filter(i => i.status === 'Doubtful').length,
+          questionable: injuries.filter(i => i.status === 'Questionable').length,
+          ir: injuries.filter(i => i.status === 'IR').length
+        }
+
+        // Calculate transaction stats
+        const transactions = teamTransactions.value
+        const transactionStats = {
+          total: transactions.length,
+          adds: transactions.reduce((sum, t) => sum + (t.adds ? Object.keys(t.adds).length : 0), 0),
+          drops: transactions.reduce((sum, t) => sum + (t.drops ? Object.keys(t.drops).length : 0), 0),
+          trades: transactions.filter(t => t.type === 'trade').length,
+          waivers: transactions.filter(t => t.type === 'waiver').length,
+          freeAgents: transactions.filter(t => t.type === 'free_agent').length
+        }
+
         teamHistory.value = {
           wins: team.settings.wins || 0,
           losses: team.settings.losses || 0,
           totalPoints,
           totalPointsAgainst,
           topPlayers,
-          matchups: matchups.reverse() // Show most recent first
+          matchups: matchups.reverse(), // Show most recent first
+          injuryStats,
+          transactionStats
         }
       } catch (err) {
         console.error('Error loading team history:', err)
