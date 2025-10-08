@@ -598,8 +598,12 @@ export default {
           selectedWeek.value = currentWeek
         }
 
-        // Load transactions for current week
-        await leagueStore.fetchTransactionsForWeek(selectedWeek.value)
+        // Load transactions for all weeks up to current week (for graphs)
+        const transactionPromises = []
+        for (let week = 1; week <= Math.min(currentWeek, 18); week++) {
+          transactionPromises.push(leagueStore.fetchTransactionsForWeek(week))
+        }
+        await Promise.all(transactionPromises)
 
         // Load injury data
         try {
