@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { getTeamInfo } from '../teamMappings.js'
+import { getTeamInfo, getTeamInfoByAiModel } from '../teamMappings.js'
 
 describe('Team Mappings', () => {
   describe('getTeamInfo', () => {
@@ -153,6 +153,68 @@ describe('Team Mappings', () => {
         const teamInfo = getTeamInfo(username)
         expect(teamInfo.gradient).toMatch(/^from-\w+-\d+ to-\w+-\d+$/)
       })
+    })
+  })
+
+  describe('getTeamInfoByAiModel', () => {
+    it('should return team info by AI model name', () => {
+      const teamInfo = getTeamInfoByAiModel('DeepSeek')
+
+      expect(teamInfo).toBeDefined()
+      expect(teamInfo.owner).toBe('Rob Spectre')
+      expect(teamInfo.aiModel).toBe('DeepSeek')
+      expect(teamInfo.logo).toBe('/images/logos/deepseek-color.svg')
+    })
+
+    it('should be case-insensitive', () => {
+      const teamInfo1 = getTeamInfoByAiModel('deepseek')
+      const teamInfo2 = getTeamInfoByAiModel('DEEPSEEK')
+      const teamInfo3 = getTeamInfoByAiModel('DeepSeek')
+
+      expect(teamInfo1.aiModel).toBe('DeepSeek')
+      expect(teamInfo2.aiModel).toBe('DeepSeek')
+      expect(teamInfo3.aiModel).toBe('DeepSeek')
+    })
+
+    it('should return team info for all AI models', () => {
+      const models = [
+        'DeepSeek',
+        'Mistral',
+        'Gemini',
+        'Gemma',
+        'GPT',
+        'GPT-OSS',
+        'Claude',
+        'Hermes',
+        'Grok',
+        'Qwen',
+        'Kimi K2'
+      ]
+
+      models.forEach(model => {
+        const teamInfo = getTeamInfoByAiModel(model)
+        expect(teamInfo).toBeDefined()
+        expect(teamInfo.aiModel).toBe(model)
+        expect(teamInfo.owner).toBeDefined()
+      })
+    })
+
+    it('should return default object for unknown AI model', () => {
+      const teamInfo = getTeamInfoByAiModel('UnknownAI')
+
+      expect(teamInfo).toBeDefined()
+      expect(teamInfo.owner).toBe('UnknownAI')
+      expect(teamInfo.aiModel).toBe('UnknownAI')
+      expect(teamInfo.color).toBe('#95A5A6')
+      expect(teamInfo.gradient).toBe('from-gray-500 to-slate-500')
+      expect(teamInfo.logo).toBe('')
+    })
+
+    it('should handle empty string', () => {
+      const teamInfo = getTeamInfoByAiModel('')
+
+      expect(teamInfo).toBeDefined()
+      expect(teamInfo.aiModel).toBe('')
     })
   })
 })
