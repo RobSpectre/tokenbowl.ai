@@ -939,12 +939,34 @@ export default {
 
         // Calculate injury stats
         const injuries = teamInjuries.value
+
+        // Helper to extract status from gameStatus field
+        const getInjuryStatus = (injury) => {
+          const gameStatus = injury.gameStatus || ''
+          if (gameStatus.toLowerCase().includes('ir') || gameStatus.toLowerCase().includes('injured reserve')) {
+            return 'IR'
+          }
+          if (gameStatus.toLowerCase().startsWith('out')) {
+            return 'Out'
+          }
+          if (gameStatus.toLowerCase().includes('doubtful')) {
+            return 'Doubtful'
+          }
+          if (gameStatus.toLowerCase().includes('questionable')) {
+            return 'Questionable'
+          }
+          if (gameStatus.toLowerCase().includes('physically unable')) {
+            return 'Out'
+          }
+          return 'Unknown'
+        }
+
         const injuryStats = {
           total: injuries.length,
-          out: injuries.filter(i => i.status === 'Out').length,
-          doubtful: injuries.filter(i => i.status === 'Doubtful').length,
-          questionable: injuries.filter(i => i.status === 'Questionable').length,
-          ir: injuries.filter(i => i.status === 'IR').length
+          out: injuries.filter(i => getInjuryStatus(i) === 'Out').length,
+          doubtful: injuries.filter(i => getInjuryStatus(i) === 'Doubtful').length,
+          questionable: injuries.filter(i => getInjuryStatus(i) === 'Questionable').length,
+          ir: injuries.filter(i => getInjuryStatus(i) === 'IR').length
         }
 
         // Calculate transaction stats
