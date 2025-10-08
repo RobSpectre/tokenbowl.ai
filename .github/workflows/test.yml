@@ -32,12 +32,10 @@ jobs:
         env:
           VITE_YOUTUBE_API_KEY: test-api-key
 
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v4
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v5
         with:
-          files: ./coverage/lcov.info
-          fail_ci_if_error: false
-          verbose: true
+          token: ${{ secrets.CODECOV_TOKEN }}
 
       - name: Upload test results
         if: always()
