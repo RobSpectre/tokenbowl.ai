@@ -427,13 +427,13 @@
                 .grid.grid-cols-2.gap-3
                   div
                     .text-white.font-black.text-2xl {{ teamHistory.transactionStats.total }}
-                    .text-gray-500.text-xs Total Moves
+                    .text-gray-500.text-xs Total Transactions
                   div
-                    .text-green-400.font-black.text-2xl {{ teamHistory.transactionStats.adds }}
-                    .text-gray-500.text-xs Players Added
+                    .text-blue-400.font-black.text-2xl {{ teamHistory.transactionStats.waivers }}
+                    .text-gray-500.text-xs Waivers
                   div
-                    .text-red-400.font-black.text-2xl {{ teamHistory.transactionStats.drops }}
-                    .text-gray-500.text-xs Players Dropped
+                    .text-green-400.font-black.text-2xl {{ teamHistory.transactionStats.freeAgents }}
+                    .text-gray-500.text-xs Free Agent Adds
                   div(v-if="teamHistory.transactionStats.trades > 0")
                     .text-purple-400.font-black.text-2xl {{ teamHistory.transactionStats.trades }}
                     .text-gray-500.text-xs Trades
