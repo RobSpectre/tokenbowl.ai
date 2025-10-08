@@ -1675,7 +1675,7 @@ export default {
         animationDuration: 1000,
         animationEasing: 'cubicOut',
         legend: {
-          data: ['Week ' + targetWeek, 'Through Week ' + targetWeek],
+          data: ['Through Week ' + targetWeek, 'Week ' + targetWeek],
           textStyle: { color: '#9ca3af' },
           top: 10
         },
@@ -1703,8 +1703,8 @@ export default {
         xAxis: [
           {
             type: 'value',
-            name: 'Week ' + targetWeek,
-            nameTextStyle: { color: '#ef4444' },
+            name: 'Through Week ' + targetWeek,
+            nameTextStyle: { color: '#f97316' },
             minInterval: 1,
             axisLabel: {
               color: '#9ca3af',
@@ -1715,8 +1715,8 @@ export default {
           },
           {
             type: 'value',
-            name: 'Through Week ' + targetWeek,
-            nameTextStyle: { color: '#f97316' },
+            name: 'Week ' + targetWeek,
+            nameTextStyle: { color: '#ef4444' },
             minInterval: 1,
             axisLabel: {
               color: '#9ca3af',
@@ -1756,26 +1756,26 @@ export default {
         },
         series: [
           {
-            name: 'Week ' + targetWeek,
-            type: 'bar',
-            xAxisIndex: 0,
-            data: sortedTeamsWithInfo.map(info => teamWeeklyInjuries[info.aiModel]),
-            itemStyle: {
-              color: new echarts.graphic.LinearGradient(1, 0, 0, 0, [
-                { offset: 0, color: '#ef4444' },
-                { offset: 1, color: '#dc2626' }
-              ])
-            }
-          },
-          {
             name: 'Through Week ' + targetWeek,
             type: 'bar',
-            xAxisIndex: 1,
+            xAxisIndex: 0,
             data: sortedTeamsWithInfo.map(info => teamSeasonInjuries[info.aiModel]),
             itemStyle: {
               color: new echarts.graphic.LinearGradient(1, 0, 0, 0, [
                 { offset: 0, color: '#f97316' },
                 { offset: 1, color: '#ea580c' }
+              ])
+            }
+          },
+          {
+            name: 'Week ' + targetWeek,
+            type: 'bar',
+            xAxisIndex: 1,
+            data: sortedTeamsWithInfo.map(info => teamWeeklyInjuries[info.aiModel]),
+            itemStyle: {
+              color: new echarts.graphic.LinearGradient(1, 0, 0, 0, [
+                { offset: 0, color: '#ef4444' },
+                { offset: 1, color: '#dc2626' }
               ])
             }
           }
