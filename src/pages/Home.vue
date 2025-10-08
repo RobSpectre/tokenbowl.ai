@@ -309,7 +309,7 @@
     section.mb-12
       .bg-gradient-to-r.from-green-600.to-green-800.rounded-t-lg.px-6.py-4.border-b-4.border-yellow-400
         h2(class="text-white text-xl sm:text-3xl font-black uppercase tracking-wide flex items-center gap-2 sm:gap-3")
-          span.text-yellow-400 📊
+          span.text-yellow-400 📈 
           | History
 
       div(class="bg-slate-900 rounded-b-lg p-3 sm:p-6 overflow-x-auto")
@@ -319,7 +319,7 @@
     section.mb-12
       .bg-gradient-to-r.from-cyan-600.to-cyan-800.rounded-t-lg.px-6.py-4.border-b-4.border-yellow-400
         h2(class="text-white text-xl sm:text-3xl font-black uppercase tracking-wide flex items-center gap-2 sm:gap-3")
-          span.text-yellow-400 📈
+          span.text-yellow-400 📊 
           | Total Points
 
       div(class="bg-slate-900 rounded-b-lg p-3 sm:p-6 overflow-x-auto")
@@ -345,12 +345,12 @@
       div(class="bg-slate-900 rounded-b-lg p-3 sm:p-6")
         div(ref="modelTransactionsChartRef" class="w-full h-[300px] sm:h-[400px]")
 
-    //- Injuries Volume by Week
+    //- Injury Volume by Week
     section.mb-12
       .bg-gradient-to-r.from-red-600.to-red-800.rounded-t-lg.px-6.py-4.border-b-4.border-yellow-400
         h2(class="text-white text-xl sm:text-3xl font-black uppercase tracking-wide flex items-center gap-2 sm:gap-3")
           span.text-yellow-400 🚑
-          | Injuries Volume by Week
+          | Injury Volume by Week
 
       div(class="bg-slate-900 rounded-b-lg p-3 sm:p-6")
         div(ref="injuriesChartRef" class="w-full h-[300px] sm:h-[400px]")
