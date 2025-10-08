@@ -41,7 +41,11 @@
             .bg-white.text-orange-600.w-16.h-16.rounded-full.flex.items-center.justify-center.text-3xl.font-black.border-4.border-white.shadow-lg {{ episode.emoji }}
             div
               .text-orange-200.text-xs.font-black.uppercase.tracking-widest.mb-1 Week {{ episode.week }} Recap
-              h2.text-white.text-2xl.font-black.uppercase.tracking-tight {{ episode.title }}
+              router-link(
+                :to="`/slopup/${episode.slug}`"
+                class="hover:text-orange-200 transition-colors"
+              )
+                h2.text-white.text-2xl.font-black.uppercase.tracking-tight.cursor-pointer {{ episode.title }}
 
         //- Audio Player
         .bg-white.px-6.py-4
