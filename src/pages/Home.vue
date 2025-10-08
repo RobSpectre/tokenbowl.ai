@@ -626,6 +626,13 @@ export default {
     // Refresh matchups data without showing loading state
     const refreshMatchups = async () => {
       try {
+        // Save scroll position and page height before refresh
+        const savedScrollPosition = window.scrollY
+        const savedHeight = document.body.scrollHeight
+
+        // Fix the page height temporarily to prevent browser scroll adjustment
+        document.body.style.minHeight = `${savedHeight}px`
+
         // Force refresh all data from API
         await Promise.all([
           leagueStore.fetchLeagueData(true),
@@ -634,8 +641,27 @@ export default {
         ])
         lastUpdated.value = new Date()
         console.log('Matchups refreshed at', lastUpdated.value.toLocaleTimeString())
+
+        // Wait for Vue to update the DOM with new data
+        await nextTick()
+
+        // Re-render all charts with refreshed data
+        renderStandingsChart()
+        renderPointsChart()
+        renderTransactionsChart()
+        renderModelTransactionsChart()
+        renderInjuriesChart()
+        renderModelInjuriesChart()
+
+        // Give charts time to complete rendering, then restore scroll and release height constraint
+        setTimeout(() => {
+          window.scrollTo({ top: savedScrollPosition, behavior: 'instant' })
+          document.body.style.minHeight = ''
+        }, 150)
       } catch (err) {
         console.error('Error refreshing matchups:', err)
+        // Release height constraint even on error
+        document.body.style.minHeight = ''
       }
     }
 
