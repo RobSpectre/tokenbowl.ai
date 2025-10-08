@@ -1,19 +1,12 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { getLatestVideos, getLatestVideoAndShorts, getPlaylistVideos } from '../youtubeApi.js'
-
-// Mock import.meta.env
-vi.stubGlobal('import', {
-  meta: {
-    env: {
-      VITE_YOUTUBE_API_KEY: 'test-api-key'
-    }
-  }
-})
 
 describe('YouTube API', () => {
   beforeEach(() => {
     // Clear all mocks before each test
     vi.clearAllMocks()
+    // Mock environment variables
+    vi.stubEnv('VITE_YOUTUBE_API_KEY', 'test-api-key')
     // Mock fetch globally
     global.fetch = vi.fn()
     // Mock localStorage
@@ -23,6 +16,10 @@ describe('YouTube API', () => {
       removeItem: vi.fn(),
       clear: vi.fn()
     }
+  })
+
+  afterEach(() => {
+    vi.unstubAllEnvs()
   })
 
   describe('getLatestVideos', () => {
