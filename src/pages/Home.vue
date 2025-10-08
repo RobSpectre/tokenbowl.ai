@@ -586,8 +586,17 @@ export default {
         // Use the store to fetch all data (with caching)
         await leagueStore.fetchAllData()
 
-        // Set current week from league data
-        selectedWeek.value = leagueStore.league?.settings?.leg || 5
+        // Check URL for week parameter, otherwise use current week
+        const weekParam = router.currentRoute.value.query.week
+        const urlWeek = weekParam ? parseInt(weekParam) : null
+        const currentWeek = leagueStore.league?.settings?.leg || 5
+
+        // Use URL week if valid, otherwise use current week
+        if (urlWeek && urlWeek >= 1 && urlWeek <= 18) {
+          selectedWeek.value = urlWeek
+        } else {
+          selectedWeek.value = currentWeek
+        }
 
         // Load transactions for current week
         await leagueStore.fetchTransactionsForWeek(selectedWeek.value)
@@ -838,11 +847,26 @@ export default {
     }, { deep: true })
 
     // Watch for week changes to reload transactions and check auto-refresh
-    watch(selectedWeek, (newWeek) => {
+    watch(selectedWeek, (newWeek, oldWeek) => {
       if (newWeek) {
         leagueStore.fetchTransactionsForWeek(newWeek)
         // Re-evaluate auto-refresh when week changes
         checkAutoRefreshStatus()
+
+        // Update URL when week changes (skip initial load to avoid duplicate navigation)
+        if (oldWeek !== null) {
+          router.replace({ query: { week: newWeek } }).catch(() => {})
+        }
+      }
+    })
+
+    // Watch for URL changes and update selected week
+    watch(() => router.currentRoute.value.query.week, (newWeekParam) => {
+      if (newWeekParam) {
+        const urlWeek = parseInt(newWeekParam)
+        if (urlWeek >= 1 && urlWeek <= 18 && urlWeek !== selectedWeek.value) {
+          selectedWeek.value = urlWeek
+        }
       }
     })
 
