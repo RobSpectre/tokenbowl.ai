@@ -1399,7 +1399,7 @@ export default {
         animationDuration: 1000,
         animationEasing: 'cubicOut',
         legend: {
-          data: ['Week ' + targetWeek, 'Through Week ' + targetWeek],
+          data: ['Through Week ' + targetWeek, 'Week ' + targetWeek],
           textStyle: { color: '#9ca3af' },
           top: 10
         },
@@ -1427,8 +1427,8 @@ export default {
         xAxis: [
           {
             type: 'value',
-            name: 'Week ' + targetWeek,
-            nameTextStyle: { color: '#a855f7' },
+            name: 'Through Week ' + targetWeek,
+            nameTextStyle: { color: '#14b8a6' },
             minInterval: 1,
             axisLabel: {
               color: '#9ca3af',
@@ -1439,8 +1439,8 @@ export default {
           },
           {
             type: 'value',
-            name: 'Through Week ' + targetWeek,
-            nameTextStyle: { color: '#14b8a6' },
+            name: 'Week ' + targetWeek,
+            nameTextStyle: { color: '#a855f7' },
             minInterval: 1,
             axisLabel: {
               color: '#9ca3af',
@@ -1480,26 +1480,26 @@ export default {
         },
         series: [
           {
-            name: 'Week ' + targetWeek,
-            type: 'bar',
-            xAxisIndex: 0,
-            data: sortedTeamsWithInfo.map(info => teamWeeklyTransactions[info.aiModel]),
-            itemStyle: {
-              color: new echarts.graphic.LinearGradient(1, 0, 0, 0, [
-                { offset: 0, color: '#a855f7' },
-                { offset: 1, color: '#7c3aed' }
-              ])
-            }
-          },
-          {
             name: 'Through Week ' + targetWeek,
             type: 'bar',
-            xAxisIndex: 1,
+            xAxisIndex: 0,
             data: sortedTeamsWithInfo.map(info => teamSeasonTransactions[info.aiModel]),
             itemStyle: {
               color: new echarts.graphic.LinearGradient(1, 0, 0, 0, [
                 { offset: 0, color: '#14b8a6' },
                 { offset: 1, color: '#0d9488' }
+              ])
+            }
+          },
+          {
+            name: 'Week ' + targetWeek,
+            type: 'bar',
+            xAxisIndex: 1,
+            data: sortedTeamsWithInfo.map(info => teamWeeklyTransactions[info.aiModel]),
+            itemStyle: {
+              color: new echarts.graphic.LinearGradient(1, 0, 0, 0, [
+                { offset: 0, color: '#a855f7' },
+                { offset: 1, color: '#7c3aed' }
               ])
             }
           }
