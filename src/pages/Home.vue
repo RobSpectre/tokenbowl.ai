@@ -875,11 +875,19 @@ export default {
         // Wait for Vue to update the DOM with new data
         await nextTick()
 
-        // Give charts time to re-render, then restore scroll and release height constraint
+        // Re-render all charts with new week data
+        renderStandingsChart()
+        renderPointsChart()
+        renderTransactionsChart()
+        renderModelTransactionsChart()
+        renderInjuriesChart()
+        renderModelInjuriesChart()
+
+        // Give charts time to complete rendering, then restore scroll and release height constraint
         setTimeout(() => {
           document.body.style.minHeight = ''
           window.scrollTo(0, savedScrollPosition)
-        }, 100)
+        }, 150)
       }
     })
 
@@ -1836,15 +1844,6 @@ export default {
       modelInjuriesChart.setOption(option)
     }
 
-    // Watch for week changes and re-render charts
-    watch(selectedWeek, () => {
-      renderStandingsChart()
-      renderPointsChart()
-      renderTransactionsChart()
-      renderModelTransactionsChart()
-      renderInjuriesChart()
-      renderModelInjuriesChart()
-    })
 
     // Handle window resize for responsive charts
     const handleResize = () => {
