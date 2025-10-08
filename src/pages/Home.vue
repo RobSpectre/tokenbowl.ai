@@ -853,8 +853,13 @@ export default {
     // Watch for week changes to reload transactions and check auto-refresh
     watch(selectedWeek, async (newWeek, oldWeek) => {
       if (newWeek) {
-        // Save scroll position before any changes
+        // Save scroll position and page height before any changes
         const savedScrollPosition = window.scrollY
+        const savedHeight = document.body.scrollHeight
+
+        // Fix the page height temporarily to prevent browser scroll adjustment
+        // when charts re-render and change the page height
+        document.body.style.minHeight = `${savedHeight}px`
 
         // Fetch transactions for the new week
         await leagueStore.fetchTransactionsForWeek(newWeek)
@@ -867,12 +872,14 @@ export default {
           router.replace({ query: { week: newWeek } }).catch(() => {})
         }
 
-        // Restore scroll position after all rendering completes
-        // Use nextTick + longer timeout to wait for charts to fully render
+        // Wait for Vue to update the DOM with new data
         await nextTick()
+
+        // Give charts time to re-render, then restore scroll and release height constraint
         setTimeout(() => {
+          document.body.style.minHeight = ''
           window.scrollTo(0, savedScrollPosition)
-        }, 1500)
+        }, 100)
       }
     })
 
