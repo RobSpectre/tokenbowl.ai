@@ -855,7 +855,13 @@ export default {
 
         // Update URL when week changes (skip initial load to avoid duplicate navigation)
         if (oldWeek !== null) {
+          // Save scroll position before updating URL
+          const scrollY = window.scrollY
           router.replace({ query: { week: newWeek } }).catch(() => {})
+          // Restore scroll position after URL update
+          nextTick(() => {
+            window.scrollTo(0, scrollY)
+          })
         }
       }
     })
