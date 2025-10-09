@@ -52,8 +52,8 @@
             class="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-gray-400 hover:text-white text-xs rounded transition-colors"
           ) Refresh Now
 
-    //- Spacer for fixed nav (dynamic height based on auto-refresh indicator)
-    div(:style="{ height: isAutoRefreshActive ? '240px' : '192px' }")
+    //- Spacer for fixed nav (consistent height to prevent scroll jumps)
+    div(style="height: 240px")
 
     //- Week Matchups
     .mb-12
@@ -880,35 +880,13 @@ export default {
     // Watch for week changes to reload transactions and check auto-refresh
     watch(selectedWeek, async (newWeek, oldWeek) => {
       if (newWeek) {
-        // Find which section the user is currently viewing based on scroll position
-        // This gives us a semantic anchor point rather than just a percentage
+        console.log(`[Week Change] ${oldWeek} → ${newWeek}`)
+
+        // Save current scroll position and measure matchups height
         const savedScrollY = window.scrollY
-        const viewportHeight = window.innerHeight
-        const viewportCenter = savedScrollY + (viewportHeight / 2)
-
-        // Find the section element that's closest to viewport center
-        const sections = [
-          { el: document.querySelector('h2'), name: 'matchups' },
-          { el: document.getElementById('videos-section') || Array.from(document.querySelectorAll('h2')).find(h => h.textContent.toUpperCase().includes('VIDEOS')), name: 'videos' },
-          { el: document.getElementById('standings-section') || Array.from(document.querySelectorAll('h2')).find(h => h.textContent.toUpperCase().includes('STANDINGS')), name: 'standings' },
-          { el: document.getElementById('transactions-section') || Array.from(document.querySelectorAll('h2')).find(h => /WEEK\s*\d+\s*TRANSACTIONS/i.test(h.textContent)), name: 'transactions' }
-        ].filter(s => s.el)
-
-        let closestSection = sections[0]
-        let minDistance = Math.abs((sections[0]?.el?.offsetTop || 0) - viewportCenter)
-
-        for (const section of sections) {
-          const distance = Math.abs(section.el.offsetTop - viewportCenter)
-          if (distance < minDistance) {
-            minDistance = distance
-            closestSection = section
-          }
-        }
-
-        const targetSectionName = closestSection?.name || 'matchups'
-
-        // Fix the page height temporarily to prevent browser scroll adjustment
-        document.body.style.minHeight = `${document.body.scrollHeight}px`
+        const matchupsSection = document.querySelector('.mb-12')
+        const oldMatchupsHeight = matchupsSection?.offsetHeight || 0
+        console.log(`[Scroll Start] Y: ${savedScrollY}, Old Matchups Height: ${oldMatchupsHeight}`)
 
         // Fetch transactions for the new week
         await leagueStore.fetchTransactionsForWeek(newWeek)
@@ -932,29 +910,20 @@ export default {
         renderInjuriesChart()
         renderModelInjuriesChart()
 
-        // Give charts time to complete rendering, then restore scroll to same section
+        // Give charts time to complete rendering, then restore scroll with height compensation
         setTimeout(() => {
-          // Remove minHeight constraint first
-          document.body.style.minHeight = ''
-
-          // Wait for layout recalculation, then scroll to the same section
           requestAnimationFrame(() => {
-            // Find the same section on the new page
-            const newSections = [
-              { el: document.querySelector('h2'), name: 'matchups' },
-              { el: document.getElementById('videos-section') || Array.from(document.querySelectorAll('h2')).find(h => h.textContent.toUpperCase().includes('VIDEOS')), name: 'videos' },
-              { el: document.getElementById('standings-section') || Array.from(document.querySelectorAll('h2')).find(h => h.textContent.toUpperCase().includes('STANDINGS')), name: 'standings' },
-              { el: document.getElementById('transactions-section') || Array.from(document.querySelectorAll('h2')).find(h => /WEEK\s*\d+\s*TRANSACTIONS/i.test(h.textContent)), name: 'transactions' }
-            ].filter(s => s.el)
+            // Measure new matchups height after re-render
+            const newMatchupsHeight = matchupsSection?.offsetHeight || 0
+            const heightDiff = newMatchupsHeight - oldMatchupsHeight
+            const adjustedScrollY = savedScrollY + heightDiff
 
-            const targetSection = newSections.find(s => s.name === targetSectionName)
-            if (targetSection && targetSection.el) {
-              // Scroll to put the section at the same relative position in viewport
-              const targetScrollY = targetSection.el.offsetTop - (viewportHeight / 4)
-              window.scrollTo({ top: Math.max(0, targetScrollY), behavior: 'smooth' })
-            }
+            console.log(`[Height Change] Old: ${oldMatchupsHeight}, New: ${newMatchupsHeight}, Diff: ${heightDiff}`)
+            console.log(`[Restoring Scroll] Target: ${adjustedScrollY} (original: ${savedScrollY})`)
+            window.scrollTo({ top: Math.max(0, adjustedScrollY), behavior: 'auto' })
+            console.log(`[Scroll Restored] Final: ${window.scrollY}`)
           })
-        }, 200)
+        }, 300)
       }
     })
 
