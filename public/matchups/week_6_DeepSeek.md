@@ -121,3 +121,119 @@ With waiver position 10, use priority aggressively for any player who can provid
 Your championship hopes are NOT slipping away - this is a manageable bye week crisis that can be solved with aggressive waiver wire moves and smart lineup management.
 
 Note: All projections based on Fantasy Nerds ROS data. Lineup decisions assume standard PPR scoring.
+
+# Week 6 Championship Matchup Analysis: Andy ReiLu vs Bill BeliClaude
+
+## Current Situation Analysis
+
+CRITICAL ISSUE IDENTIFIED: The win probability dramatically shifted in Bill BeliClaude's favor due to Lamar Jackson's hamstring injury, which has severely impacted your QB1's projected performance (7.8 points vs Josh Allen's 23.4 points).
+
+## Key Factors for the Shift:
+
+1. Lamar Jackson Injury: "Did Not Practice On Wednesday. Questionable For Week 6 Vs. L.a. Rams" with hamstring issues
+2. Bye Week Impact: Justin Jefferson and Jordan Addison on bye (Vikings)
+3. Opponent's Stacked Roster: Bill BeliClaude has elite players with favorable matchups
+
+## Current Roster Analysis
+
+### Your Team (Andy ReiLu - Roster ID 1)
+
+| Player | Position | Projected Points | Opponent | Recommendation |
+|--------|----------|------------------|----------|----------------|
+| Lamar Jackson | QB | 7.8 | LAR | BENCH ⚠️ |
+| Breece Hall | RB | 14.7 | BUF | START |
+| De'Von Achane | RB | 20.1 | JAX | START |
+| Travis Etienne | RB | 12.8 | CHI | START |
+| Davante Adams | WR | 15.6 | BYE | START |
+| Drake London | WR | 14.6 | BUF | START |
+| Keenan Allen | WR | 14.6 | LV | START |
+| Mark Andrews | TE | 8.9 | LAR | START |
+| Brandon Aubrey | K | 9.8 | SEA | START |
+| SF Defense | DEF | 5.6 | KC | START |
+| Justin Jefferson | WR | 0.0 | BYE | BENCH |
+| Jordan Addison | WR | 0.0 | BYE | BENCH |
+| Jared Goff | QB | 17.3 | DAL | START ⭐ |
+| Romeo Doubs | WR | 11.1 | ARI | BENCH |
+| A.T. Perry | WR | 0.0 | BYE | BENCH |
+
+CRITICAL LINEUP CHANGE: You must BENCH Lamar Jackson and START Jared Goff immediately.
+
+## Waiver Wire Emergency Recommendations
+
+### TOP PRIORITY PICKUP: Bo Nix (QB - DEN)
+
+- Projected Points: 18.1
+- Opponent: LAC (favorable matchup)
+- Drop Recommendation: A.T. Perry (WR - DEN)
+
+### SECONDARY TARGET: Bucky Irving (RB - TB)
+
+- Projected Points: 2.2 (this week) but 142.1 ROS projected points
+- Injury Context: Irving is dealing with shoulder issues but has massive upside
+
+## Alternative QB Options:
+
+1. Daniel Jones (QB - IND) - 18.1 projected points
+2. Caleb Williams (QB - CHI) - 18.2 projected points
+
+## Immediate Action Required
+
+### Tonight's Games (Thursday Night Football)
+
+- Available Tonight: No Thursday night players in your current roster
+- Action: Make QB change before Sunday games
+
+## Optimal Lineup for Week 6
+
+Starters:
+
+- QB: Jared Goff (17.3 points) - REPLACEMENT FOR INJURED JACKSON
+
+### Flex Positions:
+
+- WR1: Davante Adams (15.6)
+- WR2: Keenan Allen (14.6)
+- FLEX1: Drake London (14.6)
+- FLEX2: Romeo Doubs (11.1) - Higher floor than bench options
+
+## Why the Win Probability Shifted
+
+1. Lamar Jackson Injury: -15.5 point swing from projected
+2. Bye Week Impact: Missing Jefferson and Addison (-25+ points)
+3. Opponent's Strengths:
+   - Josh Allen (23.4)
+   - James Cook (17.2)
+   - Jahmyr Gibbs (18.8)
+
+## Championship Strategy
+
+### Short-Term (This Week):
+
+- START Jared Goff over Lamar Jackson
+- Monitor Jackson's practice reports - if he practices fully Friday, reconsider
+
+### Long-Term (Rest of Season):
+
+1. Acquire Bo Nix - immediate QB upgrade for this week
+2. Hold Justin Jefferson - elite WR1 when back from bye
+3. Consider trading depth for elite QB if Jackson's injury persists
+
+## Final Recommendations
+
+### Priority Order:
+
+1. IMMEDIATE: Bench Lamar Jackson, Start Jared Goff
+2. WAIVER: Claim Bo Nix (drop A.T. Perry)
+3. MONITOR: Lamar Jackson's practice status
+4. HOLD: Justin Jefferson (premier asset)
+
+### Projected Point Comparison:
+
+- Your Team (with Goff): ~124.5 points
+- Opponent (Bill BeliClaude): ~138.8 points
+
+The gap is closable with proper lineup management. The championship is still within reach!
+
+---
+
+Time-Sensitive Action: Make the QB switch BEFORE Sunday 1:00 PM ET games to maximize your chances.
