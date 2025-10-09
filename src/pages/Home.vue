@@ -712,9 +712,6 @@ export default {
     }
 
     const handleWeekChange = (direction) => {
-      // Capture current scroll position
-      const currentScrollY = window.scrollY
-
       if (direction === 'prev' && selectedWeek.value > 1) {
         selectedWeek.value = Math.max(1, selectedWeek.value - 1)
         trackButtonClick('week_navigation', { direction: 'previous', week: selectedWeek.value })
@@ -722,11 +719,7 @@ export default {
         selectedWeek.value = Math.min(18, selectedWeek.value + 1)
         trackButtonClick('week_navigation', { direction: 'next', week: selectedWeek.value })
       }
-
-      // Restore scroll position after DOM updates
-      nextTick(() => {
-        window.scrollTo(0, currentScrollY)
-      })
+      // Note: Scroll position preservation is handled by the watch(selectedWeek) watcher
     }
 
     const isWeekComplete = (matchup) => {
@@ -887,13 +880,35 @@ export default {
     // Watch for week changes to reload transactions and check auto-refresh
     watch(selectedWeek, async (newWeek, oldWeek) => {
       if (newWeek) {
-        // Save scroll position and page height before any changes
-        const savedScrollPosition = window.scrollY
-        const savedHeight = document.body.scrollHeight
+        // Find which section the user is currently viewing based on scroll position
+        // This gives us a semantic anchor point rather than just a percentage
+        const savedScrollY = window.scrollY
+        const viewportHeight = window.innerHeight
+        const viewportCenter = savedScrollY + (viewportHeight / 2)
+
+        // Find the section element that's closest to viewport center
+        const sections = [
+          { el: document.querySelector('h2'), name: 'matchups' },
+          { el: document.getElementById('videos-section') || Array.from(document.querySelectorAll('h2')).find(h => h.textContent.toUpperCase().includes('VIDEOS')), name: 'videos' },
+          { el: document.getElementById('standings-section') || Array.from(document.querySelectorAll('h2')).find(h => h.textContent.toUpperCase().includes('STANDINGS')), name: 'standings' },
+          { el: document.getElementById('transactions-section') || Array.from(document.querySelectorAll('h2')).find(h => /WEEK\s*\d+\s*TRANSACTIONS/i.test(h.textContent)), name: 'transactions' }
+        ].filter(s => s.el)
+
+        let closestSection = sections[0]
+        let minDistance = Math.abs((sections[0]?.el?.offsetTop || 0) - viewportCenter)
+
+        for (const section of sections) {
+          const distance = Math.abs(section.el.offsetTop - viewportCenter)
+          if (distance < minDistance) {
+            minDistance = distance
+            closestSection = section
+          }
+        }
+
+        const targetSectionName = closestSection?.name || 'matchups'
 
         // Fix the page height temporarily to prevent browser scroll adjustment
-        // when charts re-render and change the page height
-        document.body.style.minHeight = `${savedHeight}px`
+        document.body.style.minHeight = `${document.body.scrollHeight}px`
 
         // Fetch transactions for the new week
         await leagueStore.fetchTransactionsForWeek(newWeek)
@@ -917,11 +932,29 @@ export default {
         renderInjuriesChart()
         renderModelInjuriesChart()
 
-        // Give charts time to complete rendering, then restore scroll and release height constraint
+        // Give charts time to complete rendering, then restore scroll to same section
         setTimeout(() => {
-          window.scrollTo({ top: savedScrollPosition, behavior: 'instant' })
+          // Remove minHeight constraint first
           document.body.style.minHeight = ''
-        }, 150)
+
+          // Wait for layout recalculation, then scroll to the same section
+          requestAnimationFrame(() => {
+            // Find the same section on the new page
+            const newSections = [
+              { el: document.querySelector('h2'), name: 'matchups' },
+              { el: document.getElementById('videos-section') || Array.from(document.querySelectorAll('h2')).find(h => h.textContent.toUpperCase().includes('VIDEOS')), name: 'videos' },
+              { el: document.getElementById('standings-section') || Array.from(document.querySelectorAll('h2')).find(h => h.textContent.toUpperCase().includes('STANDINGS')), name: 'standings' },
+              { el: document.getElementById('transactions-section') || Array.from(document.querySelectorAll('h2')).find(h => /WEEK\s*\d+\s*TRANSACTIONS/i.test(h.textContent)), name: 'transactions' }
+            ].filter(s => s.el)
+
+            const targetSection = newSections.find(s => s.name === targetSectionName)
+            if (targetSection && targetSection.el) {
+              // Scroll to put the section at the same relative position in viewport
+              const targetScrollY = targetSection.el.offsetTop - (viewportHeight / 4)
+              window.scrollTo({ top: Math.max(0, targetScrollY), behavior: 'smooth' })
+            }
+          })
+        }, 200)
       }
     })
 

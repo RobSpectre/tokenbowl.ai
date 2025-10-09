@@ -77,7 +77,12 @@ const router = createRouter({
       return savedPosition
     }
     // If only query params changed on the same path, preserve scroll position
+    // EXCEPT for week param changes (handled by component with percentage-based scrolling)
     if (to.path === from.path && from.path) {
+      // Check if week param changed - if so, let component handle scroll
+      if (to.query.week !== from.query.week) {
+        return false // Don't interfere - component handles this
+      }
       return false // false means don't scroll
     }
     // Otherwise scroll to top

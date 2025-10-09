@@ -29,6 +29,7 @@ export const useLeagueStore = defineStore('league', {
 
     // Transactions by week
     transactionsByWeek: {},
+    transactionsTimestampsByWeek: {},
 
     // Draft data (never expires - loaded once)
     draftPicks: [],
@@ -285,8 +286,12 @@ export const useLeagueStore = defineStore('league', {
     },
 
     async fetchTransactionsForWeek(week, forceRefresh = false) {
-      // Return cached data if exists and not forcing refresh
-      if (!forceRefresh && this.transactionsByWeek[week]) {
+      // Check if cached data is fresh (within 5 minutes)
+      const timestamp = this.transactionsTimestampsByWeek[week]
+      const isFresh = timestamp && (Date.now() - timestamp < CACHE_DURATION)
+
+      // Return cached data if exists, is fresh, and not forcing refresh
+      if (!forceRefresh && isFresh && this.transactionsByWeek[week]) {
         return this.transactionsByWeek[week]
       }
 
@@ -336,6 +341,7 @@ export const useLeagueStore = defineStore('league', {
         })
 
         this.transactionsByWeek[week] = enhancedTransactions
+        this.transactionsTimestampsByWeek[week] = Date.now()
         return enhancedTransactions
       } catch (error) {
         console.error(`Error fetching transactions for week ${week}:`, error)
@@ -444,6 +450,7 @@ export const useLeagueStore = defineStore('league', {
       this.players = {}
       this.allMatchups = {}
       this.transactionsByWeek = {}
+      this.transactionsTimestampsByWeek = {}
       this.draftPicks = []
       this.latestVideo = null
       this.latestShorts = []
@@ -475,6 +482,7 @@ export const useLeagueStore = defineStore('league', {
       'players',
       'allMatchups',
       'transactionsByWeek',
+      'transactionsTimestampsByWeek',
       'draftPicks',
       'latestVideo',
       'latestShorts',

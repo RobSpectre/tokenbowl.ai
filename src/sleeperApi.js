@@ -254,15 +254,36 @@ export async function getDraftData() {
 }
 
 export async function getTransactions(week) {
-  // Try to fetch transactions for the requested week/round
-  let response = await fetch(`${BASE_URL}/league/${LEAGUE_ID}/transactions/${week}`)
-  let transactions = await response.json()
+  // Sleeper uses "rounds" not "weeks" for transactions
+  // A round increments each time waivers process
+  // We need to fetch all rounds and filter by the "leg" field (which is the NFL week)
 
-  // If empty, try fetching the previous round (waivers may not have processed yet)
-  if (transactions.length === 0 && week > 1) {
-    response = await fetch(`${BASE_URL}/league/${LEAGUE_ID}/transactions/${week - 1}`)
-    transactions = await response.json()
+  const allTransactions = []
+
+  // Fetch up to 20 rounds (should cover the entire season)
+  // We fetch in parallel for speed
+  const roundPromises = []
+  for (let round = 1; round <= 20; round++) {
+    roundPromises.push(
+      fetch(`${BASE_URL}/league/${LEAGUE_ID}/transactions/${round}`)
+        .then(res => res.json())
+        .catch(() => []) // Ignore errors for rounds that don't exist
+    )
   }
 
-  return transactions
+  const allRounds = await Promise.all(roundPromises)
+
+  // Combine all transactions and filter by week (leg field)
+  for (const roundTransactions of allRounds) {
+    if (Array.isArray(roundTransactions)) {
+      for (const transaction of roundTransactions) {
+        // Filter by leg (NFL week) - leg field indicates which week the transaction belongs to
+        if (transaction.leg === week) {
+          allTransactions.push(transaction)
+        }
+      }
+    }
+  }
+
+  return allTransactions
 }

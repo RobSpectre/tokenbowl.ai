@@ -426,48 +426,82 @@ describe('Sleeper API', () => {
   })
 
   describe('getTransactions', () => {
-    it('should fetch transactions for a week', async () => {
-      const mockTransactions = [
-        { type: 'waiver', adds: { p1: 1 } }
-      ]
-      global.fetch.mockResolvedValueOnce({
-        json: async () => mockTransactions
-      })
+    it('should fetch all rounds and filter by leg (week)', async () => {
+      // Mock responses for rounds 1-20
+      // Only round 3 has transactions with leg=5, round 5 has leg=5 transactions
+      for (let round = 1; round <= 20; round++) {
+        if (round === 3) {
+          global.fetch.mockResolvedValueOnce({
+            json: async () => [
+              { type: 'waiver', adds: { p1: 1 }, leg: 5 },
+              { type: 'trade', adds: { p2: 1 }, leg: 5 }
+            ]
+          })
+        } else if (round === 5) {
+          global.fetch.mockResolvedValueOnce({
+            json: async () => [
+              { type: 'waiver', adds: { p3: 1 }, leg: 5 }
+            ]
+          })
+        } else {
+          global.fetch.mockResolvedValueOnce({
+            json: async () => []
+          })
+        }
+      }
 
       const result = await getTransactions(5)
 
+      // Should have fetched all 20 rounds
+      expect(global.fetch).toHaveBeenCalledTimes(20)
+      // Should have called round 1, 2, 3, etc
       expect(global.fetch).toHaveBeenCalledWith(
-        'https://api.sleeper.app/v1/league/1266471057523490816/transactions/5'
+        'https://api.sleeper.app/v1/league/1266471057523490816/transactions/1'
       )
-      expect(result).toEqual(mockTransactions)
+      expect(global.fetch).toHaveBeenCalledWith(
+        'https://api.sleeper.app/v1/league/1266471057523490816/transactions/20'
+      )
+      // Should return only transactions with leg=5
+      expect(result).toHaveLength(3)
+      expect(result.every(t => t.leg === 5)).toBe(true)
     })
 
-    it('should fall back to previous week if current week is empty', async () => {
-      const mockTransactions = [
-        { type: 'waiver', adds: { p1: 1 } }
-      ]
-      global.fetch
-        .mockResolvedValueOnce({ json: async () => [] }) // Week 5 empty
-        .mockResolvedValueOnce({ json: async () => mockTransactions }) // Week 4
+    it('should return empty array if no transactions match the week', async () => {
+      // Mock all rounds to return empty or transactions for different weeks
+      for (let round = 1; round <= 20; round++) {
+        global.fetch.mockResolvedValueOnce({
+          json: async () => [
+            { type: 'waiver', adds: { p1: 1 }, leg: 3 }
+          ]
+        })
+      }
 
       const result = await getTransactions(5)
 
-      expect(global.fetch).toHaveBeenCalledWith(
-        'https://api.sleeper.app/v1/league/1266471057523490816/transactions/5'
-      )
-      expect(global.fetch).toHaveBeenCalledWith(
-        'https://api.sleeper.app/v1/league/1266471057523490816/transactions/4'
-      )
-      expect(result).toEqual(mockTransactions)
-    })
-
-    it('should not fall back if week is 1', async () => {
-      global.fetch.mockResolvedValueOnce({ json: async () => [] })
-
-      const result = await getTransactions(1)
-
-      expect(global.fetch).toHaveBeenCalledTimes(1)
       expect(result).toEqual([])
+    })
+
+    it('should handle fetch errors gracefully', async () => {
+      // Mock some rounds to fail, others to succeed
+      for (let round = 1; round <= 20; round++) {
+        if (round === 5) {
+          global.fetch.mockRejectedValueOnce(new Error('Network error'))
+        } else if (round === 3) {
+          global.fetch.mockResolvedValueOnce({
+            json: async () => [{ type: 'waiver', adds: { p1: 1 }, leg: 5 }]
+          })
+        } else {
+          global.fetch.mockResolvedValueOnce({
+            json: async () => []
+          })
+        }
+      }
+
+      const result = await getTransactions(5)
+
+      // Should still return transactions from successful rounds
+      expect(result).toHaveLength(1)
+      expect(result[0].leg).toBe(5)
     })
   })
 })
