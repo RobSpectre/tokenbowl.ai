@@ -139,8 +139,32 @@ export default {
       trackButtonClick('navigation', { page })
     }
 
+    // Check for app updates every 2 minutes
+    const checkForUpdates = () => {
+      const currentVersion = document.querySelector('meta[name="app-version"]')?.content
+      if (!currentVersion) return
+
+      // Store the initial version on first load
+      if (!localStorage.getItem('app-version')) {
+        localStorage.setItem('app-version', currentVersion)
+        return
+      }
+
+      const storedVersion = localStorage.getItem('app-version')
+      if (storedVersion !== currentVersion) {
+        console.log(`App update detected: ${storedVersion} -> ${currentVersion}`)
+        localStorage.setItem('app-version', currentVersion)
+        // Force reload to get new code
+        window.location.reload(true)
+      }
+    }
+
     onMounted(() => {
       loadLeagueInfo()
+      checkForUpdates()
+
+      // Check for updates every 2 minutes
+      setInterval(checkForUpdates, 2 * 60 * 1000)
     })
 
     return {
