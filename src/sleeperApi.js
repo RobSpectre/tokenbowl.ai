@@ -2,7 +2,7 @@ const LEAGUE_ID = '1266471057523490816'
 const BASE_URL = 'https://api.sleeper.app/v1'
 
 export async function getLeague() {
-  // Add cache-busting timestamp to ensure fresh data
+  // Cache-busting v2 - timestamp query prevents CDN/browser caching stale data
   const response = await fetch(`${BASE_URL}/league/${LEAGUE_ID}?_t=${Date.now()}`)
   return response.json()
 }
