@@ -122,7 +122,13 @@
                 )
                   | {{ getPlayerPosition(playerId) }}
                 .flex-1
-                  .text-white.font-semibold {{ getPlayerName(playerId) }}
+                  .flex.items-center.gap-2
+                    .text-white.font-semibold {{ getPlayerName(playerId) }}
+                    div(
+                      v-if="getPlayerInjury(playerId)"
+                      class="px-2 py-0.5 rounded text-xs font-bold"
+                      :class="getPlayerInjury(playerId) === 'O' || getPlayerInjury(playerId) === 'IR' ? 'bg-red-600 text-white' : getPlayerInjury(playerId) === 'D' ? 'bg-orange-500 text-white' : 'bg-yellow-500 text-black'"
+                    ) {{ getPlayerInjury(playerId) }}
                   .text-gray-400.text-xs {{ getPlayerTeam(playerId) }}
                 .text-right.flex-shrink-0
                   .text-blue-400.font-bold.text-lg {{ getPlayerPoints(matchup[0], playerId) }}
@@ -172,7 +178,13 @@
                 )
                   | {{ getPlayerPosition(playerId) }}
                 .flex-1
-                  .text-white.font-semibold {{ getPlayerName(playerId) }}
+                  .flex.items-center.gap-2
+                    .text-white.font-semibold {{ getPlayerName(playerId) }}
+                    div(
+                      v-if="getPlayerInjury(playerId)"
+                      class="px-2 py-0.5 rounded text-xs font-bold"
+                      :class="getPlayerInjury(playerId) === 'O' || getPlayerInjury(playerId) === 'IR' ? 'bg-red-600 text-white' : getPlayerInjury(playerId) === 'D' ? 'bg-orange-500 text-white' : 'bg-yellow-500 text-black'"
+                    ) {{ getPlayerInjury(playerId) }}
                   .text-gray-400.text-xs {{ getPlayerTeam(playerId) }}
                 .text-right.flex-shrink-0
                   .text-blue-400.font-bold.text-lg {{ getPlayerPoints(matchup[1], playerId) }}
@@ -227,6 +239,8 @@ import { ref, onMounted, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { getMatchups, getRosters, getLeagueUsers, getPlayers } from '../sleeperApi.js'
 import { getTeamInfo } from '../teamMappings.js'
+import { getPlayerInjuryStatus, getInjuryIndicator } from '../fantasyNerdsApi.js'
+import { useLeagueStore } from '../stores/league.js'
 import { marked } from 'marked'
 import 'github-markdown-css/github-markdown-dark.css'
 
@@ -234,12 +248,14 @@ export default {
   name: 'MatchupDetail',
   setup() {
     const route = useRoute()
+    const leagueStore = useLeagueStore()
     const week = ref(null)
     const matchupId = ref(null)
     const matchup = ref(null)
     const loading = ref(true)
     const error = ref(null)
     const players = ref({})
+    const injuries = ref({})
     const markdownContents = ref([])
     const draftData = ref({})
 
@@ -299,6 +315,9 @@ export default {
         if (!matchup.value) {
           throw new Error('Matchup not found')
         }
+
+        // Load injury data for this week
+        injuries.value = await leagueStore.fetchInjuriesForWeek(week.value)
 
         // Try to load markdown file for this matchup
         loadMarkdownFile()
@@ -448,6 +467,12 @@ export default {
       return colors[position] || 'bg-gray-500 text-white'
     }
 
+    const getPlayerInjury = (playerId) => {
+      const playerName = getPlayerName(playerId)
+      const injury = getPlayerInjuryStatus(injuries.value, playerName)
+      return getInjuryIndicator(injury)
+    }
+
     onMounted(() => {
       loadMatchupData()
     })
@@ -468,6 +493,7 @@ export default {
       getPlayerROS,
       getBenchPlayers,
       getPositionColor,
+      getPlayerInjury,
       markdownContents
     }
   }

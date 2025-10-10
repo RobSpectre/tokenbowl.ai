@@ -13,6 +13,16 @@ export default defineConfig({
       plugins: [tailwindcss()],
     },
   },
+  server: {
+    proxy: {
+      '/api/fantasynerds': {
+        target: 'https://api.fantasynerds.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/fantasynerds/, ''),
+        secure: true
+      }
+    }
+  },
   build: {
     rollupOptions: {
       output: {

@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { getLeagueData, getCurrentMatchups, getRelevantPlayers, getMatchups, getRosters, getLeagueUsers, getTransactions } from '../sleeperApi.js'
 import { getTeamInfo } from '../teamMappings.js'
 import { getLatestVideoAndShorts } from '../youtubeApi.js'
+import { getInjuries } from '../fantasyNerdsApi.js'
 
 // Cache duration: 5 minutes
 const CACHE_DURATION = 5 * 60 * 1000
@@ -30,6 +31,10 @@ export const useLeagueStore = defineStore('league', {
     // Transactions by week
     transactionsByWeek: {},
     transactionsTimestampsByWeek: {},
+
+    // Injuries by week (from Fantasy Nerds API)
+    injuriesByWeek: {},
+    injuriesTimestampsByWeek: {},
 
     // Draft data (never expires - loaded once)
     draftPicks: [],
@@ -108,6 +113,11 @@ export const useLeagueStore = defineStore('league', {
     // Get transactions for a specific week
     getTransactionsForWeek: (state) => {
       return (week) => state.transactionsByWeek[week] || []
+    },
+
+    // Get injuries for a specific week
+    getInjuriesForWeek: (state) => {
+      return (week) => state.injuriesByWeek[week] || {}
     }
   },
 
@@ -350,6 +360,29 @@ export const useLeagueStore = defineStore('league', {
       }
     },
 
+    async fetchInjuriesForWeek(week, forceRefresh = false) {
+      // Check if cached data is fresh (within 5 minutes)
+      const timestamp = this.injuriesTimestampsByWeek[week]
+      const isFresh = timestamp && (Date.now() - timestamp < CACHE_DURATION)
+
+      // Return cached data if exists, is fresh, and not forcing refresh
+      if (!forceRefresh && isFresh && this.injuriesByWeek[week]) {
+        return this.injuriesByWeek[week]
+      }
+
+      try {
+        const injuryData = await getInjuries(week)
+
+        this.injuriesByWeek[week] = injuryData
+        this.injuriesTimestampsByWeek[week] = Date.now()
+        return injuryData
+      } catch (error) {
+        console.error(`Error fetching injuries for week ${week}:`, error)
+        this.injuriesByWeek[week] = {}
+        return {}
+      }
+    },
+
     async fetchDraft(forceRefresh = false) {
       // Return cached data if loaded and not forcing refresh
       // Draft data never expires since it never changes
@@ -451,6 +484,8 @@ export const useLeagueStore = defineStore('league', {
       this.allMatchups = {}
       this.transactionsByWeek = {}
       this.transactionsTimestampsByWeek = {}
+      this.injuriesByWeek = {}
+      this.injuriesTimestampsByWeek = {}
       this.draftPicks = []
       this.latestVideo = null
       this.latestShorts = []
@@ -483,6 +518,8 @@ export const useLeagueStore = defineStore('league', {
       'allMatchups',
       'transactionsByWeek',
       'transactionsTimestampsByWeek',
+      'injuriesByWeek',
+      'injuriesTimestampsByWeek',
       'draftPicks',
       'latestVideo',
       'latestShorts',
