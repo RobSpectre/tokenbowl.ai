@@ -30,7 +30,7 @@ describe('Sleeper API', () => {
       const result = await getLeague()
 
       expect(global.fetch).toHaveBeenCalledWith(
-        'https://api.sleeper.app/v1/league/1266471057523490816'
+        expect.stringContaining('https://api.sleeper.app/v1/league/1266471057523490816?_t=')
       )
       expect(result).toEqual(mockLeague)
     })
@@ -47,7 +47,7 @@ describe('Sleeper API', () => {
       const result = await getLeagueUsers()
 
       expect(global.fetch).toHaveBeenCalledWith(
-        'https://api.sleeper.app/v1/league/1266471057523490816/users'
+        expect.stringContaining('https://api.sleeper.app/v1/league/1266471057523490816/users?_t=')
       )
       expect(result).toEqual(mockUsers)
     })
@@ -64,7 +64,7 @@ describe('Sleeper API', () => {
       const result = await getRosters()
 
       expect(global.fetch).toHaveBeenCalledWith(
-        'https://api.sleeper.app/v1/league/1266471057523490816/rosters'
+        expect.stringContaining('https://api.sleeper.app/v1/league/1266471057523490816/rosters?_t=')
       )
       expect(result).toEqual(mockRosters)
     })
@@ -81,7 +81,7 @@ describe('Sleeper API', () => {
       const result = await getMatchups(5)
 
       expect(global.fetch).toHaveBeenCalledWith(
-        'https://api.sleeper.app/v1/league/1266471057523490816/matchups/5'
+        expect.stringContaining('https://api.sleeper.app/v1/league/1266471057523490816/matchups/5?_t=')
       )
       expect(result).toEqual(mockMatchups)
     })

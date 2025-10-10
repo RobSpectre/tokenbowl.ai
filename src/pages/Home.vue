@@ -674,8 +674,8 @@ export default {
       }
 
       isAutoRefreshActive.value = true
-      // Refresh every 2 minutes (120000ms)
-      autoRefreshInterval.value = setInterval(refreshMatchups, 120000)
+      // Refresh every 1 minute (60000ms)
+      autoRefreshInterval.value = setInterval(refreshMatchups, 60000)
     }
 
     const stopAutoRefresh = () => {

@@ -2,22 +2,26 @@ const LEAGUE_ID = '1266471057523490816'
 const BASE_URL = 'https://api.sleeper.app/v1'
 
 export async function getLeague() {
-  const response = await fetch(`${BASE_URL}/league/${LEAGUE_ID}`)
+  // Add cache-busting timestamp to ensure fresh data
+  const response = await fetch(`${BASE_URL}/league/${LEAGUE_ID}?_t=${Date.now()}`)
   return response.json()
 }
 
 export async function getLeagueUsers() {
-  const response = await fetch(`${BASE_URL}/league/${LEAGUE_ID}/users`)
+  // Add cache-busting timestamp to ensure fresh data
+  const response = await fetch(`${BASE_URL}/league/${LEAGUE_ID}/users?_t=${Date.now()}`)
   return response.json()
 }
 
 export async function getRosters() {
-  const response = await fetch(`${BASE_URL}/league/${LEAGUE_ID}/rosters`)
+  // Add cache-busting timestamp to ensure fresh data
+  const response = await fetch(`${BASE_URL}/league/${LEAGUE_ID}/rosters?_t=${Date.now()}`)
   return response.json()
 }
 
 export async function getMatchups(week) {
-  const response = await fetch(`${BASE_URL}/league/${LEAGUE_ID}/matchups/${week}`)
+  // Add cache-busting timestamp to ensure fresh data
+  const response = await fetch(`${BASE_URL}/league/${LEAGUE_ID}/matchups/${week}?_t=${Date.now()}`)
   return response.json()
 }
 
