@@ -426,6 +426,12 @@ describe('Sleeper API', () => {
   })
 
   describe('getTransactions', () => {
+    beforeEach(async () => {
+      // Reset transaction cache before each test
+      const { resetTransactionCache } = await import('../sleeperApi.js')
+      resetTransactionCache()
+    })
+
     it('should fetch all rounds and filter by leg (week)', async () => {
       // Mock responses for rounds 1-20
       // Only round 3 has transactions with leg=5, round 5 has leg=5 transactions

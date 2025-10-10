@@ -1,6 +1,20 @@
 const LEAGUE_ID = '1266471057523490816'
 const BASE_URL = 'https://api.sleeper.app/v1'
 
+// Cache for transaction rounds to prevent duplicate API calls
+// Each call to getTransactions() was fetching all 20 rounds
+let transactionRoundsCache = null
+let transactionRoundsCacheTimestamp = null
+let transactionRoundsPromise = null
+const TRANSACTION_CACHE_DURATION = 5 * 60 * 1000 // 5 minutes
+
+// Export function to reset cache (useful for testing)
+export function resetTransactionCache() {
+  transactionRoundsCache = null
+  transactionRoundsCacheTimestamp = null
+  transactionRoundsPromise = null
+}
+
 export async function getLeague() {
   // Cache-busting v2 - timestamp query prevents CDN/browser caching stale data
   const response = await fetch(`${BASE_URL}/league/${LEAGUE_ID}?_t=${Date.now()}`)
@@ -262,22 +276,46 @@ export async function getTransactions(week) {
   // A round increments each time waivers process
   // We need to fetch all rounds and filter by the "leg" field (which is the NFL week)
 
-  const allTransactions = []
+  // Check if we have cached rounds that are still fresh
+  const isCacheFresh = transactionRoundsCacheTimestamp &&
+                       (Date.now() - transactionRoundsCacheTimestamp < TRANSACTION_CACHE_DURATION)
 
-  // Fetch up to 20 rounds (should cover the entire season)
-  // We fetch in parallel for speed
-  const roundPromises = []
-  for (let round = 1; round <= 20; round++) {
-    roundPromises.push(
-      fetch(`${BASE_URL}/league/${LEAGUE_ID}/transactions/${round}`)
-        .then(res => res.json())
-        .catch(() => []) // Ignore errors for rounds that don't exist
-    )
+  let allRounds
+  if (isCacheFresh && transactionRoundsCache) {
+    // Use cached rounds
+    allRounds = transactionRoundsCache
+  } else if (transactionRoundsPromise) {
+    // Another call is already fetching - wait for it
+    allRounds = await transactionRoundsPromise
+  } else {
+    // Create and store the promise so concurrent calls can await it
+    transactionRoundsPromise = (async () => {
+      // Fetch up to 20 rounds (should cover the entire season)
+      // We fetch in parallel for speed
+      const roundPromises = []
+      for (let round = 1; round <= 20; round++) {
+        roundPromises.push(
+          fetch(`${BASE_URL}/league/${LEAGUE_ID}/transactions/${round}`)
+            .then(res => res.json())
+            .catch(() => []) // Ignore errors for rounds that don't exist
+        )
+      }
+
+      const rounds = await Promise.all(roundPromises)
+
+      // Cache the rounds for future calls
+      transactionRoundsCache = rounds
+      transactionRoundsCacheTimestamp = Date.now()
+      transactionRoundsPromise = null
+
+      return rounds
+    })()
+
+    allRounds = await transactionRoundsPromise
   }
 
-  const allRounds = await Promise.all(roundPromises)
-
   // Combine all transactions and filter by week (leg field)
+  const allTransactions = []
   for (const roundTransactions of allRounds) {
     if (Array.isArray(roundTransactions)) {
       for (const transaction of roundTransactions) {
