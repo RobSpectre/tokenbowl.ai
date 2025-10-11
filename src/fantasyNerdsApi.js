@@ -12,8 +12,11 @@ export async function getInjuries(week) {
   const apiKey = import.meta.env.VITE_FANTASY_FOOTBALL_NERD_API_KEY
 
   if (!apiKey) {
-    console.error('Fantasy Nerds API key not found in environment variables')
-    return {}
+    console.warn('⚠️ Fantasy Nerds API key not configured. Please add VITE_FANTASY_FOOTBALL_NERD_API_KEY to your environment variables')
+    console.warn('Get your API key from: https://www.fantasynerds.com/')
+
+    // Return mock data for development
+    return getMockInjuryData(week)
   }
 
   try {
@@ -28,16 +31,43 @@ export async function getInjuries(week) {
 
     const data = await response.json()
 
-    // Transform array into a map keyed by player name for easy lookup
-    // Fantasy Nerds returns array of injury objects
+    // Check if the API returned an error
+    if (data.error) {
+      console.error(`Fantasy Nerds API error: ${data.error}`)
+      return {}
+    }
+
+    // Transform into a map keyed by player name for easy lookup
     const injuryMap = {}
 
-    if (Array.isArray(data)) {
+    // Handle new API format: { season, week, teams: { TEAM: [...injuries] } }
+    if (data.teams && typeof data.teams === 'object') {
+      Object.values(data.teams).forEach(teamInjuries => {
+        if (Array.isArray(teamInjuries)) {
+          teamInjuries.forEach(injury => {
+            // Key by player name (lowercase for case-insensitive matching)
+            const playerKey = `${injury.name || injury.player}`.toLowerCase()
+            injuryMap[playerKey] = {
+              player: injury.name || injury.player,
+              team: injury.team,
+              position: injury.position,
+              injury: injury.injury,
+              practice_status: injury.practice_status,
+              game_status: injury.game_status,
+              last_update: injury.last_update,
+              notes: injury.notes
+            }
+          })
+        }
+      })
+    }
+    // Handle old API format: array of injuries
+    else if (Array.isArray(data)) {
       data.forEach(injury => {
         // Key by player name (lowercase for case-insensitive matching)
-        const playerKey = `${injury.player}`.toLowerCase()
+        const playerKey = `${injury.name || injury.player}`.toLowerCase()
         injuryMap[playerKey] = {
-          player: injury.player,
+          player: injury.name || injury.player,
           team: injury.team,
           position: injury.position,
           injury: injury.injury,
@@ -90,4 +120,89 @@ export function getInjuryIndicator(injury) {
   if (injury.injury) return 'Q'
 
   return null
+}
+
+/**
+ * Get mock injury data for development when API key is not configured
+ * @param {number} week - NFL week number
+ * @returns {Object} Mock injury data
+ */
+function getMockInjuryData(week) {
+  // Sample injury data for development/testing
+  const mockInjuries = {
+    'cooper kupp': {
+      player: 'Cooper Kupp',
+      team: 'LAR',
+      position: 'WR',
+      injury: 'Ankle',
+      practice_status: 'Limited',
+      game_status: 'Questionable',
+      last_update: new Date().toISOString(),
+      notes: 'Mock data - configure API key for real data'
+    },
+    'justin jefferson': {
+      player: 'Justin Jefferson',
+      team: 'MIN',
+      position: 'WR',
+      injury: 'Hamstring',
+      practice_status: 'DNP',
+      game_status: 'Doubtful',
+      last_update: new Date().toISOString(),
+      notes: 'Mock data - configure API key for real data'
+    },
+    'christian mccaffrey': {
+      player: 'Christian McCaffrey',
+      team: 'SF',
+      position: 'RB',
+      injury: 'Achilles',
+      practice_status: 'DNP',
+      game_status: 'IR',
+      last_update: new Date().toISOString(),
+      notes: 'Mock data - configure API key for real data'
+    },
+    'travis kelce': {
+      player: 'Travis Kelce',
+      team: 'KC',
+      position: 'TE',
+      injury: 'Knee',
+      practice_status: 'Limited',
+      game_status: 'Questionable',
+      last_update: new Date().toISOString(),
+      notes: 'Mock data - configure API key for real data'
+    },
+    'tua tagovailoa': {
+      player: 'Tua Tagovailoa',
+      team: 'MIA',
+      position: 'QB',
+      injury: 'Concussion',
+      practice_status: 'DNP',
+      game_status: 'Out',
+      last_update: new Date().toISOString(),
+      notes: 'Mock data - configure API key for real data'
+    },
+    'nick chubb': {
+      player: 'Nick Chubb',
+      team: 'CLE',
+      position: 'RB',
+      injury: 'Knee',
+      practice_status: 'Limited',
+      game_status: 'Questionable',
+      last_update: new Date().toISOString(),
+      notes: 'Mock data - configure API key for real data'
+    }
+  }
+
+  // Return varying injuries based on week for realism
+  const players = Object.keys(mockInjuries)
+  const selectedInjuries = {}
+
+  // Select 3-5 injured players for this week
+  const numInjuries = 3 + (week % 3)
+  for (let i = 0; i < numInjuries && i < players.length; i++) {
+    const playerIndex = (week + i) % players.length
+    const playerKey = players[playerIndex]
+    selectedInjuries[playerKey] = mockInjuries[playerKey]
+  }
+
+  return selectedInjuries
 }
