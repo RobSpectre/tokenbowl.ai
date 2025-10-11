@@ -163,8 +163,8 @@ describe('League Store - Player Data Management', () => {
     it('should have consistent cache version between store and main.js', () => {
       const store = useLeagueStore()
 
-      // Both should use version 4 (optimized player loading)
-      expect(store.cacheVersion).toBe(4)
+      // Both should use version 5 (local JSON + zero duplicate API calls)
+      expect(store.cacheVersion).toBe(5)
     })
 
     it('should clear cache when players data is missing after timestamp is set', async () => {

@@ -9,7 +9,7 @@ const CACHE_DURATION = 5 * 60 * 1000
 // YouTube cache duration: 24 hours
 const YOUTUBE_CACHE_DURATION = 24 * 60 * 60 * 1000
 // Cache version - increment this when making breaking changes to data structure
-const CACHE_VERSION = 4 // v4: Optimized to store relevant players (~600 instead of 11,400: rosters + transactions + top 400)
+const CACHE_VERSION = 5 // v5: Local JSON for top 500 players + promise tracking + zero duplicate API calls
 
 export const useLeagueStore = defineStore('league', {
   state: () => ({

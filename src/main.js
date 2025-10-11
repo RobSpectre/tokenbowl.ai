@@ -7,7 +7,7 @@ import router from './router.js'
 import './style.css'
 
 // Cache version management - increment when making breaking changes
-const CACHE_VERSION = 4 // v4: Optimized to only store relevant players
+const CACHE_VERSION = 5 // v5: Local JSON for top 500 players + promise tracking + zero duplicate API calls
 const CACHE_KEY = 'tokenbowl-league'
 
 // Check and clear old cache before Pinia initializes
