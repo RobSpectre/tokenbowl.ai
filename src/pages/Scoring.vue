@@ -176,11 +176,12 @@
 
 <script>
 import { ref, onMounted, computed } from 'vue'
-import { getLeague } from '../sleeperApi.js'
+import { useLeagueStore } from '../stores/league.js'
 
 export default {
   name: 'Scoring',
   setup() {
+    const leagueStore = useLeagueStore()
     const leagueSettings = ref(null)
     const loading = ref(true)
     const error = ref(null)
@@ -190,8 +191,9 @@ export default {
         loading.value = true
         error.value = null
 
-        const league = await getLeague()
-        leagueSettings.value = league
+        // Use the store to fetch league data (uses cache if available)
+        await leagueStore.fetchLeagueData()
+        leagueSettings.value = leagueStore.league
       } catch (err) {
         error.value = 'Failed to load scoring settings. Please try again later.'
         console.error(err)

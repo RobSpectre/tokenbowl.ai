@@ -237,7 +237,6 @@
 <script>
 import { ref, onMounted, computed } from 'vue'
 import { useRoute } from 'vue-router'
-import { getMatchups, getRosters, getLeagueUsers, getPlayers } from '../sleeperApi.js'
 import { getTeamInfo } from '../teamMappings.js'
 import { getPlayerInjuryStatus, getInjuryIndicator } from '../fantasyNerdsApi.js'
 import { useLeagueStore } from '../stores/league.js'
@@ -267,47 +266,22 @@ export default {
         week.value = parseInt(route.params.week)
         matchupId.value = parseInt(route.params.matchupId)
 
-        const [matchupsData, rostersData, usersData, playersData, draftResponse] = await Promise.all([
-          getMatchups(week.value),
-          getRosters(),
-          getLeagueUsers(),
-          getPlayers(),
-          fetch('/data/draft_picks.json')
+        // Use the store to fetch all needed data (uses cache if available)
+        const [matchupsData, playersData, draftPicks] = await Promise.all([
+          leagueStore.fetchMatchupForWeek(week.value),
+          leagueStore.fetchPlayers(),
+          leagueStore.fetchDraft()
         ])
 
         players.value = playersData
+        draftData.value = draftPicks
 
-        if (draftResponse.ok) {
-          const draftPicks = await draftResponse.json()
-          draftData.value = draftPicks
-        }
-
-        // Create maps
-        const userMap = {}
-        usersData.forEach(user => {
-          userMap[user.user_id] = user
-        })
-
-        const rosterMap = {}
-        rostersData.forEach(roster => {
-          rosterMap[roster.roster_id] = {
-            ...roster,
-            user: userMap[roster.owner_id]
-          }
-        })
-
-        // Find the specific matchup
-        const matchupsWithRosters = matchupsData.map(m => ({
-          ...m,
-          roster: rosterMap[m.roster_id]
-        }))
-
+        // Find the specific matchup from the week's matchups
         const matchupGroups = {}
-        matchupsWithRosters.forEach(m => {
-          if (!matchupGroups[m.matchup_id]) {
-            matchupGroups[m.matchup_id] = []
-          }
-          matchupGroups[m.matchup_id].push(m)
+        matchupsData.forEach(matchupGroup => {
+          // Each matchupGroup is already an array of 2 teams in a matchup
+          const matchupIdKey = matchupGroup[0].matchup_id
+          matchupGroups[matchupIdKey] = matchupGroup
         })
 
         matchup.value = matchupGroups[matchupId.value]

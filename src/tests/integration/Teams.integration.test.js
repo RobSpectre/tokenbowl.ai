@@ -136,7 +136,7 @@ describe('Teams.vue Integration Tests', () => {
             json: () => Promise.resolve(mockLeague)
           })
         }
-        if (url.includes('/players/nfl')) {
+        if (url.includes('/players/nfl') || url.includes('/players.json')) {
           return Promise.resolve({
             ok: true,
             json: () => Promise.resolve(mockPlayers)
@@ -205,7 +205,7 @@ describe('Teams.vue Integration Tests', () => {
       }
 
       global.fetch.mockImplementation((url) => {
-        if (url.includes('/players/nfl')) {
+        if (url.includes('/players/nfl') || url.includes('/players.json')) {
           return Promise.resolve({
             ok: true,
             json: () => Promise.resolve(mockPlayers)
@@ -231,7 +231,7 @@ describe('Teams.vue Integration Tests', () => {
 
       // Verify players API was called
       const playersCalls = global.fetch.mock.calls.filter(call =>
-        call[0].includes('/players/nfl')
+        (call[0].includes('/players/nfl') || call[0].includes('/players.json'))
       )
 
       expect(playersCalls.length).toBeGreaterThan(0)
@@ -267,7 +267,7 @@ describe('Teams.vue Integration Tests', () => {
 
       // Find the players API call
       const playersCalls = global.fetch.mock.calls.filter(call =>
-        call[0].includes('/players/nfl')
+        (call[0].includes('/players/nfl') || call[0].includes('/players.json'))
       )
 
       if (playersCalls.length > 0) {

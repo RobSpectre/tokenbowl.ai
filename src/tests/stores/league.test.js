@@ -251,9 +251,9 @@ describe('League Store - Player Data Management', () => {
       expect(Object.keys(store.players).length).toBe(2)
       expect(store.players['4984'].full_name).toBe('Josh Allen')
 
-      // getRelevantPlayers makes 2 calls: getPlayers + getRosters (which fails)
-      // So we expect 2 fetch calls total, not 3 (concurrent calls share the promise)
-      expect(global.fetch).toHaveBeenCalledTimes(2)
+      // getRelevantPlayers now only makes 1 call to local players.json file
+      // Concurrent calls share the promise, so only 1 fetch call total
+      expect(global.fetch).toHaveBeenCalledTimes(1)
     })
 
     it('should not return empty players when already loading', async () => {
@@ -293,8 +293,8 @@ describe('League Store - Player Data Management', () => {
       expect(Object.keys(result2).length).toBeGreaterThan(0)
       expect(result1).toEqual(result2)
 
-      // getRelevantPlayers makes 2 calls: getPlayers + getRosters (which fails)
-      expect(global.fetch).toHaveBeenCalledTimes(2)
+      // getRelevantPlayers now only makes 1 call to local players.json file
+      expect(global.fetch).toHaveBeenCalledTimes(1)
     })
   })
 

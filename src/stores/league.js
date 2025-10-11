@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { getLeagueData, getCurrentMatchups, getRelevantPlayers, getMatchups, getRosters, getLeagueUsers, getTransactions } from '../sleeperApi.js'
+import { getLeagueData, getRelevantPlayers, getMatchups, getTransactions } from '../sleeperApi.js'
 import { getTeamInfo } from '../teamMappings.js'
 import { getLatestVideoAndShorts } from '../youtubeApi.js'
 import { getInjuries } from '../fantasyNerdsApi.js'
@@ -61,6 +61,8 @@ export const useLeagueStore = defineStore('league', {
 
     // Promise tracking for concurrent requests
     playersPromise: null,
+    leagueDataPromise: null,
+    currentMatchupsPromise: null,
 
     // Error states
     leagueDataError: null,
@@ -118,6 +120,11 @@ export const useLeagueStore = defineStore('league', {
     // Get injuries for a specific week
     getInjuriesForWeek: (state) => {
       return (week) => state.injuriesByWeek[week] || {}
+    },
+
+    // Get matchups for a specific week
+    getMatchupsForWeek: (state) => {
+      return (week) => state.allMatchups[week] || null
     }
   },
 
@@ -132,28 +139,36 @@ export const useLeagueStore = defineStore('league', {
         }
       }
 
-      // Skip if already loading
-      if (this.isLoadingLeagueData) return
+      // If already loading, wait for the existing promise instead of returning undefined
+      if (this.isLoadingLeagueData && this.leagueDataPromise) {
+        return await this.leagueDataPromise
+      }
 
       this.isLoadingLeagueData = true
       this.leagueDataError = null
 
-      try {
-        const data = await getLeagueData()
+      // Create and store the promise so concurrent calls can await it
+      this.leagueDataPromise = (async () => {
+        try {
+          const data = await getLeagueData()
 
-        this.league = data.league
-        this.rosters = data.rosters
-        this.users = data.users
-        this.leagueDataTimestamp = Date.now()
+          this.league = data.league
+          this.rosters = data.rosters
+          this.users = data.users
+          this.leagueDataTimestamp = Date.now()
 
-        return data
-      } catch (error) {
-        console.error('Error fetching league data:', error)
-        this.leagueDataError = error.message
-        throw error
-      } finally {
-        this.isLoadingLeagueData = false
-      }
+          return data
+        } catch (error) {
+          console.error('Error fetching league data:', error)
+          this.leagueDataError = error.message
+          throw error
+        } finally {
+          this.isLoadingLeagueData = false
+          this.leagueDataPromise = null
+        }
+      })()
+
+      return await this.leagueDataPromise
     },
 
     async fetchCurrentMatchups(forceRefresh = false) {
@@ -165,27 +180,73 @@ export const useLeagueStore = defineStore('league', {
         }
       }
 
-      // Skip if already loading
-      if (this.isLoadingMatchups) return
+      // If already loading, wait for the existing promise
+      if (this.isLoadingMatchups && this.currentMatchupsPromise) {
+        return await this.currentMatchupsPromise
+      }
 
       this.isLoadingMatchups = true
       this.matchupsError = null
 
-      try {
-        const data = await getCurrentMatchups()
+      // Create and store the promise so concurrent calls can await it
+      this.currentMatchupsPromise = (async () => {
+        try {
+          // Ensure we have league data cached first
+          await this.fetchLeagueData()
 
-        this.currentWeek = data.week
-        this.currentMatchups = data.matchups
-        this.matchupsTimestamp = Date.now()
+          // Get the current week from cached league data
+          const currentWeek = this.league?.settings?.leg || 1
 
-        return data
-      } catch (error) {
-        console.error('Error fetching matchups:', error)
-        this.matchupsError = error.message
-        throw error
-      } finally {
-        this.isLoadingMatchups = false
-      }
+          // Fetch just the matchups for current week
+          const matchups = await getMatchups(currentWeek)
+
+          // Create maps from cached data
+          const userMap = {}
+          this.users.forEach(user => {
+            userMap[user.user_id] = user
+          })
+
+          const rosterMap = {}
+          this.rosters.forEach(roster => {
+            rosterMap[roster.roster_id] = {
+              ...roster,
+              user: userMap[roster.owner_id]
+            }
+          })
+
+          // Group matchups by matchup_id
+          const matchupGroups = {}
+          matchups.forEach(matchup => {
+            if (!matchupGroups[matchup.matchup_id]) {
+              matchupGroups[matchup.matchup_id] = []
+            }
+            matchupGroups[matchup.matchup_id].push({
+              ...matchup,
+              roster: rosterMap[matchup.roster_id]
+            })
+          })
+
+          const data = {
+            week: currentWeek,
+            matchups: Object.values(matchupGroups)
+          }
+
+          this.currentWeek = data.week
+          this.currentMatchups = data.matchups
+          this.matchupsTimestamp = Date.now()
+
+          return data
+        } catch (error) {
+          console.error('Error fetching matchups:', error)
+          this.matchupsError = error.message
+          throw error
+        } finally {
+          this.isLoadingMatchups = false
+          this.currentMatchupsPromise = null
+        }
+      })()
+
+      return await this.currentMatchupsPromise
     },
 
     async fetchPlayers(forceRefresh = false) {
@@ -227,6 +288,52 @@ export const useLeagueStore = defineStore('league', {
       return await this.playersPromise
     },
 
+    async fetchMatchupForWeek(week, forceRefresh = false) {
+      // If we have fresh all matchups data, just return the specific week
+      if (!forceRefresh && this.isAllMatchupsFresh && this.allMatchups[week]) {
+        return this.allMatchups[week]
+      }
+
+      // Otherwise fetch just this week's matchup
+      try {
+        // Ensure we have rosters and users
+        // Don't pass forceRefresh to avoid duplicate API calls
+        await this.fetchLeagueData()
+
+        const matchups = await getMatchups(week)
+
+        // Create roster map
+        const rosterMap = {}
+        this.rosters.forEach(roster => {
+          rosterMap[roster.roster_id] = roster
+        })
+
+        // Group matchups
+        const matchupGroups = {}
+        matchups.forEach(matchup => {
+          if (!matchupGroups[matchup.matchup_id]) {
+            matchupGroups[matchup.matchup_id] = []
+          }
+          matchupGroups[matchup.matchup_id].push({
+            ...matchup,
+            roster: rosterMap[matchup.roster_id]
+          })
+        })
+
+        this.allMatchups[week] = Object.values(matchupGroups)
+
+        // Only update timestamp if all matchups are loaded
+        if (Object.keys(this.allMatchups).length >= 18) {
+          this.allMatchupsTimestamp = Date.now()
+        }
+
+        return Object.values(matchupGroups)
+      } catch (error) {
+        console.error(`Error fetching matchups for week ${week}:`, error)
+        throw error
+      }
+    },
+
     async fetchAllMatchups(forceRefresh = false) {
       // Return cached data if fresh and not forcing refresh
       if (!forceRefresh && this.isAllMatchupsFresh && Object.keys(this.allMatchups).length > 0) {
@@ -240,17 +347,19 @@ export const useLeagueStore = defineStore('league', {
       this.allMatchupsError = null
 
       try {
-        const rosters = await getRosters()
-        const users = await getLeagueUsers()
+        // Use cached league data (rosters and users) instead of making new API calls
+        // Don't pass forceRefresh to fetchLeagueData to avoid duplicate API calls
+        // when this method is called as part of fetchAllData
+        await this.fetchLeagueData()
 
-        // Create maps
+        // Create maps from cached data
         const userMap = {}
-        users.forEach(user => {
+        this.users.forEach(user => {
           userMap[user.user_id] = user
         })
 
         const rosterMap = {}
-        rosters.forEach(roster => {
+        this.rosters.forEach(roster => {
           rosterMap[roster.roster_id] = {
             ...roster,
             user: userMap[roster.owner_id]
@@ -306,21 +415,22 @@ export const useLeagueStore = defineStore('league', {
       }
 
       try {
-        const [trans, rosters, users] = await Promise.all([
-          getTransactions(week),
-          getRosters(),
-          getLeagueUsers()
-        ])
+        // Ensure we have league data (rosters and users) cached
+        // Don't pass forceRefresh to avoid duplicate API calls
+        await this.fetchLeagueData()
 
-        // Create user map
+        // Only fetch the transactions for this week
+        const trans = await getTransactions(week)
+
+        // Create user map from cached data
         const userMap = {}
-        users.forEach(user => {
+        this.users.forEach(user => {
           userMap[user.user_id] = user
         })
 
-        // Create roster map
+        // Create roster map from cached data
         const rosterMap = {}
-        rosters.forEach(roster => {
+        this.rosters.forEach(roster => {
           rosterMap[roster.roster_id] = {
             ...roster,
             user: userMap[roster.owner_id]

@@ -268,7 +268,7 @@ describe('Sleeper API', () => {
   })
 
   describe('getPlayers', () => {
-    it('should fetch players without cache busting by default', async () => {
+    it('should fetch players from local file without cache busting by default', async () => {
       const mockPlayers = { p1: { name: 'Player 1' } }
       global.fetch.mockResolvedValueOnce({
         json: async () => mockPlayers
@@ -277,13 +277,13 @@ describe('Sleeper API', () => {
       const result = await getPlayers()
 
       expect(global.fetch).toHaveBeenCalledWith(
-        'https://api.sleeper.app/v1/players/nfl',
+        '/data/players.json',
         { cache: 'default' }
       )
       expect(result).toEqual(mockPlayers)
     })
 
-    it('should fetch players with cache busting when requested', async () => {
+    it('should fetch players from local file with cache busting when requested', async () => {
       const mockPlayers = { p1: { name: 'Player 1' } }
       global.fetch.mockResolvedValueOnce({
         json: async () => mockPlayers
@@ -292,7 +292,7 @@ describe('Sleeper API', () => {
       const result = await getPlayers(true)
 
       expect(global.fetch).toHaveBeenCalledWith(
-        expect.stringContaining('https://api.sleeper.app/v1/players/nfl?_t='),
+        expect.stringContaining('/data/players.json?_t='),
         { cache: 'reload' }
       )
       expect(result).toEqual(mockPlayers)
@@ -300,87 +300,42 @@ describe('Sleeper API', () => {
   })
 
   describe('getRelevantPlayers', () => {
-    it('should filter players to relevant ones', async () => {
-      // Create many players so p3 is truly outside top 400
+    it('should return players from local file', async () => {
       const mockPlayers = {
         p1: { name: 'Player 1', search_rank: 10 },
         p2: { name: 'Player 2', search_rank: 20 },
-        p3: { name: 'Player 3', search_rank: 500 }
-      }
-      // Add 400 more players with better ranks than p3
-      for (let i = 4; i <= 404; i++) {
-        mockPlayers[`p${i}`] = { name: `Player ${i}`, search_rank: i }
+        p3: { name: 'Player 3', search_rank: 30 }
       }
 
-      const mockRosters = [
-        { roster_id: 1, players: ['p1'] }
-      ]
-      const mockTransactions = [
-        { adds: { p2: 1 }, drops: {} }
-      ]
-
-      global.fetch
-        .mockResolvedValueOnce({ json: async () => mockPlayers }) // getPlayers
-        .mockResolvedValueOnce({ json: async () => mockRosters }) // getRosters
-        // Mock all 18 weeks of transactions
-        .mockResolvedValueOnce({ json: async () => mockTransactions })
-        .mockResolvedValueOnce({ json: async () => [] })
-        .mockResolvedValueOnce({ json: async () => [] })
-        .mockResolvedValueOnce({ json: async () => [] })
-        .mockResolvedValueOnce({ json: async () => [] })
-        .mockResolvedValueOnce({ json: async () => [] })
-        .mockResolvedValueOnce({ json: async () => [] })
-        .mockResolvedValueOnce({ json: async () => [] })
-        .mockResolvedValueOnce({ json: async () => [] })
-        .mockResolvedValueOnce({ json: async () => [] })
-        .mockResolvedValueOnce({ json: async () => [] })
-        .mockResolvedValueOnce({ json: async () => [] })
-        .mockResolvedValueOnce({ json: async () => [] })
-        .mockResolvedValueOnce({ json: async () => [] })
-        .mockResolvedValueOnce({ json: async () => [] })
-        .mockResolvedValueOnce({ json: async () => [] })
-        .mockResolvedValueOnce({ json: async () => [] })
-        .mockResolvedValueOnce({ json: async () => [] })
+      global.fetch.mockResolvedValueOnce({ json: async () => mockPlayers })
 
       const result = await getRelevantPlayers()
 
-      // Should include rostered players (p1), transaction players (p2), and top ranked players (p1-p404)
+      // Should return all players from local file (top 500)
+      expect(result).toEqual(mockPlayers)
       expect(result.p1).toBeDefined()
       expect(result.p2).toBeDefined()
-      // Should not include low-ranked player not in rosters or transactions (rank 500 > top 400)
-      expect(result.p3).toBeUndefined()
+      expect(result.p3).toBeDefined()
     })
 
-    it('should return all players if roster fetch fails', async () => {
+    it('should support cache busting', async () => {
       const mockPlayers = { p1: { name: 'Player 1' } }
 
-      global.fetch
-        .mockResolvedValueOnce({ json: async () => mockPlayers }) // getPlayers
-        .mockRejectedValueOnce(new Error('Roster fetch failed')) // getRosters fails
+      global.fetch.mockResolvedValueOnce({ json: async () => mockPlayers })
 
-      const result = await getRelevantPlayers()
+      const result = await getRelevantPlayers(true)
 
+      expect(global.fetch).toHaveBeenCalledWith(
+        expect.stringContaining('/data/players.json?_t='),
+        { cache: 'reload' }
+      )
       expect(result).toEqual(mockPlayers)
     })
 
-    it('should handle transaction fetch failures gracefully', async () => {
-      const mockPlayers = {
-        p1: { name: 'Player 1', search_rank: 10 }
-      }
-      const mockRosters = [
-        { roster_id: 1, players: ['p1'] }
-      ]
+    it('should handle fetch errors', async () => {
+      global.fetch.mockRejectedValueOnce(new Error('File fetch failed'))
 
-      global.fetch
-        .mockResolvedValueOnce({ json: async () => mockPlayers }) // getPlayers
-        .mockResolvedValueOnce({ json: async () => mockRosters }) // getRosters
-        // Mock transactions failing
-        .mockRejectedValue(new Error('Transaction fetch failed'))
-
-      const result = await getRelevantPlayers()
-
-      // Should still work with just roster filtering
-      expect(result.p1).toBeDefined()
+      await expect(getRelevantPlayers()).rejects.toThrow('File fetch failed')
     })
   })
 

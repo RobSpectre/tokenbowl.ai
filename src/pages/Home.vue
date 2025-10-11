@@ -633,9 +633,13 @@ export default {
         // Fix the page height temporarily to prevent browser scroll adjustment
         document.body.style.minHeight = `${savedHeight}px`
 
-        // Force refresh all data from API
+        // Force refresh league data first, then other data that depends on it
+        // This prevents duplicate API calls to /rosters and /users
+        await leagueStore.fetchLeagueData(true)
+
+        // Now refresh matchups and transactions in parallel
+        // They will use the freshly cached league data
         await Promise.all([
-          leagueStore.fetchLeagueData(true),
           leagueStore.fetchAllMatchups(true),
           leagueStore.fetchTransactionsForWeek(selectedWeek.value, true)
         ])

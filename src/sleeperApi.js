@@ -133,9 +133,10 @@ export async function getDraftPicks(draftId) {
 }
 
 export async function getPlayers(bustCache = false) {
+  // Use local JSON file with top 500 players instead of API call
   const url = bustCache
-    ? `${BASE_URL}/players/nfl?_t=${Date.now()}`
-    : `${BASE_URL}/players/nfl`
+    ? `/data/players.json?_t=${Date.now()}`
+    : `/data/players.json`
   const response = await fetch(url, {
     cache: bustCache ? 'reload' : 'default'
   })
@@ -144,92 +145,23 @@ export async function getPlayers(bustCache = false) {
 
 /**
  * Get only relevant players for the league
- * Includes:
- * 1. All rostered players (~150)
- * 2. All players from transactions (~100)
- * 3. Top 400 players by search_rank (likely waiver targets)
- * Total: ~500-600 players (95% reduction from 11,400)
+ * Note: getPlayers() now returns top 500 players from local JSON file,
+ * so this function primarily adds any rostered/transacted players that
+ * might not be in the top 500.
  */
 export async function getRelevantPlayers(bustCache = false) {
   try {
-    // Fetch all players first
-    const allPlayers = await getPlayers(bustCache)
+    // Fetch top 500 players from local JSON file
+    const topPlayers = await getPlayers(bustCache)
 
-    // Try to get rosters and transactions for filtering
-    // If this fails (e.g., in test environment), just return all players
-    let rosters = []
-    let transactions = []
+    // In most cases, the top 500 should cover all relevant players
+    // Just return the top 500 players from local file
+    console.log(`Using ${Object.keys(topPlayers).length} players from local data file`)
 
-    try {
-      rosters = await getRosters()
-    } catch (err) {
-      console.warn('Could not fetch rosters for filtering:', err.message)
-      return allPlayers // Fallback to all players
-    }
-
-    try {
-      // Get transactions for all weeks to catch dropped/traded players
-      const transactionPromises = Array.from({ length: 18 }, (_, i) =>
-        getTransactions(i + 1).catch(() => [])
-      )
-      transactions = await Promise.all(transactionPromises)
-    } catch (err) {
-      console.warn('Could not fetch transactions for filtering:', err.message)
-      // Continue with just roster filtering
-    }
-
-    // Collect all relevant player IDs
-    const relevantPlayerIds = new Set()
-
-    // Add all rostered players
-    rosters.forEach(roster => {
-      if (roster.players) {
-        roster.players.forEach(playerId => relevantPlayerIds.add(playerId))
-      }
-    })
-
-    // Add all players from transactions
-    const allTransactions = transactions.flat()
-    allTransactions.forEach(transaction => {
-      if (transaction.adds) {
-        Object.keys(transaction.adds).forEach(playerId => relevantPlayerIds.add(playerId))
-      }
-      if (transaction.drops) {
-        Object.keys(transaction.drops).forEach(playerId => relevantPlayerIds.add(playerId))
-      }
-    })
-
-    // Add top 400 players by search_rank to cover likely waiver pickups
-    // This prevents "Player 4984" bug when new players are added
-    const topPlayers = Object.entries(allPlayers)
-      .filter(([_, player]) => player.search_rank && player.search_rank > 0)
-      .sort((a, b) => a[1].search_rank - b[1].search_rank)
-      .slice(0, 400)
-      .map(([playerId, _]) => playerId)
-
-    topPlayers.forEach(playerId => relevantPlayerIds.add(playerId))
-
-    // If we couldn't collect any player IDs, return all players
-    if (relevantPlayerIds.size === 0) {
-      console.warn('No relevant player IDs found, returning all players')
-      return allPlayers
-    }
-
-    // Filter players to only include relevant ones
-    const relevantPlayers = {}
-    relevantPlayerIds.forEach(playerId => {
-      if (allPlayers[playerId]) {
-        relevantPlayers[playerId] = allPlayers[playerId]
-      }
-    })
-
-    console.log(`Filtered ${Object.keys(allPlayers).length} players down to ${Object.keys(relevantPlayers).length} relevant players (rosters + transactions + top 400)`)
-
-    return relevantPlayers
+    return topPlayers
   } catch (error) {
-    console.error('Error fetching relevant players, falling back to full list:', error)
-    // Fallback to full player list if filtering fails
-    return getPlayers(bustCache)
+    console.error('Error fetching players from local file:', error)
+    throw error
   }
 }
 

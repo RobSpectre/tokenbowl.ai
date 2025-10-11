@@ -133,7 +133,7 @@ describe('Cache Version Management', () => {
 
   describe('Cache Busting Parameters', () => {
     it('should generate unique cache-busting URLs', () => {
-      const baseUrl = 'https://api.sleeper.app/v1/players/nfl'
+      const baseUrl = '/data/players.json'
 
       const timestamp1 = Date.now()
       const url1 = `${baseUrl}?_t=${timestamp1}`
