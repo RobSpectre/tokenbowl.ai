@@ -488,6 +488,7 @@ import { ref, onMounted, onUnmounted, watch, computed, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { useLeagueStore } from '../stores/league.js'
 import { getTeamInfo } from '../teamMappings.js'
+import { getPlayerInjuryStatus } from '../fantasyNerdsApi.js'
 import * as echarts from 'echarts'
 import { trackButtonClick } from '../analytics.js'
 
@@ -511,7 +512,7 @@ export default {
     let modelTransactionsChart = null
     let injuriesChart = null
     let modelInjuriesChart = null
-    const injuriesData = ref(null)
+    const injuriesData = ref({})
     const lastUpdated = ref(null)
     const autoRefreshInterval = ref(null)
     const autoRefreshCheckInterval = ref(null)
@@ -605,13 +606,63 @@ export default {
         }
         await Promise.all(transactionPromises)
 
-        // Load injury data
-        try {
-          const response = await fetch('/data/injuries_by_team.json')
-          injuriesData.value = await response.json()
-        } catch (err) {
-          console.error('Failed to load injury data:', err)
+        // Load injury data for all weeks (for charts)
+        const injuryPromises = []
+        for (let week = 1; week <= Math.min(currentWeek, 18); week++) {
+          injuryPromises.push(leagueStore.fetchInjuriesForWeek(week))
         }
+        await Promise.all(injuryPromises)
+
+        // Transform injury data into the format expected by charts
+        const transformedInjuries = {}
+        for (let week = 1; week <= Math.min(currentWeek, 18); week++) {
+          const weekInjuries = leagueStore.getInjuriesForWeek(week)
+          const injuriesByTeam = {}
+
+          // Group injuries by team based on players on rosters
+          const weekMatchups = leagueStore.allMatchups[week] || []
+          weekMatchups.forEach(matchupGroup => {
+            matchupGroup.forEach(matchup => {
+              if (matchup.roster?.user?.display_name) {
+                const teamInfo = getTeamInfo(matchup.roster.user.display_name)
+                const teamName = teamInfo.aiModel
+                const teamInjuries = []
+
+                // Check each player on the roster for injuries
+                if (matchup.players) {
+                  matchup.players.forEach(playerId => {
+                    const player = players.value[playerId]
+                    if (player) {
+                      const playerName = `${player.first_name} ${player.last_name}`
+                      const injuryStatus = getPlayerInjuryStatus(weekInjuries, playerName)
+                      if (injuryStatus) {
+                        teamInjuries.push({
+                          player: playerName,
+                          team: player.team,
+                          position: player.position,
+                          injury: injuryStatus.injury,
+                          gameStatus: injuryStatus.game_status,
+                          practice_status: injuryStatus.practice_status
+                        })
+                      }
+                    }
+                  })
+                }
+
+                if (teamInjuries.length > 0) {
+                  injuriesByTeam[teamName] = teamInjuries
+                }
+              }
+            })
+          })
+
+          transformedInjuries[`week${week}`] = {
+            week: week,
+            injuries: injuriesByTeam
+          }
+        }
+
+        injuriesData.value = transformedInjuries
 
         // Set last updated timestamp
         lastUpdated.value = new Date()

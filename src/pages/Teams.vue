@@ -154,7 +154,13 @@
                     :class="getPositionColor(getPlayerPosition(playerId))"
                   ) {{ getPlayerPosition(playerId) }}
                   .flex-1.min-w-0
-                    div(class="text-white font-semibold text-sm sm:text-base truncate") {{ getPlayerName(playerId) }}
+                    .flex.items-center.gap-2
+                      div(class="text-white font-semibold text-sm sm:text-base truncate") {{ getPlayerName(playerId) }}
+                      div(
+                        v-if="getPlayerInjury(playerId)"
+                        class="px-2 py-0.5 rounded text-xs font-bold"
+                        :class="getPlayerInjury(playerId) === 'O' || getPlayerInjury(playerId) === 'IR' ? 'bg-red-600 text-white' : getPlayerInjury(playerId) === 'D' ? 'bg-orange-500 text-white' : 'bg-yellow-500 text-black'"
+                      ) {{ getPlayerInjury(playerId) }}
                     div(class="text-gray-400 text-xs hidden sm:block") {{ getPlayerTeam(playerId) }}
                     div(class="flex gap-2 text-xs mt-0.5")
                       span(class="text-gray-500" v-if="getPlayerVORP(playerId)") VORP: {{ getPlayerVORP(playerId) }}
@@ -182,7 +188,13 @@
                       :class="getPositionColor(getPlayerPosition(playerId))"
                     ) {{ getPlayerPosition(playerId) }}
                     .flex-1
-                      .text-white.font-semibold.text-sm {{ getPlayerName(playerId) }}
+                      .flex.items-center.gap-2
+                        .text-white.font-semibold.text-sm {{ getPlayerName(playerId) }}
+                        div(
+                          v-if="getPlayerInjury(playerId)"
+                          class="px-1.5 py-0.5 rounded text-xs font-bold"
+                          :class="getPlayerInjury(playerId) === 'O' || getPlayerInjury(playerId) === 'IR' ? 'bg-red-600 text-white' : getPlayerInjury(playerId) === 'D' ? 'bg-orange-500 text-white' : 'bg-yellow-500 text-black'"
+                        ) {{ getPlayerInjury(playerId) }}
                       .text-gray-400.text-xs {{ getPlayerTeam(playerId) }}
                       div(class="flex gap-2 text-xs mt-0.5")
                         span(class="text-gray-500" v-if="getPlayerVORP(playerId)") VORP: {{ getPlayerVORP(playerId) }}
@@ -492,6 +504,7 @@ import { ref, onMounted, onUnmounted, computed, watch, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useLeagueStore } from '../stores/league.js'
 import { getTeamInfo } from '../teamMappings.js'
+import { getPlayerInjuryStatus, getInjuryIndicator } from '../fantasyNerdsApi.js'
 import { trackButtonClick } from '../analytics.js'
 import * as echarts from 'echarts'
 
@@ -513,7 +526,7 @@ export default {
     let transactionsChart = null
     const injuriesChartRef = ref(null)
     let injuriesChart = null
-    const injuriesData = ref(null)
+    const injuriesData = ref({})
 
     // Set the ref function
     const setWeeklyChartRef = (el) => {
@@ -575,22 +588,21 @@ export default {
         loading.value = true
         error.value = null
 
-        // Load all data from store and injury data in parallel
+        // Load all data from store
         await Promise.all([
           leagueStore.fetchLeagueData(),
           leagueStore.fetchPlayers(),
           leagueStore.fetchDraft(),
-          leagueStore.fetchAllMatchups(),
-          // Load injury data early so it's available for team history calculation
-          (async () => {
-            try {
-              const response = await fetch('/data/injuries_by_team.json')
-              injuriesData.value = await response.json()
-            } catch (err) {
-              console.error('Failed to load injury data:', err)
-            }
-          })()
+          leagueStore.fetchAllMatchups()
         ])
+
+        // Load injuries for all weeks (up to current week)
+        const currentWeekNum = leagueStore.league?.settings?.leg || 1
+        const injuryPromises = []
+        for (let week = 1; week <= Math.min(currentWeekNum, 18); week++) {
+          injuryPromises.push(leagueStore.fetchInjuriesForWeek(week))
+        }
+        await Promise.all(injuryPromises)
 
         // Select team based on route parameter or default to first team
         if (teams.value.length > 0) {
@@ -1006,23 +1018,48 @@ export default {
     })
 
     const teamInjuries = computed(() => {
-      if (!selectedTeam.value || !injuriesData.value) return []
+      if (!selectedTeam.value) return []
 
-      const teamName = selectedTeam.value.teamInfo.aiModel
       const injuries = []
+      const currentWeekNum = currentWeek.value
 
-      // Collect injuries from all weeks
-      Object.entries(injuriesData.value).forEach(([weekKey, weekData]) => {
-        const week = weekData.week
-        if (weekData.injuries && weekData.injuries[teamName]) {
-          weekData.injuries[teamName].forEach(injury => {
-            injuries.push({
-              ...injury,
-              week
-            })
-          })
+      // Collect all injuries for players on this team's roster from all weeks
+      for (let week = 1; week <= Math.min(currentWeekNum, 18); week++) {
+        const weekInjuries = leagueStore.getInjuriesForWeek(week)
+
+        // Get all players on this team (starters + bench)
+        const teamPlayers = new Set()
+        const weekMatchups = allMatchups.value[week]
+        if (weekMatchups) {
+          const matchupGroup = weekMatchups.find(group =>
+            group.some(m => m.roster_id === selectedTeam.value.roster_id)
+          )
+          if (matchupGroup) {
+            const teamMatchup = matchupGroup.find(m => m.roster_id === selectedTeam.value.roster_id)
+            if (teamMatchup && teamMatchup.players) {
+              teamMatchup.players.forEach(playerId => teamPlayers.add(playerId))
+            }
+          }
         }
-      })
+
+        // Check each player for injuries
+        teamPlayers.forEach(playerId => {
+          const player = players.value[playerId]
+          if (player) {
+            const playerName = `${player.first_name} ${player.last_name}`
+            const injuryStatus = getPlayerInjuryStatus(weekInjuries, playerName)
+            if (injuryStatus) {
+              injuries.push({
+                ...injuryStatus,
+                week,
+                playerId,
+                playerName,
+                gameStatus: injuryStatus.game_status || injuryStatus.gameStatus
+              })
+            }
+          }
+        })
+      }
 
       return injuries
     })
@@ -1114,6 +1151,17 @@ export default {
     const getPlayerROS = (playerId) => {
       const draftPick = draftPicksData.value.find(pick => pick.sleeper_id === playerId)
       return draftPick?.ros || null
+    }
+
+    const getPlayerInjury = (playerId) => {
+      // Get current week injuries
+      const weekInjuries = leagueStore.getInjuriesForWeek(currentWeek.value)
+      const player = players.value[playerId]
+      if (!player) return null
+
+      const playerName = `${player.first_name} ${player.last_name}`
+      const injuryStatus = getPlayerInjuryStatus(weekInjuries, playerName)
+      return getInjuryIndicator(injuryStatus)
     }
 
     const getTransactionDelta = (transaction) => {
@@ -1730,6 +1778,7 @@ export default {
       getPlayerRankECR,
       getPlayerVORP,
       getPlayerROS,
+      getPlayerInjury,
       getTransactionDelta,
       formatTransactionDate,
       formatReleaseDate,
@@ -1740,7 +1789,8 @@ export default {
       setTransactionsChartRef,
       injuriesChartRef,
       setInjuriesChartRef,
-      teamInjuries
+      teamInjuries,
+      getTeamInfo
     }
   }
 }
