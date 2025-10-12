@@ -1,13 +1,7 @@
 <template lang="pug">
 .bg-slate-950
-  //- Loading State
-  .flex.items-center.justify-center(v-if="loading" style="min-height: 50vh")
-    .text-center
-      .inline-block.animate-spin.rounded-full.h-16.w-16.border-4.border-blue-500.border-t-transparent
-      p.text-white.mt-4.text-xl.font-bold.uppercase.tracking-wider Loading Matchups...
-
   //- Error State
-  .container.mx-auto.px-4.py-12(v-else-if="error")
+  .container.mx-auto.px-4.py-12(v-if="error")
     .bg-red-600.border-l-4.border-red-800.rounded.p-6.text-center
       p.text-white.text-xl.font-bold {{ error }}
 
@@ -19,15 +13,20 @@
         div(class="flex items-center justify-center gap-3 mb-3")
           button(class="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-700 disabled:text-slate-500 text-white font-bold rounded-lg transition-all duration-200 disabled:cursor-not-allowed"
             @click="handleWeekChange('prev')"
-            :disabled="selectedWeek === 1"
+            :disabled="selectedWeek === 1 || loading"
           ) ← PREV
-          select(class="px-4 py-2 bg-slate-800 text-white font-black text-xl rounded-lg border-2 border-blue-600 focus:outline-none focus:border-yellow-400 transition-colors uppercase"
-            v-model="selectedWeek"
-          )
-            option(v-for="week in 18" :key="week" :value="week") Week {{ week }}
+          div(class="relative")
+            select(class="px-4 py-2 bg-slate-800 text-white font-black text-xl rounded-lg border-2 border-blue-600 focus:outline-none focus:border-yellow-400 transition-colors uppercase"
+              v-model="selectedWeek"
+              :disabled="loading"
+            )
+              option(v-for="week in 18" :key="week" :value="week") Week {{ week }}
+            //- Loading Spinner Overlay
+            div(v-if="loading" class="absolute inset-0 flex items-center justify-center bg-slate-800/50 rounded-lg")
+              .inline-block.animate-spin.rounded-full.h-6.w-6.border-3.border-blue-500.border-t-transparent
           button(class="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-700 disabled:text-slate-500 text-white font-bold rounded-lg transition-all duration-200 disabled:cursor-not-allowed"
             @click="handleWeekChange('next')"
-            :disabled="selectedWeek === 18"
+            :disabled="selectedWeek === 18 || loading"
           ) NEXT →
 
         //- Season Progress Bar
