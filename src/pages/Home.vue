@@ -616,6 +616,29 @@ export default {
         }
         await Promise.all(injuryPromises)
 
+        // Collect all unique player IDs from all rosters to fetch missing players
+        const allRosteredPlayerIds = new Set()
+        if (leagueData.value.rosters) {
+          leagueData.value.rosters.forEach(roster => {
+            ;[
+              ...(roster.players || []),
+              ...(roster.starters || []),
+              ...(roster.taxi || []),
+              ...(roster.reserve || [])
+            ].forEach(playerId => allRosteredPlayerIds.add(playerId))
+          })
+        }
+
+        // Fetch any missing players before checking injuries
+        const missingPlayerIds = Array.from(allRosteredPlayerIds).filter(
+          playerId => !players.value[playerId] && !dynamicPlayers.value[playerId]
+        )
+        if (missingPlayerIds.length > 0) {
+          const { getPlayers } = await import('../utils/playerService.js')
+          const fetchedPlayers = await getPlayers(missingPlayerIds, players.value)
+          Object.assign(dynamicPlayers.value, fetchedPlayers)
+        }
+
         // Transform injury data into the format expected by charts
         const transformedInjuries = {}
         for (let week = 1; week <= Math.min(currentWeek, 18); week++) {
@@ -640,9 +663,10 @@ export default {
 
                 // Check each player on the roster for injuries
                 allPlayerIds.forEach(playerId => {
-                  const player = players.value[playerId]
+                  // Check both cached and dynamically fetched players
+                  const player = players.value[playerId] || dynamicPlayers.value[playerId]
                   if (player) {
-                    const playerName = `${player.first_name} ${player.last_name}`
+                    const playerName = player.full_name || `${player.first_name} ${player.last_name}`
                     const injuryStatus = getPlayerInjuryStatus(weekInjuries, playerName)
                     if (injuryStatus) {
                       teamInjuries.push({
