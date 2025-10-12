@@ -71,6 +71,7 @@
             :key="index"
             @click="goToMatchupDetail(matchup)"
             class="bg-slate-800 rounded-lg overflow-hidden hover:bg-slate-750 transition-all duration-200 cursor-pointer border-2 border-slate-700 hover:border-blue-500"
+            :class="{ 'matchup-highlight': matchup.length === 2 && isMatchupAnimating(selectedWeek, matchup[0].matchup_id) }"
           )
             div(class="p-4" v-if="matchup.length === 2")
               //- Mobile Layout (stacked)
@@ -521,6 +522,7 @@ export default {
     // Score animation tracking
     const animatingScores = ref(new Set())
     const previousScores = ref({})
+    const animatingMatchups = ref(new Set())
 
     // Computed properties from store
     const leagueData = computed(() => ({
@@ -887,6 +889,23 @@ export default {
       }, 1000)
     }
 
+    // Check if a matchup is currently animating
+    const isMatchupAnimating = (week, matchupId) => {
+      const key = `${week}-${matchupId}`
+      return animatingMatchups.value.has(key)
+    }
+
+    // Trigger matchup animation
+    const animateMatchup = (week, matchupId) => {
+      const key = `${week}-${matchupId}`
+      animatingMatchups.value.add(key)
+
+      // Remove animation after 2 seconds
+      setTimeout(() => {
+        animatingMatchups.value.delete(key)
+      }, 2000)
+    }
+
     // Watch for score changes in allMatchups
     watch(() => allMatchups.value, (newMatchups, oldMatchups) => {
       if (!newMatchups || !oldMatchups) return
@@ -918,6 +937,7 @@ export default {
           // If score changed and we have a previous score
           if (prevScore !== undefined && prevScore !== newScore && newScore > 0) {
             animateScore(selectedWeek.value, team.matchup_id, team.roster_id)
+            animateMatchup(selectedWeek.value, team.matchup_id)
             scoreChanged = true
           }
 
@@ -2037,7 +2057,8 @@ export default {
       injuriesChartRef,
       modelInjuriesChartRef,
       refreshMatchups,
-      isScoreAnimating
+      isScoreAnimating,
+      isMatchupAnimating
     }
   }
 }
@@ -2073,5 +2094,32 @@ export default {
 
 .score-pulse {
   animation: scorePulse 1s ease-out;
+}
+
+@keyframes matchupHighlight {
+  0% {
+    border-color: rgb(51, 65, 85);
+    box-shadow: 0 0 0 rgba(34, 197, 94, 0);
+  }
+  25% {
+    border-color: rgb(34, 197, 94);
+    box-shadow: 0 0 30px rgba(34, 197, 94, 0.6);
+  }
+  50% {
+    border-color: rgb(34, 197, 94);
+    box-shadow: 0 0 25px rgba(34, 197, 94, 0.5);
+  }
+  75% {
+    border-color: rgb(34, 197, 94);
+    box-shadow: 0 0 20px rgba(34, 197, 94, 0.4);
+  }
+  100% {
+    border-color: rgb(51, 65, 85);
+    box-shadow: 0 0 0 rgba(34, 197, 94, 0);
+  }
+}
+
+.matchup-highlight {
+  animation: matchupHighlight 2s ease-out;
 }
 </style>
