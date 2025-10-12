@@ -1,16 +1,21 @@
 const CHANNEL_ID = 'UCFf-Wwy675zDhKDcKxGl_kw'
 const API_KEY = import.meta.env.VITE_YOUTUBE_API_KEY // Read from environment variable
 const CACHE_DURATION = 3600000 // 1 hour in milliseconds
+const CACHE_VERSION = 2 // Increment when changing video classification logic
 
 // Helper function to get cached data
 function getCachedData(key) {
   try {
     const cached = localStorage.getItem(key)
     if (cached) {
-      const { data, timestamp } = JSON.parse(cached)
-      if (Date.now() - timestamp < CACHE_DURATION) {
+      const { data, timestamp, version } = JSON.parse(cached)
+      // Check version and timestamp
+      if (version === CACHE_VERSION && Date.now() - timestamp < CACHE_DURATION) {
         console.log(`Using cached YouTube data for: ${key}`)
         return data
+      } else if (version !== CACHE_VERSION) {
+        console.log(`Cache version mismatch for ${key} (stored: ${version}, current: ${CACHE_VERSION}). Clearing cache...`)
+        localStorage.removeItem(key)
       }
     }
   } catch (error) {
@@ -24,7 +29,8 @@ function setCachedData(key, data) {
   try {
     localStorage.setItem(key, JSON.stringify({
       data,
-      timestamp: Date.now()
+      timestamp: Date.now(),
+      version: CACHE_VERSION
     }))
   } catch (error) {
     console.error('Error setting cache:', error)
