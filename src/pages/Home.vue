@@ -584,8 +584,8 @@ export default {
         loading.value = true
         error.value = null
 
-        // Use the store to fetch all data (with caching)
-        await leagueStore.fetchAllData()
+        // Force refresh all matchups data on page load to ensure latest scores
+        await leagueStore.fetchAllData(true)
 
         // Check URL for week parameter, otherwise use current week
         const weekParam = router.currentRoute.value.query.week
