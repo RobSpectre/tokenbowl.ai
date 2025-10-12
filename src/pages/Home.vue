@@ -802,20 +802,88 @@ export default {
       return types[type] || type
     }
 
+    // Helper function to check if playerId is a defense team abbreviation
+    const isDefenseTeam = (playerId) => {
+      return typeof playerId === 'string' && /^[A-Z]{2,3}$/.test(playerId)
+    }
+
+    // Helper function to get team name from abbreviation
+    const getTeamNameFromAbbr = (abbr) => {
+      const teamNames = {
+        'ARI': 'Arizona Cardinals',
+        'ATL': 'Atlanta Falcons',
+        'BAL': 'Baltimore Ravens',
+        'BUF': 'Buffalo Bills',
+        'CAR': 'Carolina Panthers',
+        'CHI': 'Chicago Bears',
+        'CIN': 'Cincinnati Bengals',
+        'CLE': 'Cleveland Browns',
+        'DAL': 'Dallas Cowboys',
+        'DEN': 'Denver Broncos',
+        'DET': 'Detroit Lions',
+        'GB': 'Green Bay Packers',
+        'HOU': 'Houston Texans',
+        'IND': 'Indianapolis Colts',
+        'JAC': 'Jacksonville Jaguars',
+        'KC': 'Kansas City Chiefs',
+        'LAC': 'Los Angeles Chargers',
+        'LAR': 'Los Angeles Rams',
+        'LV': 'Las Vegas Raiders',
+        'MIA': 'Miami Dolphins',
+        'MIN': 'Minnesota Vikings',
+        'NE': 'New England Patriots',
+        'NO': 'New Orleans Saints',
+        'NYG': 'New York Giants',
+        'NYJ': 'New York Jets',
+        'PHI': 'Philadelphia Eagles',
+        'PIT': 'Pittsburgh Steelers',
+        'SEA': 'Seattle Seahawks',
+        'SF': 'San Francisco 49ers',
+        'TB': 'Tampa Bay Buccaneers',
+        'TEN': 'Tennessee Titans',
+        'WAS': 'Washington Commanders'
+      }
+      return teamNames[abbr] || `${abbr} Defense`
+    }
+
     const getPlayerNameFromId = (playerId) => {
       const player = players.value?.[playerId]
+
+      // Check if this is a defense team (2-3 uppercase letters)
+      if (isDefenseTeam(playerId)) {
+        return getTeamNameFromAbbr(playerId)
+      }
+
       if (!player) return `Player ${playerId}`
+
+      // Handle defenses that are in player data but missing name
+      if (player.position === 'DEF') {
+        return player.full_name || getTeamNameFromAbbr(player.team || playerId)
+      }
+
       return `${player.first_name} ${player.last_name}`
     }
 
     const getPlayerPosition = (playerId) => {
       const player = players.value?.[playerId]
+
+      // Check if this is a defense team
+      if (isDefenseTeam(playerId)) {
+        return 'DEF'
+      }
+
       if (!player || !player.position) return 'N/A'
       return player.position
     }
 
     const getPlayerImageUrl = (playerId) => {
       const player = players.value?.[playerId]
+
+      // Check if this is a defense team abbreviation
+      if (isDefenseTeam(playerId)) {
+        return `https://sleepercdn.com/images/team_logos/nfl/${playerId.toLowerCase()}.png`
+      }
+
       if (!player) return `https://sleepercdn.com/content/nfl/players/thumb/${playerId}.jpg`
 
       // For defenses, use team logo instead of player portrait
@@ -1094,21 +1162,16 @@ export default {
       if (!leagueData.value || !selectedWeek.value) return []
 
       // Determine which week to calculate standings through
-      // Check if current week is complete by looking at matchup data
+      // IMPORTANT: Only show standings through the previous week when viewing current week
+      // This ensures all rostered players have finished playing before updating records
+      // Only show current week standings once the league has officially advanced to the next week
       const currentWeek = leagueData.value.league?.settings?.leg || 1
-      const currentWeekMatchups = allMatchups.value[currentWeek]
-      const isCurrentWeekComplete = currentWeekMatchups?.every(matchup =>
-        matchup.every(team => team.points && team.points > 0)
-      )
 
-      // If viewing current week and it's complete, show through current week
-      // If viewing current week and it's not complete, show through previous week
+      // If viewing current week, show through previous week (all players have finished)
       // If viewing past weeks, show through that week
       const standingsWeek = selectedWeek.value < currentWeek
         ? selectedWeek.value
-        : (selectedWeek.value === currentWeek && isCurrentWeekComplete)
-          ? currentWeek
-          : Math.max(0, currentWeek - 1)
+        : Math.max(0, currentWeek - 1)
 
       const standings = leagueData.value.rosters.map(roster => {
         const record = getRecordThroughWeek(roster.roster_id, standingsWeek)
@@ -1143,16 +1206,11 @@ export default {
       }
 
       const currentWeek = leagueData.value.league?.settings?.leg || 1
-      const currentWeekMatchups = allMatchups.value[currentWeek]
-      const isCurrentWeekComplete = currentWeekMatchups?.every(matchup =>
-        matchup.every(team => team.points && team.points > 0)
-      )
 
+      // Same logic as historicalStandings: only show through previous week for current week
       const maxWeek = selectedWeek.value < currentWeek
         ? selectedWeek.value
-        : (selectedWeek.value === currentWeek && isCurrentWeekComplete)
-          ? currentWeek
-          : Math.max(0, currentWeek - 1)
+        : Math.max(0, currentWeek - 1)
 
       // Prepare data: track each team's rank over time
       const teamData = {}

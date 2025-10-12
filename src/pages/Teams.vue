@@ -1064,9 +1064,44 @@ export default {
       return injuries
     })
 
+    // Helper function to check if playerId is a defense team abbreviation
+    const isDefenseTeam = (playerId) => {
+      return typeof playerId === 'string' && /^[A-Z]{2,3}$/.test(playerId)
+    }
+
+    // Helper function to get team name from abbreviation
+    const getTeamNameFromAbbr = (abbr) => {
+      const teamNames = {
+        'ARI': 'Arizona Cardinals', 'ATL': 'Atlanta Falcons', 'BAL': 'Baltimore Ravens',
+        'BUF': 'Buffalo Bills', 'CAR': 'Carolina Panthers', 'CHI': 'Chicago Bears',
+        'CIN': 'Cincinnati Bengals', 'CLE': 'Cleveland Browns', 'DAL': 'Dallas Cowboys',
+        'DEN': 'Denver Broncos', 'DET': 'Detroit Lions', 'GB': 'Green Bay Packers',
+        'HOU': 'Houston Texans', 'IND': 'Indianapolis Colts', 'JAC': 'Jacksonville Jaguars',
+        'KC': 'Kansas City Chiefs', 'LAC': 'Los Angeles Chargers', 'LAR': 'Los Angeles Rams',
+        'LV': 'Las Vegas Raiders', 'MIA': 'Miami Dolphins', 'MIN': 'Minnesota Vikings',
+        'NE': 'New England Patriots', 'NO': 'New Orleans Saints', 'NYG': 'New York Giants',
+        'NYJ': 'New York Jets', 'PHI': 'Philadelphia Eagles', 'PIT': 'Pittsburgh Steelers',
+        'SEA': 'Seattle Seahawks', 'SF': 'San Francisco 49ers', 'TB': 'Tampa Bay Buccaneers',
+        'TEN': 'Tennessee Titans', 'WAS': 'Washington Commanders'
+      }
+      return teamNames[abbr] || `${abbr} Defense`
+    }
+
     const getPlayerName = (playerId) => {
       const player = players.value[playerId]
+
+      // Check if this is a defense team
+      if (isDefenseTeam(playerId)) {
+        return getTeamNameFromAbbr(playerId)
+      }
+
       if (!player) return `Player ${playerId}`
+
+      // Handle defenses that are in player data but missing name
+      if (player.position === 'DEF') {
+        return player.full_name || getTeamNameFromAbbr(player.team || playerId)
+      }
+
       return `${player.first_name} ${player.last_name}`
     }
 
@@ -1076,6 +1111,12 @@ export default {
 
     const getPlayerPosition = (playerId) => {
       const player = players.value[playerId]
+
+      // Check if this is a defense team
+      if (isDefenseTeam(playerId)) {
+        return 'DEF'
+      }
+
       return player?.position || '?'
     }
 
@@ -1121,6 +1162,12 @@ export default {
 
     const getPlayerImageUrl = (playerId) => {
       const player = players.value[playerId]
+
+      // Check if this is a defense team abbreviation
+      if (isDefenseTeam(playerId)) {
+        return `https://sleepercdn.com/images/team_logos/nfl/${playerId.toLowerCase()}.png`
+      }
+
       if (!player) return `https://sleepercdn.com/content/nfl/players/thumb/${playerId}.jpg`
 
       // For defenses, use team logo instead of player portrait
@@ -1132,6 +1179,11 @@ export default {
     }
 
     const getPlayerPositionFromId = (playerId) => {
+      // Check if this is a defense team
+      if (isDefenseTeam(playerId)) {
+        return 'DEF'
+      }
+
       const player = players.value[playerId]
       if (!player || !player.position) return 'N/A'
       return player.position
