@@ -144,83 +144,107 @@
       .bg-gradient-to-r.from-purple-600.to-purple-800.rounded-t-lg.px-6.py-4.border-b-4.border-yellow-400
         h2.text-white.text-2xl.font-black.uppercase.tracking-wide Head to Head
 
-      div(class="bg-slate-900 rounded-b-lg p-4 sm:p-6 space-y-2")
+      div(class="bg-slate-900 rounded-b-lg p-4 sm:p-6 space-y-4")
         //- Roster Slots (specific positions with colors)
         div(v-for="(slot, index) in getRosterSlots()" :key="slot.name")
-          div(class="grid grid-cols-1 md:grid-cols-2 gap-2")
-            //- Team 1 Player
-            div(v-if="slot.team1Player")
-              .bg-slate-800.rounded.p-3(:class="{ 'matchup-highlight': isPlayerScoreAnimating(slot.team1Player) }")
-                .flex.items-center.gap-3
-                  //- Position Label with Color
-                  div(class="w-16 h-16 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0"
-                    :class="getSlotColor(slot.name)"
-                  )
-                    div(class="text-center")
-                      div {{ slot.name }}
-                  img.h-12.w-12.rounded-full.object-cover(
-                    v-if="getPlayerPortrait(slot.team1Player)"
-                    :src="getPlayerPortrait(slot.team1Player)"
-                    :alt="getPlayerName(slot.team1Player)"
-                    @error="$event.target.style.display='none'"
-                  )
-                  .flex-1
-                    .flex.items-center.gap-2
-                      .text-white.font-semibold.text-sm {{ getPlayerName(slot.team1Player) }}
-                      div(
-                        v-if="getPlayerInjury(slot.team1Player)"
-                        class="px-2 py-0.5 rounded text-xs font-bold"
-                        :class="getPlayerInjury(slot.team1Player) === 'O' || getPlayerInjury(slot.team1Player) === 'IR' ? 'bg-red-600 text-white' : getPlayerInjury(slot.team1Player) === 'D' ? 'bg-orange-500 text-white' : 'bg-yellow-500 text-black'"
-                      ) {{ getPlayerInjury(slot.team1Player) }}
-                    .text-gray-500.text-xs {{ getPlayerTeam(slot.team1Player) }} • {{ getPlayerPosition(slot.team1Player) }}
-                  .text-right.flex-shrink-0
-                    .text-blue-400.font-bold.text-lg(
-                      :class="{ 'score-pulse': isPlayerScoreAnimating(slot.team1Player) }"
-                    ) {{ getPlayerPoints(matchup[0], slot.team1Player) }}
-            div(v-else)
-              .bg-slate-800.rounded.p-3.opacity-30
-                .flex.items-center.gap-3
-                  div(class="w-16 h-16 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0 bg-gray-700 text-gray-500")
-                    div(class="text-center")
-                      div {{ slot.name }}
-                  .text-center.text-gray-600.flex-1 Empty
+          div(class="space-y-2")
+            div(class="grid grid-cols-1 md:grid-cols-2 gap-2")
+              //- Team 1 Player
+              div(v-if="slot.team1Player")
+                .bg-slate-800.rounded.p-3(:class="{ 'matchup-highlight': isPlayerScoreAnimating(slot.team1Player) }")
+                  .flex.items-center.gap-3
+                    //- Position Label with Color
+                    div(class="w-16 h-16 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0"
+                      :class="getSlotColor(slot.name)"
+                    )
+                      div(class="text-center")
+                        div {{ slot.name }}
+                    img.h-12.w-12.rounded-full.object-cover(
+                      v-if="getPlayerPortrait(slot.team1Player)"
+                      :src="getPlayerPortrait(slot.team1Player)"
+                      :alt="getPlayerName(slot.team1Player)"
+                      @error="$event.target.style.display='none'"
+                    )
+                    .flex-1
+                      .flex.items-center.gap-2
+                        .text-white.font-semibold.text-sm {{ getPlayerName(slot.team1Player) }}
+                        div(
+                          v-if="getPlayerInjury(slot.team1Player)"
+                          class="px-2 py-0.5 rounded text-xs font-bold"
+                          :class="getPlayerInjury(slot.team1Player) === 'O' || getPlayerInjury(slot.team1Player) === 'IR' ? 'bg-red-600 text-white' : getPlayerInjury(slot.team1Player) === 'D' ? 'bg-orange-500 text-white' : 'bg-yellow-500 text-black'"
+                        ) {{ getPlayerInjury(slot.team1Player) }}
+                      .text-gray-500.text-xs {{ getPlayerTeam(slot.team1Player) }} • {{ getPlayerPosition(slot.team1Player) }}
+                    .text-right.flex-shrink-0
+                      .text-blue-400.font-bold.text-lg(
+                        :class="{ 'score-pulse': isPlayerScoreAnimating(slot.team1Player) }"
+                      ) {{ getPlayerPoints(matchup[0], slot.team1Player) }}
+              div(v-else)
+                .bg-slate-800.rounded.p-3.opacity-30
+                  .flex.items-center.gap-3
+                    div(class="w-16 h-16 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0 bg-gray-700 text-gray-500")
+                      div(class="text-center")
+                        div {{ slot.name }}
+                    .text-center.text-gray-600.flex-1 Empty
 
-            //- Team 2 Player
-            div(v-if="slot.team2Player")
-              .bg-slate-800.rounded.p-3(:class="{ 'matchup-highlight': isPlayerScoreAnimating(slot.team2Player) }")
-                .flex.items-center.gap-3.flex-row-reverse
-                  //- Position Label with Color
-                  div(class="w-16 h-16 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0"
-                    :class="getSlotColor(slot.name)"
-                  )
-                    div(class="text-center")
-                      div {{ slot.name }}
-                  img.h-12.w-12.rounded-full.object-cover(
-                    v-if="getPlayerPortrait(slot.team2Player)"
-                    :src="getPlayerPortrait(slot.team2Player)"
-                    :alt="getPlayerName(slot.team2Player)"
-                    @error="$event.target.style.display='none'"
-                  )
-                  .flex-1.text-right
-                    .flex.items-center.gap-2.justify-end
-                      div(
-                        v-if="getPlayerInjury(slot.team2Player)"
-                        class="px-2 py-0.5 rounded text-xs font-bold"
-                        :class="getPlayerInjury(slot.team2Player) === 'O' || getPlayerInjury(slot.team2Player) === 'IR' ? 'bg-red-600 text-white' : getPlayerInjury(slot.team2Player) === 'D' ? 'bg-orange-500 text-white' : 'bg-yellow-500 text-black'"
-                      ) {{ getPlayerInjury(slot.team2Player) }}
-                      .text-white.font-semibold.text-sm {{ getPlayerName(slot.team2Player) }}
-                    .text-gray-500.text-xs {{ getPlayerTeam(slot.team2Player) }} • {{ getPlayerPosition(slot.team2Player) }}
-                  .text-left.flex-shrink-0
-                    .text-blue-400.font-bold.text-lg(
-                      :class="{ 'score-pulse': isPlayerScoreAnimating(slot.team2Player) }"
-                    ) {{ getPlayerPoints(matchup[1], slot.team2Player) }}
-            div(v-else)
-              .bg-slate-800.rounded.p-3.opacity-30
-                .flex.items-center.gap-3.flex-row-reverse
-                  div(class="w-16 h-16 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0 bg-gray-700 text-gray-500")
-                    div(class="text-center")
-                      div {{ slot.name }}
-                  .text-center.text-gray-600.flex-1 Empty
+              //- Team 2 Player
+              div(v-if="slot.team2Player")
+                .bg-slate-800.rounded.p-3(:class="{ 'matchup-highlight': isPlayerScoreAnimating(slot.team2Player) }")
+                  .flex.items-center.gap-3.flex-row-reverse
+                    //- Position Label with Color
+                    div(class="w-16 h-16 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0"
+                      :class="getSlotColor(slot.name)"
+                    )
+                      div(class="text-center")
+                        div {{ slot.name }}
+                    img.h-12.w-12.rounded-full.object-cover(
+                      v-if="getPlayerPortrait(slot.team2Player)"
+                      :src="getPlayerPortrait(slot.team2Player)"
+                      :alt="getPlayerName(slot.team2Player)"
+                      @error="$event.target.style.display='none'"
+                    )
+                    .flex-1.text-right
+                      .flex.items-center.gap-2.justify-end
+                        div(
+                          v-if="getPlayerInjury(slot.team2Player)"
+                          class="px-2 py-0.5 rounded text-xs font-bold"
+                          :class="getPlayerInjury(slot.team2Player) === 'O' || getPlayerInjury(slot.team2Player) === 'IR' ? 'bg-red-600 text-white' : getPlayerInjury(slot.team2Player) === 'D' ? 'bg-orange-500 text-white' : 'bg-yellow-500 text-black'"
+                        ) {{ getPlayerInjury(slot.team2Player) }}
+                        .text-white.font-semibold.text-sm {{ getPlayerName(slot.team2Player) }}
+                      .text-gray-500.text-xs {{ getPlayerTeam(slot.team2Player) }} • {{ getPlayerPosition(slot.team2Player) }}
+                    .text-left.flex-shrink-0
+                      .text-blue-400.font-bold.text-lg(
+                        :class="{ 'score-pulse': isPlayerScoreAnimating(slot.team2Player) }"
+                      ) {{ getPlayerPoints(matchup[1], slot.team2Player) }}
+              div(v-else)
+                .bg-slate-800.rounded.p-3.opacity-30
+                  .flex.items-center.gap-3.flex-row-reverse
+                    div(class="w-16 h-16 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0 bg-gray-700 text-gray-500")
+                      div(class="text-center")
+                        div {{ slot.name }}
+                    .text-center.text-gray-600.flex-1 Empty
+
+            //- Position Differential Bar (only show if both players exist and scores differ)
+            .relative.h-8.flex.items-center.bg-slate-800.rounded.overflow-hidden(
+              v-if="slot.team1Player && slot.team2Player && getPositionDifferential(slot).team1Points !== getPositionDifferential(slot).team2Points"
+            )
+              //- Center Line
+              div(class="absolute left-1/2 transform -translate-x-1/2 w-0.5 h-full bg-slate-600 z-10")
+
+              //- Team 1 winning bar (left side)
+              div(
+                v-if="getPositionDifferential(slot).team1Points > getPositionDifferential(slot).team2Points"
+                class="absolute right-1/2 h-6 bg-gradient-to-l from-blue-500 to-blue-600 flex items-center justify-start pl-2 transition-all duration-500"
+                :style="{ width: `${Math.min((getPositionDifferential(slot).differential / Math.max(getPositionDifferential(slot).team1Points, getPositionDifferential(slot).team2Points)) * 45, 45)}%` }"
+              )
+                span.text-white.text-xs.font-bold +{{ getPositionDifferential(slot).differential.toFixed(1) }}
+
+              //- Team 2 winning bar (right side)
+              div(
+                v-else-if="getPositionDifferential(slot).team2Points > getPositionDifferential(slot).team1Points"
+                class="absolute left-1/2 h-6 bg-gradient-to-r from-green-500 to-green-600 flex items-center justify-end pr-2 transition-all duration-500"
+                :style="{ width: `${Math.min((getPositionDifferential(slot).differential / Math.max(getPositionDifferential(slot).team1Points, getPositionDifferential(slot).team2Points)) * 45, 45)}%` }"
+              )
+                span.text-white.text-xs.font-bold +{{ getPositionDifferential(slot).differential.toFixed(1) }}
 
     //- Bench Players
     section.mb-8
@@ -728,6 +752,19 @@ export default {
       return colors[slotName] || 'bg-gray-500 text-white'
     }
 
+    // Calculate point differential for a specific position matchup
+    const getPositionDifferential = (slot) => {
+      const team1Points = parseFloat(getPlayerPoints(matchup.value[0], slot.team1Player)) || 0
+      const team2Points = parseFloat(getPlayerPoints(matchup.value[1], slot.team2Player)) || 0
+      const differential = Math.abs(team1Points - team2Points)
+
+      return {
+        team1Points,
+        team2Points,
+        differential
+      }
+    }
+
     onMounted(async () => {
       await loadMatchupData()
 
@@ -767,6 +804,7 @@ export default {
       getPlayerInjury,
       getRosterSlots,
       getSlotColor,
+      getPositionDifferential,
       markdownContents,
       isScoreAnimating,
       isPlayerScoreAnimating
