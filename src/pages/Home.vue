@@ -969,10 +969,10 @@ export default {
       const key = `${week}-${matchupId}-${rosterId}`
       animatingScores.value.add(key)
 
-      // Remove animation after 1 second
+      // Remove animation after 2 seconds
       setTimeout(() => {
         animatingScores.value.delete(key)
-      }, 1000)
+      }, 2000)
     }
 
     // Check if a matchup is currently animating
@@ -2169,7 +2169,7 @@ export default {
 }
 
 .score-pulse {
-  animation: scorePulse 1s ease-out;
+  animation: scorePulse 2s ease-out;
 }
 
 @keyframes matchupHighlight {
