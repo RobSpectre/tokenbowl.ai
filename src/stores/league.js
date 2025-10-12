@@ -10,7 +10,7 @@ const CACHE_DURATION = 5 * 60 * 1000
 // YouTube cache duration: 24 hours
 const YOUTUBE_CACHE_DURATION = 24 * 60 * 60 * 1000
 // Cache version - increment this when making breaking changes to data structure
-const CACHE_VERSION = 6 // v6: Dynamic player fetching from Sleeper API for missing players (defenses + lower-ranked)
+const CACHE_VERSION = 7 // v7: Fixed YouTube Shorts detection using UUSH playlist for vertical vs horizontal videos
 
 export const useLeagueStore = defineStore('league', {
   state: () => ({

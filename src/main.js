@@ -7,7 +7,7 @@ import router from './router.js'
 import './style.css'
 
 // Cache version management - increment when making breaking changes
-const CACHE_VERSION = 6 // v6: Dynamic player fetching from Sleeper API for missing players (defenses + lower-ranked)
+const CACHE_VERSION = 7 // v7: Fixed YouTube Shorts detection using UUSH playlist for vertical vs horizontal videos
 const CACHE_KEY = 'tokenbowl-league'
 
 // Check and clear old cache before Pinia initializes
