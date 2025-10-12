@@ -404,6 +404,100 @@ export const useLeagueStore = defineStore('league', {
       }
     },
 
+    /**
+     * Intelligently pair transactions that occur within a short time window
+     * Handles cases where AI made separate add/drop calls instead of paired transactions
+     */
+    pairTransactions(transactions) {
+      if (!Array.isArray(transactions) || transactions.length === 0) {
+        return transactions
+      }
+
+      // Sort by timestamp to process chronologically
+      const sorted = [...transactions].sort((a, b) => {
+        const timeA = a.status_updated || a.created || 0
+        const timeB = b.status_updated || b.created || 0
+        return timeA - timeB
+      })
+
+      // Group by roster_id
+      const byRoster = {}
+      sorted.forEach(t => {
+        const rosterId = t.roster_ids?.[0]
+        if (rosterId) {
+          if (!byRoster[rosterId]) {
+            byRoster[rosterId] = []
+          }
+          byRoster[rosterId].push(t)
+        }
+      })
+
+      // Process each roster's transactions
+      const result = []
+      const PAIRING_WINDOW_MS = 2 * 60 * 1000 // 2 minutes
+
+      Object.values(byRoster).forEach(rosterTransactions => {
+        let i = 0
+        while (i < rosterTransactions.length) {
+          const current = rosterTransactions[i]
+          const currentTime = current.status_updated || current.created || 0
+
+          // If this transaction already has both adds and drops, keep it as-is
+          if (current.adds && current.drops) {
+            result.push(current)
+            i++
+            continue
+          }
+
+          // Look for complementary transactions within the time window
+          let paired = false
+          for (let j = i + 1; j < rosterTransactions.length; j++) {
+            const candidate = rosterTransactions[j]
+            const candidateTime = candidate.status_updated || candidate.created || 0
+
+            // Stop if we're outside the pairing window
+            if (candidateTime - currentTime > PAIRING_WINDOW_MS) {
+              break
+            }
+
+            // Check if this is a complementary transaction
+            const currentHasAdds = current.adds && Object.keys(current.adds).length > 0
+            const currentHasDrops = current.drops && Object.keys(current.drops).length > 0
+            const candidateHasAdds = candidate.adds && Object.keys(candidate.adds).length > 0
+            const candidateHasDrops = candidate.drops && Object.keys(candidate.drops).length > 0
+
+            // Pair add-only with drop-only, or drop-only with add-only
+            if ((currentHasAdds && !currentHasDrops && candidateHasDrops && !candidateHasAdds) ||
+                (currentHasDrops && !currentHasAdds && candidateHasAdds && !candidateHasDrops)) {
+              // Merge the transactions
+              result.push({
+                ...current,
+                adds: current.adds || candidate.adds,
+                drops: current.drops || candidate.drops
+              })
+              // Mark candidate as consumed
+              rosterTransactions.splice(j, 1)
+              paired = true
+              break
+            }
+          }
+
+          // If no pairing found, add transaction as-is
+          if (!paired) {
+            result.push(current)
+          }
+          i++
+        }
+      })
+
+      // Sort result by timestamp descending (newest first)
+      return result.sort((a, b) => {
+        const timeA = a.status_updated || a.created || 0
+        const timeB = b.status_updated || b.created || 0
+        return timeB - timeA
+      })
+    },
+
     async fetchTransactionsForWeek(week, forceRefresh = false) {
       // Check if cached data is fresh (within 5 minutes)
       const timestamp = this.transactionsTimestampsByWeek[week]
@@ -460,9 +554,13 @@ export const useLeagueStore = defineStore('league', {
           }
         })
 
-        this.transactionsByWeek[week] = enhancedTransactions
+        // Smart transaction pairing: Group transactions that occurred within 2 minutes of each other
+        // This handles cases where AI made multiple separate add/drop calls instead of paired transactions
+        const pairedTransactions = this.pairTransactions(enhancedTransactions)
+
+        this.transactionsByWeek[week] = pairedTransactions
         this.transactionsTimestampsByWeek[week] = Date.now()
-        return enhancedTransactions
+        return pairedTransactions
       } catch (error) {
         console.error(`Error fetching transactions for week ${week}:`, error)
         this.transactionsByWeek[week] = []

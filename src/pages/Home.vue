@@ -621,42 +621,47 @@ export default {
           const weekInjuries = leagueStore.getInjuriesForWeek(week)
           const injuriesByTeam = {}
 
-          // Group injuries by team based on players on rosters
-          const weekMatchups = leagueStore.allMatchups[week] || []
-          weekMatchups.forEach(matchupGroup => {
-            matchupGroup.forEach(matchup => {
-              if (matchup.roster?.user?.display_name) {
-                const teamInfo = getTeamInfo(matchup.roster.user.display_name)
+          // Group injuries by team based on ALL players on rosters (not just starters)
+          if (leagueData.value.rosters) {
+            leagueData.value.rosters.forEach(roster => {
+              if (roster.user?.display_name) {
+                const teamInfo = getTeamInfo(roster.user.display_name)
                 const teamName = teamInfo.aiModel
                 const teamInjuries = []
 
+                // Collect all players on this roster (players, starters, taxi, reserve)
+                const allPlayerIds = new Set([
+                  ...(roster.players || []),
+                  ...(roster.starters || []),
+                  ...(roster.taxi || []),
+                  ...(roster.reserve || [])
+                ])
+
                 // Check each player on the roster for injuries
-                if (matchup.players) {
-                  matchup.players.forEach(playerId => {
-                    const player = players.value[playerId]
-                    if (player) {
-                      const playerName = `${player.first_name} ${player.last_name}`
-                      const injuryStatus = getPlayerInjuryStatus(weekInjuries, playerName)
-                      if (injuryStatus) {
-                        teamInjuries.push({
-                          player: playerName,
-                          team: player.team,
-                          position: player.position,
-                          injury: injuryStatus.injury,
-                          gameStatus: injuryStatus.game_status,
-                          practice_status: injuryStatus.practice_status
-                        })
-                      }
+                allPlayerIds.forEach(playerId => {
+                  const player = players.value[playerId]
+                  if (player) {
+                    const playerName = `${player.first_name} ${player.last_name}`
+                    const injuryStatus = getPlayerInjuryStatus(weekInjuries, playerName)
+                    if (injuryStatus) {
+                      teamInjuries.push({
+                        player: playerName,
+                        team: player.team,
+                        position: player.position,
+                        injury: injuryStatus.injury,
+                        gameStatus: injuryStatus.game_status,
+                        practice_status: injuryStatus.practice_status
+                      })
                     }
-                  })
-                }
+                  }
+                })
 
                 if (teamInjuries.length > 0) {
                   injuriesByTeam[teamName] = teamInjuries
                 }
               }
             })
-          })
+          }
 
           transformedInjuries[`week${week}`] = {
             week: week,
