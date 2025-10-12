@@ -586,8 +586,9 @@ export default {
         loading.value = true
         error.value = null
 
-        // Force refresh all matchups data on page load to ensure latest scores
-        await leagueStore.fetchAllData(true)
+        // Load from Pinia cache first (fast), then refresh in background if stale
+        // This ensures matchups display immediately when navigating back to home
+        await leagueStore.fetchAllData(false)
 
         // Check URL for week parameter, otherwise use current week
         const weekParam = router.currentRoute.value.query.week
