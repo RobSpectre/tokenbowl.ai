@@ -9,9 +9,20 @@ describe('Fantasy Nerds API', () => {
   })
 
   describe('getInjuries', () => {
-    it('should return empty object when API key is missing', async () => {
+    it('should return mock data when API key is missing', async () => {
       const result = await getInjuries(1)
-      expect(result).toEqual({})
+      // Should return mock data for development when API key is not configured
+      expect(result).toBeDefined()
+      expect(typeof result).toBe('object')
+      // Mock data should have some players
+      expect(Object.keys(result).length).toBeGreaterThan(0)
+      // Each player should have required injury data fields
+      const firstPlayer = Object.values(result)[0]
+      expect(firstPlayer).toHaveProperty('player')
+      expect(firstPlayer).toHaveProperty('team')
+      expect(firstPlayer).toHaveProperty('position')
+      expect(firstPlayer).toHaveProperty('injury')
+      expect(firstPlayer).toHaveProperty('game_status')
     })
 
     it('should fetch injury data successfully', async () => {
