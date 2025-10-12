@@ -558,6 +558,42 @@ export const useLeagueStore = defineStore('league', {
         // This handles cases where AI made multiple separate add/drop calls instead of paired transactions
         const pairedTransactions = this.pairTransactions(enhancedTransactions)
 
+        // Collect all player IDs from transactions (both adds and drops)
+        const transactionPlayerIds = new Set()
+        pairedTransactions.forEach(transaction => {
+          if (transaction.adds) {
+            Object.keys(transaction.adds).forEach(playerId => transactionPlayerIds.add(playerId))
+          }
+          if (transaction.drops) {
+            Object.keys(transaction.drops).forEach(playerId => transactionPlayerIds.add(playerId))
+          }
+        })
+
+        // Fetch missing players that appear in transactions but not in our players cache
+        const missingPlayerIds = Array.from(transactionPlayerIds).filter(
+          playerId => !this.players[playerId]
+        )
+
+        if (missingPlayerIds.length > 0) {
+          console.log(`Fetching ${missingPlayerIds.length} players from transactions:`, missingPlayerIds)
+          try {
+            // Fetch all players from Sleeper API
+            const allPlayersResponse = await fetch('https://api.sleeper.app/v1/players/nfl')
+            if (allPlayersResponse.ok) {
+              const allPlayers = await allPlayersResponse.json()
+
+              // Add missing players to cache
+              missingPlayerIds.forEach(playerId => {
+                if (allPlayers[playerId]) {
+                  this.players[playerId] = allPlayers[playerId]
+                }
+              })
+            }
+          } catch (error) {
+            console.error('Error fetching transaction players:', error)
+          }
+        }
+
         this.transactionsByWeek[week] = pairedTransactions
         this.transactionsTimestampsByWeek[week] = Date.now()
         return pairedTransactions
