@@ -253,10 +253,12 @@ export default {
     const matchup = ref(null)
     const loading = ref(true)
     const error = ref(null)
-    const players = ref({})
     const injuries = ref({})
     const markdownContents = ref([])
     const draftData = ref({})
+
+    // Use computed property to access players from store
+    const players = computed(() => leagueStore.players)
 
     const loadMatchupData = async () => {
       try {
@@ -267,13 +269,12 @@ export default {
         matchupId.value = parseInt(route.params.matchupId)
 
         // Use the store to fetch all needed data (uses cache if available)
-        const [matchupsData, playersData, draftPicks] = await Promise.all([
+        const [matchupsData, , draftPicks] = await Promise.all([
           leagueStore.fetchMatchupForWeek(week.value),
-          leagueStore.fetchPlayers(),
+          leagueStore.fetchPlayers(), // Fetch to ensure data is loaded in store
           leagueStore.fetchDraft()
         ])
 
-        players.value = playersData
         draftData.value = draftPicks
 
         // Find the specific matchup from the week's matchups
