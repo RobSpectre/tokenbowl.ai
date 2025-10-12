@@ -588,13 +588,25 @@ export default {
         loading.value = true
         error.value = null
 
-        // Load all data from store
+        // First ensure league data and players are loaded
+        await leagueStore.fetchLeagueData()
+
+        // fetchLeagueData includes players, but make sure they're loaded
+        await leagueStore.fetchPlayers()
+
+        // Now load other data in parallel
         await Promise.all([
-          leagueStore.fetchLeagueData(),
-          leagueStore.fetchPlayers(),
           leagueStore.fetchDraft(),
           leagueStore.fetchAllMatchups()
         ])
+
+        // Wait for computed teams to be ready
+        await nextTick()
+
+        // Check if we have the required data
+        if (!leagueStore.rosters || !leagueStore.users || !leagueStore.players) {
+          throw new Error('Required data not loaded')
+        }
 
         // Load injuries for all weeks (up to current week)
         const currentWeekNum = leagueStore.league?.settings?.leg || 1
@@ -1088,13 +1100,17 @@ export default {
     }
 
     const getPlayerName = (playerId) => {
-      const player = players.value[playerId]
-
       // Check if this is a defense team
       if (isDefenseTeam(playerId)) {
         return getTeamNameFromAbbr(playerId)
       }
 
+      // Make sure players data is loaded
+      if (!players.value || Object.keys(players.value).length === 0) {
+        return 'Loading...'
+      }
+
+      const player = players.value[playerId]
       if (!player) return `Player ${playerId}`
 
       // Handle defenses that are in player data but missing name
@@ -1102,7 +1118,7 @@ export default {
         return player.full_name || getTeamNameFromAbbr(player.team || playerId)
       }
 
-      return `${player.first_name} ${player.last_name}`
+      return player.full_name || `${player.first_name} ${player.last_name}`
     }
 
     const getPlayerNameFromId = (playerId) => {
@@ -1110,17 +1126,26 @@ export default {
     }
 
     const getPlayerPosition = (playerId) => {
-      const player = players.value[playerId]
-
       // Check if this is a defense team
       if (isDefenseTeam(playerId)) {
         return 'DEF'
       }
 
+      // Make sure players data is loaded
+      if (!players.value || Object.keys(players.value).length === 0) {
+        return '...'
+      }
+
+      const player = players.value[playerId]
       return player?.position || '?'
     }
 
     const getPlayerTeam = (playerId) => {
+      // Make sure players data is loaded
+      if (!players.value || Object.keys(players.value).length === 0) {
+        return '...'
+      }
+
       const player = players.value[playerId]
       return player?.team || 'FA'
     }
@@ -1182,6 +1207,11 @@ export default {
       // Check if this is a defense team
       if (isDefenseTeam(playerId)) {
         return 'DEF'
+      }
+
+      // Make sure players data is loaded
+      if (!players.value || Object.keys(players.value).length === 0) {
+        return '...'
       }
 
       const player = players.value[playerId]
