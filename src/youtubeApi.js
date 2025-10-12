@@ -85,7 +85,7 @@ export async function getLatestVideos(maxResults = 10) {
       thumbnail: item.snippet.thumbnails.high.url,
       publishedAt: item.snippet.publishedAt,
       duration: parseDuration(item.contentDetails.duration),
-      isShort: parseDuration(item.contentDetails.duration) <= 60,
+      isShort: parseDuration(item.contentDetails.duration) < 60,
       url: `https://www.youtube.com/watch?v=${item.id}`
     }))
 
