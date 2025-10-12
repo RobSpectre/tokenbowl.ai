@@ -585,7 +585,15 @@ export default {
 
     const loadTeamsData = async () => {
       try {
-        loading.value = true
+        // Only show loading spinner if Pinia store is empty (first time load)
+        const hasData = leagueStore.rosters?.length > 0 &&
+                       leagueStore.users?.length > 0 &&
+                       Object.keys(leagueStore.players || {}).length > 0
+
+        if (!hasData) {
+          loading.value = true
+        }
+
         error.value = null
 
         // First ensure league data and players are loaded
