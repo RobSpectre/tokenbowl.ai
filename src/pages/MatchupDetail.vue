@@ -55,8 +55,12 @@
             div(class="bg-slate-700 rounded-full px-4 py-2")
               span(class="text-white font-black text-lg") VS
 
-          //- Team 2
+          //- Team 2 (inverted layout - score on left, team info on right)
           div(class="flex-1 text-center bg-slate-800 rounded-lg p-6")
+            div(
+              class="text-white font-black text-5xl mb-4 transition-all duration-300"
+              :class="{ 'score-pulse': isScoreAnimating(matchup[1].roster_id) }"
+            ) {{ matchup[1].points?.toFixed(2) || '0.00' }}
             img(
               class="h-24 w-24 object-contain mx-auto mb-4"
               :src="getTeamInfo(matchup[1].roster?.user?.display_name).logo"
@@ -65,10 +69,6 @@
             )
             div(class="text-white font-bold text-2xl") {{ getTeamInfo(matchup[1].roster?.user?.display_name).aiModel }}
             div(class="text-blue-400 text-lg font-semibold") {{ getTeamInfo(matchup[1].roster?.user?.display_name).owner }}
-            div(
-              class="text-white font-black text-5xl mt-4 transition-all duration-300"
-              :class="{ 'score-pulse': isScoreAnimating(matchup[1].roster_id) }"
-            ) {{ matchup[1].points?.toFixed(2) || '0.00' }}
 
         //- Mobile Layout
         div(class="flex flex-col gap-3 sm:hidden")
@@ -94,23 +94,23 @@
           div(class="text-center")
             span(class="text-gray-400 font-semibold text-xs uppercase") vs
 
-          //- Team 2
+          //- Team 2 (inverted layout - score on left)
           .bg-slate-800.rounded-lg.p-4
             .flex.items-center.justify-between
+              div(
+                class="text-white font-black text-2xl transition-all duration-300"
+                :class="{ 'score-pulse': isScoreAnimating(matchup[1].roster_id) }"
+              ) {{ matchup[1].points?.toFixed(2) || '0.00' }}
               div(class="flex items-center gap-3")
+                div(class="text-right")
+                  div(class="text-white font-bold text-base") {{ getTeamInfo(matchup[1].roster?.user?.display_name).aiModel }}
+                  div(class="text-blue-400 text-sm font-semibold") {{ getTeamInfo(matchup[1].roster?.user?.display_name).owner }}
                 img(
                   class="h-14 w-14 object-contain"
                   :src="getTeamInfo(matchup[1].roster?.user?.display_name).logo"
                   :alt="getTeamInfo(matchup[1].roster?.user?.display_name).aiModel"
                   :class="getTeamInfo(matchup[1].roster?.user?.display_name).invertLogo ? 'invert brightness-200' : ''"
                 )
-                div
-                  div(class="text-white font-bold text-base") {{ getTeamInfo(matchup[1].roster?.user?.display_name).aiModel }}
-                  div(class="text-blue-400 text-sm font-semibold") {{ getTeamInfo(matchup[1].roster?.user?.display_name).owner }}
-              div(
-                class="text-white font-black text-2xl transition-all duration-300"
-                :class="{ 'score-pulse': isScoreAnimating(matchup[1].roster_id) }"
-              ) {{ matchup[1].points?.toFixed(2) || '0.00' }}
 
         //- Point Differential Graph (like Home page)
         .mt-6.pt-6.border-t.border-slate-700(v-if="(matchup[0].points || 0) !== (matchup[1].points || 0)")
@@ -144,70 +144,83 @@
       .bg-gradient-to-r.from-purple-600.to-purple-800.rounded-t-lg.px-6.py-4.border-b-4.border-yellow-400
         h2.text-white.text-2xl.font-black.uppercase.tracking-wide Head to Head
 
-      div(class="bg-slate-900 rounded-b-lg p-4 sm:p-6 space-y-3")
-        //- Position Groups
-        div(v-for="position in ['QB', 'RB', 'WR', 'TE', 'K', 'DEF']" :key="position")
-          div(v-if="getPositionPlayers(position).team1.length > 0 || getPositionPlayers(position).team2.length > 0")
-            //- Position Header
-            .text-gray-400.font-bold.text-sm.uppercase.tracking-wider.mb-2 {{ position }}
+      div(class="bg-slate-900 rounded-b-lg p-4 sm:p-6 space-y-2")
+        //- Roster Slots (specific positions with colors)
+        div(v-for="(slot, index) in getRosterSlots()" :key="slot.name")
+          div(class="grid grid-cols-1 md:grid-cols-2 gap-2")
+            //- Team 1 Player
+            div(v-if="slot.team1Player")
+              .bg-slate-800.rounded.p-3(:class="{ 'matchup-highlight': isPlayerScoreAnimating(slot.team1Player) }")
+                .flex.items-center.gap-3
+                  //- Position Label with Color
+                  div(class="w-16 h-16 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0"
+                    :class="getSlotColor(slot.name)"
+                  )
+                    div(class="text-center")
+                      div {{ slot.name }}
+                  img.h-12.w-12.rounded-full.object-cover(
+                    v-if="getPlayerPortrait(slot.team1Player)"
+                    :src="getPlayerPortrait(slot.team1Player)"
+                    :alt="getPlayerName(slot.team1Player)"
+                    @error="$event.target.style.display='none'"
+                  )
+                  .flex-1
+                    .flex.items-center.gap-2
+                      .text-white.font-semibold.text-sm {{ getPlayerName(slot.team1Player) }}
+                      div(
+                        v-if="getPlayerInjury(slot.team1Player)"
+                        class="px-2 py-0.5 rounded text-xs font-bold"
+                        :class="getPlayerInjury(slot.team1Player) === 'O' || getPlayerInjury(slot.team1Player) === 'IR' ? 'bg-red-600 text-white' : getPlayerInjury(slot.team1Player) === 'D' ? 'bg-orange-500 text-white' : 'bg-yellow-500 text-black'"
+                      ) {{ getPlayerInjury(slot.team1Player) }}
+                    .text-gray-500.text-xs {{ getPlayerTeam(slot.team1Player) }} • {{ getPlayerPosition(slot.team1Player) }}
+                  .text-right.flex-shrink-0
+                    .text-blue-400.font-bold.text-lg(
+                      :class="{ 'score-pulse': isPlayerScoreAnimating(slot.team1Player) }"
+                    ) {{ getPlayerPoints(matchup[0], slot.team1Player) }}
+            div(v-else)
+              .bg-slate-800.rounded.p-3.opacity-30
+                .flex.items-center.gap-3
+                  div(class="w-16 h-16 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0 bg-gray-700 text-gray-500")
+                    div(class="text-center")
+                      div {{ slot.name }}
+                  .text-center.text-gray-600.flex-1 Empty
 
-            //- Player matchups for this position
-            .space-y-2
-              div(v-for="index in Math.max(getPositionPlayers(position).team1.length, getPositionPlayers(position).team2.length)" :key="index")
-                div(class="grid grid-cols-1 md:grid-cols-2 gap-2")
-                  //- Team 1 Player
-                  div(v-if="getPositionPlayers(position).team1[index - 1]")
-                    .bg-slate-800.rounded.p-3(:class="{ 'matchup-highlight': isPlayerScoreAnimating(getPositionPlayers(position).team1[index - 1]) }")
-                      .flex.items-center.gap-3
-                        img.h-10.w-10.rounded-full.object-cover(
-                          v-if="getPlayerPortrait(getPositionPlayers(position).team1[index - 1])"
-                          :src="getPlayerPortrait(getPositionPlayers(position).team1[index - 1])"
-                          :alt="getPlayerName(getPositionPlayers(position).team1[index - 1])"
-                          @error="$event.target.style.display='none'"
-                        )
-                        .flex-1
-                          .flex.items-center.gap-2
-                            .text-white.font-semibold.text-sm {{ getPlayerName(getPositionPlayers(position).team1[index - 1]) }}
-                            div(
-                              v-if="getPlayerInjury(getPositionPlayers(position).team1[index - 1])"
-                              class="px-2 py-0.5 rounded text-xs font-bold"
-                              :class="getPlayerInjury(getPositionPlayers(position).team1[index - 1]) === 'O' || getPlayerInjury(getPositionPlayers(position).team1[index - 1]) === 'IR' ? 'bg-red-600 text-white' : getPlayerInjury(getPositionPlayers(position).team1[index - 1]) === 'D' ? 'bg-orange-500 text-white' : 'bg-yellow-500 text-black'"
-                            ) {{ getPlayerInjury(getPositionPlayers(position).team1[index - 1]) }}
-                          .text-gray-500.text-xs {{ getPlayerTeam(getPositionPlayers(position).team1[index - 1]) }}
-                        .text-right.flex-shrink-0
-                          .text-blue-400.font-bold.text-lg(
-                            :class="{ 'score-pulse': isPlayerScoreAnimating(getPositionPlayers(position).team1[index - 1]) }"
-                          ) {{ getPlayerPoints(matchup[0], getPositionPlayers(position).team1[index - 1]) }}
-                  div(v-else)
-                    .bg-slate-800.rounded.p-3.opacity-30
-                      .text-center.text-gray-600 -
-
-                  //- Team 2 Player
-                  div(v-if="getPositionPlayers(position).team2[index - 1]")
-                    .bg-slate-800.rounded.p-3(:class="{ 'matchup-highlight': isPlayerScoreAnimating(getPositionPlayers(position).team2[index - 1]) }")
-                      .flex.items-center.gap-3
-                        img.h-10.w-10.rounded-full.object-cover(
-                          v-if="getPlayerPortrait(getPositionPlayers(position).team2[index - 1])"
-                          :src="getPlayerPortrait(getPositionPlayers(position).team2[index - 1])"
-                          :alt="getPlayerName(getPositionPlayers(position).team2[index - 1])"
-                          @error="$event.target.style.display='none'"
-                        )
-                        .flex-1
-                          .flex.items-center.gap-2
-                            .text-white.font-semibold.text-sm {{ getPlayerName(getPositionPlayers(position).team2[index - 1]) }}
-                            div(
-                              v-if="getPlayerInjury(getPositionPlayers(position).team2[index - 1])"
-                              class="px-2 py-0.5 rounded text-xs font-bold"
-                              :class="getPlayerInjury(getPositionPlayers(position).team2[index - 1]) === 'O' || getPlayerInjury(getPositionPlayers(position).team2[index - 1]) === 'IR' ? 'bg-red-600 text-white' : getPlayerInjury(getPositionPlayers(position).team2[index - 1]) === 'D' ? 'bg-orange-500 text-white' : 'bg-yellow-500 text-black'"
-                            ) {{ getPlayerInjury(getPositionPlayers(position).team2[index - 1]) }}
-                          .text-gray-500.text-xs {{ getPlayerTeam(getPositionPlayers(position).team2[index - 1]) }}
-                        .text-right.flex-shrink-0
-                          .text-blue-400.font-bold.text-lg(
-                            :class="{ 'score-pulse': isPlayerScoreAnimating(getPositionPlayers(position).team2[index - 1]) }"
-                          ) {{ getPlayerPoints(matchup[1], getPositionPlayers(position).team2[index - 1]) }}
-                  div(v-else)
-                    .bg-slate-800.rounded.p-3.opacity-30
-                      .text-center.text-gray-600 -
+            //- Team 2 Player
+            div(v-if="slot.team2Player")
+              .bg-slate-800.rounded.p-3(:class="{ 'matchup-highlight': isPlayerScoreAnimating(slot.team2Player) }")
+                .flex.items-center.gap-3.flex-row-reverse
+                  //- Position Label with Color
+                  div(class="w-16 h-16 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0"
+                    :class="getSlotColor(slot.name)"
+                  )
+                    div(class="text-center")
+                      div {{ slot.name }}
+                  img.h-12.w-12.rounded-full.object-cover(
+                    v-if="getPlayerPortrait(slot.team2Player)"
+                    :src="getPlayerPortrait(slot.team2Player)"
+                    :alt="getPlayerName(slot.team2Player)"
+                    @error="$event.target.style.display='none'"
+                  )
+                  .flex-1.text-right
+                    .flex.items-center.gap-2.justify-end
+                      div(
+                        v-if="getPlayerInjury(slot.team2Player)"
+                        class="px-2 py-0.5 rounded text-xs font-bold"
+                        :class="getPlayerInjury(slot.team2Player) === 'O' || getPlayerInjury(slot.team2Player) === 'IR' ? 'bg-red-600 text-white' : getPlayerInjury(slot.team2Player) === 'D' ? 'bg-orange-500 text-white' : 'bg-yellow-500 text-black'"
+                      ) {{ getPlayerInjury(slot.team2Player) }}
+                      .text-white.font-semibold.text-sm {{ getPlayerName(slot.team2Player) }}
+                    .text-gray-500.text-xs {{ getPlayerTeam(slot.team2Player) }} • {{ getPlayerPosition(slot.team2Player) }}
+                  .text-left.flex-shrink-0
+                    .text-blue-400.font-bold.text-lg(
+                      :class="{ 'score-pulse': isPlayerScoreAnimating(slot.team2Player) }"
+                    ) {{ getPlayerPoints(matchup[1], slot.team2Player) }}
+            div(v-else)
+              .bg-slate-800.rounded.p-3.opacity-30
+                .flex.items-center.gap-3.flex-row-reverse
+                  div(class="w-16 h-16 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0 bg-gray-700 text-gray-500")
+                    div(class="text-center")
+                      div {{ slot.name }}
+                  .text-center.text-gray-600.flex-1 Empty
 
     //- Bench Players
     section.mb-8
@@ -670,22 +683,49 @@ export default {
       return getInjuryIndicator(injury)
     }
 
-    // Get players for each team by position for head-to-head display
-    const getPositionPlayers = (position) => {
-      const team1Players = matchup.value[0].starters.filter(playerId => {
-        const player = players.value[playerId]
-        return player?.position === position
-      })
+    // Map starters to specific roster slots with position-specific colors
+    const getRosterSlots = () => {
+      if (!matchup.value) return []
 
-      const team2Players = matchup.value[1].starters.filter(playerId => {
-        const player = players.value[playerId]
-        return player?.position === position
-      })
+      const team1Starters = matchup.value[0].starters
+      const team2Starters = matchup.value[1].starters
 
-      return {
-        team1: team1Players,
-        team2: team2Players
+      // Define roster slots - Sleeper uses specific ordering in starters array
+      const slots = [
+        { name: 'QB', index: 0 },
+        { name: 'RB1', index: 1 },
+        { name: 'RB2', index: 2 },
+        { name: 'WR1', index: 3 },
+        { name: 'WR2', index: 4 },
+        { name: 'TE', index: 5 },
+        { name: 'FLEX1', index: 6 },
+        { name: 'FLEX2', index: 7 },
+        { name: 'K', index: 8 },
+        { name: 'DEF', index: 9 }
+      ]
+
+      return slots.map(slot => ({
+        name: slot.name,
+        team1Player: team1Starters[slot.index],
+        team2Player: team2Starters[slot.index]
+      }))
+    }
+
+    // Get color class for specific roster slot
+    const getSlotColor = (slotName) => {
+      const colors = {
+        'QB': 'bg-red-500 text-white',
+        'RB1': 'bg-green-500 text-white',
+        'RB2': 'bg-green-700 text-white',
+        'WR1': 'bg-blue-500 text-white',
+        'WR2': 'bg-blue-700 text-white',
+        'TE': 'bg-yellow-500 text-black',
+        'FLEX1': 'bg-teal-500 text-white',
+        'FLEX2': 'bg-cyan-500 text-white',
+        'K': 'bg-purple-500 text-white',
+        'DEF': 'bg-orange-500 text-white'
       }
+      return colors[slotName] || 'bg-gray-500 text-white'
     }
 
     onMounted(async () => {
@@ -725,7 +765,8 @@ export default {
       getBenchPlayers,
       getPositionColor,
       getPlayerInjury,
-      getPositionPlayers,
+      getRosterSlots,
+      getSlotColor,
       markdownContents,
       isScoreAnimating,
       isPlayerScoreAnimating
