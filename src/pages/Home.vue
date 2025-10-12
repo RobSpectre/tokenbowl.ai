@@ -1,7 +1,13 @@
 <template lang="pug">
 .bg-slate-950
+  //- Loading State (only show when no matchups exist yet)
+  .flex.items-center.justify-center(v-if="!error && Object.keys(allMatchups).length === 0 && loading" style="min-height: 80vh")
+    .text-center
+      .inline-block.animate-spin.rounded-full.h-20.w-20.border-4.border-blue-500.border-t-transparent.mb-4
+      p.text-white.text-xl.font-bold.uppercase.tracking-wider Loading matchups...
+
   //- Error State
-  .container.mx-auto.px-4.py-12(v-if="error")
+  .container.mx-auto.px-4.py-12(v-else-if="error")
     .bg-red-600.border-l-4.border-red-800.rounded.p-6.text-center
       p.text-white.text-xl.font-bold {{ error }}
 
