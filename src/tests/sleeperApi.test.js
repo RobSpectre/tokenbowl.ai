@@ -300,28 +300,72 @@ describe('Sleeper API', () => {
   })
 
   describe('getRelevantPlayers', () => {
-    it('should return players from local file', async () => {
+    it('should return players from local file when all rostered players are in top 500', async () => {
       const mockPlayers = {
         p1: { name: 'Player 1', search_rank: 10 },
         p2: { name: 'Player 2', search_rank: 20 },
         p3: { name: 'Player 3', search_rank: 30 }
       }
+      const mockRosters = [
+        { roster_id: 1, players: ['p1', 'p2'], starters: ['p1'] },
+        { roster_id: 2, players: ['p3'], starters: ['p3'] }
+      ]
 
+      // Mock getPlayers() call
       global.fetch.mockResolvedValueOnce({ json: async () => mockPlayers })
+      // Mock getRosters() call
+      global.fetch.mockResolvedValueOnce({ json: async () => mockRosters })
 
       const result = await getRelevantPlayers()
 
-      // Should return all players from local file (top 500)
+      // Should return all players from local file (all rostered players found)
       expect(result).toEqual(mockPlayers)
       expect(result.p1).toBeDefined()
       expect(result.p2).toBeDefined()
       expect(result.p3).toBeDefined()
     })
 
+    it('should fetch missing players from Sleeper API', async () => {
+      const mockLocalPlayers = {
+        p1: { name: 'Player 1', search_rank: 10 }
+      }
+      const mockRosters = [
+        { roster_id: 1, players: ['p1', 'p2', 'LV'], starters: ['p1'] }
+      ]
+      const mockAllPlayers = {
+        p1: { name: 'Player 1', search_rank: 10 },
+        p2: { name: 'Player 2', search_rank: 600 },
+        LV: { first_name: 'Las Vegas', last_name: 'Raiders', position: 'DEF' }
+      }
+
+      // Mock getPlayers() call
+      global.fetch.mockResolvedValueOnce({ json: async () => mockLocalPlayers })
+      // Mock getRosters() call
+      global.fetch.mockResolvedValueOnce({ json: async () => mockRosters })
+      // Mock Sleeper all players API call
+      global.fetch.mockResolvedValueOnce({ json: async () => mockAllPlayers })
+
+      const result = await getRelevantPlayers()
+
+      // Should have fetched from Sleeper API
+      expect(global.fetch).toHaveBeenCalledWith(
+        'https://api.sleeper.app/v1/players/nfl'
+      )
+      // Should return combined players
+      expect(result.p1).toBeDefined()
+      expect(result.p2).toBeDefined()
+      expect(result.LV).toBeDefined()
+      expect(Object.keys(result).length).toBe(3)
+    })
+
     it('should support cache busting', async () => {
       const mockPlayers = { p1: { name: 'Player 1' } }
+      const mockRosters = [{ roster_id: 1, players: ['p1'] }]
 
+      // Mock getPlayers() call with cache busting
       global.fetch.mockResolvedValueOnce({ json: async () => mockPlayers })
+      // Mock getRosters() call
+      global.fetch.mockResolvedValueOnce({ json: async () => mockRosters })
 
       const result = await getRelevantPlayers(true)
 
@@ -332,10 +376,20 @@ describe('Sleeper API', () => {
       expect(result).toEqual(mockPlayers)
     })
 
-    it('should handle fetch errors', async () => {
-      global.fetch.mockRejectedValueOnce(new Error('File fetch failed'))
+    it('should handle fetch errors with fallback', async () => {
+      const mockPlayers = { p1: { name: 'Player 1' } }
 
-      await expect(getRelevantPlayers()).rejects.toThrow('File fetch failed')
+      // First call to getPlayers() succeeds
+      global.fetch.mockResolvedValueOnce({ json: async () => mockPlayers })
+      // getRosters() fails
+      global.fetch.mockRejectedValueOnce(new Error('Network error'))
+      // Fallback getPlayers() call
+      global.fetch.mockResolvedValueOnce({ json: async () => mockPlayers })
+
+      const result = await getRelevantPlayers()
+
+      // Should return fallback players
+      expect(result).toEqual(mockPlayers)
     })
   })
 

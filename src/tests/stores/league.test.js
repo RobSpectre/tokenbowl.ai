@@ -37,10 +37,19 @@ describe('League Store - Player Data Management', () => {
           team: 'BUF'
         }
       }
+      const mockRosters = [
+        { roster_id: 1, players: ['4984', '8138'] }
+      ]
 
+      // Mock getPlayers() call
       global.fetch.mockResolvedValueOnce({
         ok: true,
         json: async () => mockPlayers
+      })
+      // Mock getRosters() call
+      global.fetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockRosters
       })
 
       await store.fetchPlayers()
@@ -92,10 +101,19 @@ describe('League Store - Player Data Management', () => {
         '4984': { full_name: 'Josh Allen' },
         '8138': { full_name: 'James Cook' }
       }
+      const mockRosters = [
+        { roster_id: 1, players: ['4984', '8138'] }
+      ]
 
+      // Mock getPlayers() call
       global.fetch.mockResolvedValueOnce({
         ok: true,
         json: async () => mockPlayers
+      })
+      // Mock getRosters() call
+      global.fetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockRosters
       })
 
       await store.fetchPlayers(true)
@@ -122,10 +140,19 @@ describe('League Store - Player Data Management', () => {
           position: 'RB'
         }
       }
+      const mockRosters = [
+        { roster_id: 1, players: ['4984', '8138'] }
+      ]
 
+      // Mock getPlayers() call
       global.fetch.mockResolvedValueOnce({
         ok: true,
         json: async () => mockPlayers
+      })
+      // Mock getRosters() call
+      global.fetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockRosters
       })
 
       await store.fetchPlayers()
@@ -146,9 +173,17 @@ describe('League Store - Player Data Management', () => {
       expect(Object.keys(store.players).length).toBe(0)
 
       const mockPlayers = { '4984': { full_name: 'Josh Allen' } }
+      const mockRosters = [{ roster_id: 1, players: ['4984'] }]
+
+      // Mock getPlayers() call
       global.fetch.mockResolvedValueOnce({
         ok: true,
         json: async () => mockPlayers
+      })
+      // Mock getRosters() call
+      global.fetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockRosters
       })
 
       await store.fetchPlayers()
@@ -175,9 +210,17 @@ describe('League Store - Player Data Management', () => {
       store.players = {}
 
       const mockPlayers = { '4984': { full_name: 'Josh Allen' } }
+      const mockRosters = [{ roster_id: 1, players: ['4984'] }]
+
+      // Mock getPlayers() call
       global.fetch.mockResolvedValueOnce({
         ok: true,
         json: async () => mockPlayers
+      })
+      // Mock getRosters() call
+      global.fetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockRosters
       })
 
       await store.fetchPlayers()
@@ -220,8 +263,11 @@ describe('League Store - Player Data Management', () => {
         '4984': { full_name: 'Josh Allen', position: 'QB', team: 'BUF' },
         '8138': { full_name: 'James Cook', position: 'RB', team: 'BUF' }
       }
+      const mockRosters = [
+        { roster_id: 1, players: ['4984', '8138'] }
+      ]
 
-      // Mock fetch to simulate slow API response
+      // Mock getPlayers() call with slow response
       global.fetch.mockResolvedValueOnce({
         ok: true,
         json: async () => {
@@ -229,6 +275,11 @@ describe('League Store - Player Data Management', () => {
           await new Promise(resolve => setTimeout(resolve, 10))
           return mockPlayers
         }
+      })
+      // Mock getRosters() call
+      global.fetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockRosters
       })
 
       // Simulate Promise.all with multiple fetchPlayers calls
@@ -251,9 +302,9 @@ describe('League Store - Player Data Management', () => {
       expect(Object.keys(store.players).length).toBe(2)
       expect(store.players['4984'].full_name).toBe('Josh Allen')
 
-      // getRelevantPlayers now only makes 1 call to local players.json file
-      // Concurrent calls share the promise, so only 1 fetch call total
-      expect(global.fetch).toHaveBeenCalledTimes(1)
+      // getRelevantPlayers now makes 2 calls (players + rosters)
+      // Concurrent calls share the promise, so only 2 fetch calls total
+      expect(global.fetch).toHaveBeenCalledTimes(2)
     })
 
     it('should not return empty players when already loading', async () => {
@@ -262,8 +313,12 @@ describe('League Store - Player Data Management', () => {
       const mockPlayers = {
         '4984': { full_name: 'Josh Allen', position: 'QB', team: 'BUF' }
       }
+      const mockRosters = [
+        { roster_id: 1, players: ['4984'] }
+      ]
 
       let fetchResolved = false
+      // Mock getPlayers() call with slow response
       global.fetch.mockImplementationOnce(() => ({
         ok: true,
         json: async () => {
@@ -271,6 +326,11 @@ describe('League Store - Player Data Management', () => {
           fetchResolved = true
           return mockPlayers
         }
+      }))
+      // Mock getRosters() call
+      global.fetch.mockImplementationOnce(() => ({
+        ok: true,
+        json: async () => mockRosters
       }))
 
       // Start first fetch (don't await yet)
@@ -293,8 +353,8 @@ describe('League Store - Player Data Management', () => {
       expect(Object.keys(result2).length).toBeGreaterThan(0)
       expect(result1).toEqual(result2)
 
-      // getRelevantPlayers now only makes 1 call to local players.json file
-      expect(global.fetch).toHaveBeenCalledTimes(1)
+      // getRelevantPlayers now makes 2 calls (players + rosters)
+      expect(global.fetch).toHaveBeenCalledTimes(2)
     })
   })
 
