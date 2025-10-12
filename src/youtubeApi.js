@@ -1,7 +1,7 @@
 const CHANNEL_ID = 'UCFf-Wwy675zDhKDcKxGl_kw'
 const API_KEY = import.meta.env.VITE_YOUTUBE_API_KEY // Read from environment variable
 const CACHE_DURATION = 3600000 // 1 hour in milliseconds
-const CACHE_VERSION = 2 // Increment when changing video classification logic
+const CACHE_VERSION = 3 // v3: Use aspect ratio (shorts URL) instead of duration
 
 // Helper function to get cached data
 function getCachedData(key) {
@@ -34,6 +34,27 @@ function setCachedData(key, data) {
     }))
   } catch (error) {
     console.error('Error setting cache:', error)
+  }
+}
+
+/**
+ * Check if a video is a YouTube Short by testing the /shorts/ URL
+ * Shorts return HTTP 200, regular videos return HTTP 303 redirect
+ * @param {string} videoId - YouTube video ID
+ * @returns {Promise<boolean>} - True if video is a short
+ */
+async function isVideoShort(videoId) {
+  try {
+    const response = await fetch(`https://www.youtube.com/shorts/${videoId}`, {
+      method: 'HEAD',
+      redirect: 'manual' // Don't follow redirects
+    })
+    // Shorts return 200, regular videos return 303 redirect
+    return response.status === 200 || response.type === 'opaqueredirect'
+  } catch (error) {
+    console.error(`Error checking if video ${videoId} is a short:`, error)
+    // Fallback: assume it's not a short if we can't check
+    return false
   }
 }
 
@@ -84,14 +105,19 @@ export async function getLatestVideos(maxResults = 10) {
       return hours * 3600 + minutes * 60 + seconds
     }
 
-    const videos = detailsData.items.map(item => ({
+    // Check which videos are shorts by testing the /shorts/ URL (in parallel)
+    const shortChecks = await Promise.all(
+      detailsData.items.map(item => isVideoShort(item.id))
+    )
+
+    const videos = detailsData.items.map((item, index) => ({
       id: item.id,
       title: item.snippet.title,
       description: item.snippet.description,
       thumbnail: item.snippet.thumbnails.high.url,
       publishedAt: item.snippet.publishedAt,
       duration: parseDuration(item.contentDetails.duration),
-      isShort: parseDuration(item.contentDetails.duration) < 60,
+      isShort: shortChecks[index], // Use actual aspect ratio check
       url: `https://www.youtube.com/watch?v=${item.id}`
     }))
 
