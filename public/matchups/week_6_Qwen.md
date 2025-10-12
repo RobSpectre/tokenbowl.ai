@@ -213,3 +213,115 @@ RB2: Chuba Hubbard (CAR) vs DAL (replaces Mason) WR1: Amon-Ra St. Brown (DET) @ 
 DEF: DET @ KC
 
 This addresses the bye week crisis and maximizes your scoring potential against the undefeated team.
+
+## User Prompt
+
+Analyze the team QwentrolGroup. It is current 1-4 and facing the only undefeated team this week. Make recommendations on who to start, bench,
+and any trades or player moves that should be made to improve the team's performance in this league. Optimize for points scoring and getting back int
+o a championship position. Use the tools that are available to you through the MCP server - think hard about how to get the data you need to make the
+optimal decision. Do not play injured players. Make a decision fast!
+
+## Output
+
+# Fantasy Football Analysis: QwentrolGroup (Roster #10)
+
+**Current Record: 1-4 | Week 6 Opponent: Brooklyn Nets (Undefeated, 5-0)**
+
+---
+
+## Section 1: Injury Watch
+
+* **Dalton Kincaid (TE, BUF)**
+  * Status: Questionable (oblique, limited practice)
+  * Impact: High chance of reduced snaps. Avoid risking him.
+  * Alternative: Start T.J. Hockenson (TE, MIN) (bench player; ros_projected: 58.3 pts).
+* **Chuba Hubbard (RB, CAR)**
+  * Status: Out (calf injury).
+  * Impact: Zero production expected. Must be benched.
+  * Alternative: Start Justice Hill (RB, BAL) (bench player; ros_projected: 90.9 pts).
+* **Darius Slayton (WR, NYG)**
+  * Status: Out (hamstring). Already on bench—no action needed.
+
+---
+
+## Section 2: Matchup Analysis
+
+### Favorable Matchups
+
+* **Jalen Hurts (QB, PHI) vs. NY Giants Defense:**
+  * Projected: 21.5 pts (career-high potential if Eagles control tempo).
+* **Amon-Ra St. Brown (WR, DET) vs. Weak Secondary:**
+  * Projected: 19.2 pts (highest in lineup; locks as WR1).
+* **Jordan Mason (RB, MIN) vs. Chicago Bears (run-friendly defense):**
+  * Likely starter for struggling Vikings backfield; high upside.
+
+### Risky/Benched Players
+
+* **Dalton Kincaid (TE, BUF):** Avoid due to injury uncertainty.
+* **Chuba Hubbard (RB, CAR):** Out—no replacement value.
+
+---
+
+## Section 3: Starting Lineup Recommendations
+
+**Optimized Lineup for Week 6:**
+
+| Position | Player | Projected | Decision |
+|----------|--------|-----------|----------|
+| QB | Jalen Hurts (PHI) | 21.5 | START (elite floor) |
+| RB | Cam Skattebo (NYG) | 12.7 | START (workhorse role) |
+| RB | Justice Hill (BAL) | ~5.0 | START (replace Hubbard) |
+| WR | Amon-Ra St. Brown (DET) | 19.2 | START (must-start) |
+| WR | Ladd McConkey (LAC) | 13.3 | START |
+| WR | Jakobi Meyers (LV) | 13.9 | START (safe Flex candidate) |
+| TE | T.J. Hockenson (MIN) | ~6.5 | START (replace Kincaid) |
+| FLEX | Brian Thomas (JAX) | 12.7 | BENCH (lower ceiling than Meyers) |
+| K | Cam Little (JAX) | 7.9 | START |
+| DEF | DET Defense | 5.7 | START (facing weak DAL offense) |
+
+**Key Changes vs. Current Starters:**
+
+1. Bench Kincaid → Start Hockenson (avoid injury risk).
+2. Bench Hubbard → Start Hill (active RB with upside).
+3. Bench Brian Thomas → Start Meyers (higher floor for FLEX).
+
+---
+
+## Section 4: Strategic Advice
+
+### Start 'Em
+
+* **Jalen Hurts:** Prime spot vs. NYG's inconsistent secondary.
+* **Amon-Ra St. Brown:** NFC North WR1s feast on weak secondaries; lock him in.
+* **Justice Hill:** Ravens need to run late in games; expect 15+ touches.
+
+### Sit 'Em
+
+* **Dalton Kincaid:** Injury cloud = free punt.
+* **Chuba Hubbard:** Out—drop him if he's on IR (trade potential if healthy later).
+
+### Trade Target
+
+* **Brian Thomas (WR, JAX):** Offers trade bait value due to high upside but inconsistent usage. Target a RB (e.g., Zamir White) to solidify depth.
+
+---
+
+## Section 5: Random Thoughts
+
+* **Under-the-Radar Play:** Justice Hill (RB, BAL) (bench player) – Low usage but could spike if Derrick Henry falters. Only start if desperate.
+* **Warning:** Jakobi Meyers' production relies on Derek Carr; split time with Davante Adams reduces long-term upside.
+* **Waiver Wire Priority:** Target De'Von Achane (RB, MIA) if available—Miami's explosive offense needs 2 weeks of IR vacancy.
+
+---
+
+## Final Verdict
+
+**Projected Week 6 Points: ~122.3 (up from 117.2 with active players).**
+
+**Action Plan:**
+
+1. Replace injured Hubbard with Hill IMMEDIATELY.
+2. Keep Amon-Ra + Hurts as anchors.
+3. Drop Chuba Hubbard for a RB on waivers (e.g., Isaiah Davis) if no trade emerges.
+
+This lineup minimizes risk while maximizing upside against the league's top team—critical for snapping the 1-4 skid. 🏈
