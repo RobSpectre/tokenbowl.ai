@@ -3,6 +3,7 @@ import { getLeagueData, getRelevantPlayers, getMatchups, getTransactions } from 
 import { getTeamInfo } from '../teamMappings.js'
 import { getLatestVideoAndShorts } from '../youtubeApi.js'
 import { getInjuries } from '../fantasyNerdsApi.js'
+import { getPlayers as getPlayersFromService, enrichPlayerData } from '../utils/playerService.js'
 
 // Cache duration: 5 minutes
 const CACHE_DURATION = 5 * 60 * 1000
@@ -308,17 +309,24 @@ export const useLeagueStore = defineStore('league', {
           rosterMap[roster.roster_id] = roster
         })
 
-        // Group matchups
+        // Group matchups and enrich player data
         const matchupGroups = {}
-        matchups.forEach(matchup => {
+        for (const matchup of matchups) {
+          // Enrich player data for matchup.players_points
+          let enrichedPlayers = null
+          if (matchup.players_points) {
+            enrichedPlayers = await enrichPlayerData(matchup.players_points, this.players)
+          }
+
           if (!matchupGroups[matchup.matchup_id]) {
             matchupGroups[matchup.matchup_id] = []
           }
           matchupGroups[matchup.matchup_id].push({
             ...matchup,
-            roster: rosterMap[matchup.roster_id]
+            roster: rosterMap[matchup.roster_id],
+            enrichedPlayers // Add enriched player data
           })
-        })
+        }
 
         this.allMatchups[week] = Object.values(matchupGroups)
 
@@ -370,18 +378,25 @@ export const useLeagueStore = defineStore('league', {
         const weekPromises = []
         for (let week = 1; week <= 18; week++) {
           weekPromises.push(
-            getMatchups(week).then(matchups => {
-              // Group matchups
+            getMatchups(week).then(async matchups => {
+              // Group matchups and enrich player data
               const matchupGroups = {}
-              matchups.forEach(matchup => {
+              for (const matchup of matchups) {
+                // Enrich player data for matchup.players_points
+                let enrichedPlayers = null
+                if (matchup.players_points) {
+                  enrichedPlayers = await enrichPlayerData(matchup.players_points, this.players)
+                }
+
                 if (!matchupGroups[matchup.matchup_id]) {
                   matchupGroups[matchup.matchup_id] = []
                 }
                 matchupGroups[matchup.matchup_id].push({
                   ...matchup,
-                  roster: rosterMap[matchup.roster_id]
+                  roster: rosterMap[matchup.roster_id],
+                  enrichedPlayers // Add enriched player data
                 })
-              })
+              }
 
               this.allMatchups[week] = Object.values(matchupGroups)
             }).catch(err => {

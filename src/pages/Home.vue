@@ -490,6 +490,7 @@ import { useRouter } from 'vue-router'
 import { useLeagueStore } from '../stores/league.js'
 import { getTeamInfo } from '../teamMappings.js'
 import { getPlayerInjuryStatus } from '../fantasyNerdsApi.js'
+import { getPlayer } from '../utils/playerService.js'
 import * as echarts from 'echarts'
 import { trackButtonClick } from '../analytics.js'
 
@@ -846,22 +847,34 @@ export default {
       return teamNames[abbr] || `${abbr} Defense`
     }
 
-    const getPlayerNameFromId = (playerId) => {
-      const player = players.value?.[playerId]
+    // Store for dynamically fetched players
+    const dynamicPlayers = ref({})
 
+    const getPlayerNameFromId = (playerId) => {
       // Check if this is a defense team (2-3 uppercase letters)
       if (isDefenseTeam(playerId)) {
         return getTeamNameFromAbbr(playerId)
       }
 
-      if (!player) return `Player ${playerId}`
+      // Check cached players first
+      const player = players.value?.[playerId] || dynamicPlayers.value?.[playerId]
+
+      if (!player) {
+        // Fetch player asynchronously and store for future use
+        getPlayer(playerId, players.value).then(fetchedPlayer => {
+          if (fetchedPlayer) {
+            dynamicPlayers.value[playerId] = fetchedPlayer
+          }
+        })
+        return `Loading...`
+      }
 
       // Handle defenses that are in player data but missing name
       if (player.position === 'DEF') {
         return player.full_name || getTeamNameFromAbbr(player.team || playerId)
       }
 
-      return `${player.first_name} ${player.last_name}`
+      return player.full_name || `${player.first_name} ${player.last_name}`
     }
 
     const getPlayerPosition = (playerId) => {
