@@ -1,7 +1,8 @@
 const CHANNEL_ID = 'UCFf-Wwy675zDhKDcKxGl_kw'
+const SHORTS_PLAYLIST_ID = 'UUSH' + CHANNEL_ID.substring(2) // Replace UC with UUSH for shorts playlist
 const API_KEY = import.meta.env.VITE_YOUTUBE_API_KEY // Read from environment variable
 const CACHE_DURATION = 3600000 // 1 hour in milliseconds
-const CACHE_VERSION = 3 // v3: Use aspect ratio (shorts URL) instead of duration
+const CACHE_VERSION = 4 // v4: Use YouTube Shorts playlist (UUSH) for reliable detection
 
 // Helper function to get cached data
 function getCachedData(key) {
@@ -38,23 +39,30 @@ function setCachedData(key, data) {
 }
 
 /**
- * Check if a video is a YouTube Short by testing the /shorts/ URL
- * Shorts return HTTP 200, regular videos return HTTP 303 redirect
- * @param {string} videoId - YouTube video ID
- * @returns {Promise<boolean>} - True if video is a short
+ * Get all Shorts video IDs from the channel's Shorts playlist
+ * @returns {Promise<Set<string>>} - Set of video IDs that are shorts
  */
-async function isVideoShort(videoId) {
+async function getShortsVideoIds() {
   try {
-    const response = await fetch(`https://www.youtube.com/shorts/${videoId}`, {
-      method: 'HEAD',
-      redirect: 'manual' // Don't follow redirects
-    })
-    // Shorts return 200, regular videos return 303 redirect
-    return response.status === 200 || response.type === 'opaqueredirect'
+    if (!API_KEY) {
+      return new Set()
+    }
+
+    const response = await fetch(
+      `https://www.googleapis.com/youtube/v3/playlistItems?key=${API_KEY}&playlistId=${SHORTS_PLAYLIST_ID}&part=contentDetails&maxResults=50`
+    )
+
+    if (!response.ok) {
+      console.warn('Could not fetch shorts playlist')
+      return new Set()
+    }
+
+    const data = await response.json()
+    const shortIds = data.items.map(item => item.contentDetails.videoId)
+    return new Set(shortIds)
   } catch (error) {
-    console.error(`Error checking if video ${videoId} is a short:`, error)
-    // Fallback: assume it's not a short if we can't check
-    return false
+    console.error('Error fetching shorts playlist:', error)
+    return new Set()
   }
 }
 
@@ -105,19 +113,17 @@ export async function getLatestVideos(maxResults = 10) {
       return hours * 3600 + minutes * 60 + seconds
     }
 
-    // Check which videos are shorts by testing the /shorts/ URL (in parallel)
-    const shortChecks = await Promise.all(
-      detailsData.items.map(item => isVideoShort(item.id))
-    )
+    // Get list of Shorts video IDs from the UUSH playlist
+    const shortsIds = await getShortsVideoIds()
 
-    const videos = detailsData.items.map((item, index) => ({
+    const videos = detailsData.items.map((item) => ({
       id: item.id,
       title: item.snippet.title,
       description: item.snippet.description,
       thumbnail: item.snippet.thumbnails.high.url,
       publishedAt: item.snippet.publishedAt,
       duration: parseDuration(item.contentDetails.duration),
-      isShort: shortChecks[index], // Use actual aspect ratio check
+      isShort: shortsIds.has(item.id), // Check if video ID is in shorts playlist
       url: `https://www.youtube.com/watch?v=${item.id}`
     }))
 

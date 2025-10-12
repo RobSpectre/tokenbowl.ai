@@ -59,6 +59,10 @@ describe('YouTube API', () => {
         ]
       }
 
+      const mockShortsPlaylist = {
+        items: [] // No shorts in this test
+      }
+
       global.fetch
         .mockResolvedValueOnce({
           ok: true,
@@ -68,8 +72,10 @@ describe('YouTube API', () => {
           ok: true,
           json: async () => mockDetailsResponse
         })
-        // Mock HEAD request to check if video is a short
-        .mockResolvedValueOnce({ status: 303, type: 'basic' }) // Not a short (redirect)
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => mockShortsPlaylist
+        })
 
       const videos = await getLatestVideos(10)
 
@@ -130,12 +136,16 @@ describe('YouTube API', () => {
         ]
       }
 
+      const mockShortsPlaylist = {
+        items: [
+          { contentDetails: { videoId: 'short1' } } // short1 is in the shorts playlist
+        ]
+      }
+
       global.fetch
         .mockResolvedValueOnce({ ok: true, json: async () => mockSearchResponse })
         .mockResolvedValueOnce({ ok: true, json: async () => mockDetailsResponse })
-        // Mock HEAD requests to check if videos are shorts
-        .mockResolvedValueOnce({ status: 303, type: 'basic' }) // video1 - not a short (redirect)
-        .mockResolvedValueOnce({ status: 200, type: 'opaqueredirect' }) // short1 - is a short
+        .mockResolvedValueOnce({ ok: true, json: async () => mockShortsPlaylist })
 
       const result = await getLatestVideoAndShorts()
 
