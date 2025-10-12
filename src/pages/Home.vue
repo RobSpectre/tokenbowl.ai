@@ -489,7 +489,6 @@ import { useRouter } from 'vue-router'
 import { useLeagueStore } from '../stores/league.js'
 import { getTeamInfo } from '../teamMappings.js'
 import { getPlayerInjuryStatus } from '../fantasyNerdsApi.js'
-import { getPlayer } from '../utils/playerService.js'
 import * as echarts from 'echarts'
 import { trackButtonClick } from '../analytics.js'
 
@@ -590,6 +589,9 @@ export default {
         // This ensures matchups display immediately when navigating back to home
         await leagueStore.fetchAllData(false)
 
+        // Ensure players are loaded in the store
+        await leagueStore.fetchPlayers()
+
         // Check URL for week parameter, otherwise use current week
         const weekParam = router.currentRoute.value.query.week
         const urlWeek = weekParam ? parseInt(weekParam) : null
@@ -616,29 +618,6 @@ export default {
         }
         await Promise.all(injuryPromises)
 
-        // Collect all unique player IDs from all rosters to fetch missing players
-        const allRosteredPlayerIds = new Set()
-        if (leagueData.value.rosters) {
-          leagueData.value.rosters.forEach(roster => {
-            ;[
-              ...(roster.players || []),
-              ...(roster.starters || []),
-              ...(roster.taxi || []),
-              ...(roster.reserve || [])
-            ].forEach(playerId => allRosteredPlayerIds.add(playerId))
-          })
-        }
-
-        // Fetch any missing players before checking injuries
-        const missingPlayerIds = Array.from(allRosteredPlayerIds).filter(
-          playerId => !players.value[playerId] && !dynamicPlayers.value[playerId]
-        )
-        if (missingPlayerIds.length > 0) {
-          const { getPlayers } = await import('../utils/playerService.js')
-          const fetchedPlayers = await getPlayers(missingPlayerIds, players.value)
-          Object.assign(dynamicPlayers.value, fetchedPlayers)
-        }
-
         // Transform injury data into the format expected by charts
         const transformedInjuries = {}
         for (let week = 1; week <= Math.min(currentWeek, 18); week++) {
@@ -663,8 +642,8 @@ export default {
 
                 // Check each player on the roster for injuries
                 allPlayerIds.forEach(playerId => {
-                  // Check both cached and dynamically fetched players
-                  const player = players.value[playerId] || dynamicPlayers.value[playerId]
+                  // Get player from Pinia store
+                  const player = players.value[playerId]
                   if (player) {
                     const playerName = player.full_name || `${player.first_name} ${player.last_name}`
                     const injuryStatus = getPlayerInjuryStatus(weekInjuries, playerName)
@@ -871,26 +850,19 @@ export default {
       return teamNames[abbr] || `${abbr} Defense`
     }
 
-    // Store for dynamically fetched players
-    const dynamicPlayers = ref({})
-
     const getPlayerNameFromId = (playerId) => {
       // Check if this is a defense team (2-3 uppercase letters)
       if (isDefenseTeam(playerId)) {
         return getTeamNameFromAbbr(playerId)
       }
 
-      // Check cached players first
-      const player = players.value?.[playerId] || dynamicPlayers.value?.[playerId]
+      // Get player from Pinia store
+      const player = players.value?.[playerId]
 
       if (!player) {
-        // Fetch player asynchronously and store for future use
-        getPlayer(playerId, players.value).then(fetchedPlayer => {
-          if (fetchedPlayer) {
-            dynamicPlayers.value[playerId] = fetchedPlayer
-          }
-        })
-        return `Loading...`
+        // Player not found - the store should have all players
+        // Return a placeholder while store is loading
+        return `Player ${playerId}`
       }
 
       // Handle defenses that are in player data but missing name
