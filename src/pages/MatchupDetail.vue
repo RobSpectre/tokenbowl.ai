@@ -19,54 +19,21 @@
         span ←
         |  Back to Matchups
 
-    //- Matchup Header
+    //- Matchup Header with Auto-refresh Status
     section.mb-8
       div(class="bg-gradient-to-r from-blue-600 to-blue-800 rounded-t-lg px-4 sm:px-6 py-3 sm:py-4 border-b-4 border-yellow-400")
-        h1(class="text-white text-xl sm:text-3xl font-black uppercase tracking-wide")
-          | Week {{ week }} Matchup
+        .flex.items-center.justify-between
+          h1(class="text-white text-xl sm:text-3xl font-black uppercase tracking-wide")
+            | Week {{ week }} Matchup
+          //- Auto-refresh indicator
+          div(v-if="isAutoRefreshActive" class="flex items-center gap-2 text-xs")
+            div(class="w-2 h-2 rounded-full bg-green-500 animate-pulse")
+            span(class="text-green-400") Live
+            span(class="text-gray-300") • {{ lastUpdated?.toLocaleTimeString() || 'Updating...' }}
 
-      //- Score Summary
+      //- Score Summary with Animation
       div(class="bg-slate-900 rounded-b-lg p-4 sm:p-6")
-        //- Mobile Layout (stacked)
-        div(class="flex flex-col gap-3 sm:hidden")
-          //- Team 1
-          .bg-slate-800.rounded-lg.p-4
-            .flex.items-center.justify-between
-              div(class="flex items-center gap-3")
-                img(
-                  class="h-14 w-14 object-contain"
-                  :src="getTeamInfo(matchup[0].roster?.user?.display_name).logo"
-                  :alt="getTeamInfo(matchup[0].roster?.user?.display_name).aiModel"
-                  :class="getTeamInfo(matchup[0].roster?.user?.display_name).invertLogo ? 'invert brightness-200' : ''"
-                )
-                div
-                  div(class="text-white font-bold text-base") {{ getTeamInfo(matchup[0].roster?.user?.display_name).aiModel }}
-                  div(class="text-blue-400 text-sm font-semibold") {{ getTeamInfo(matchup[0].roster?.user?.display_name).owner }}
-              div(class="text-white font-black text-2xl") {{ matchup[0].points?.toFixed(2) || '0.00' }}
-
-          //- VS Separator (Mobile) - subtle design
-          div(class="relative flex items-center justify-center")
-            div(class="absolute inset-0 flex items-center")
-              div(class="w-full border-t border-slate-600")
-            div(class="relative bg-slate-900 px-3")
-              span(class="text-gray-400 font-semibold text-xs uppercase") vs
-
-          //- Team 2
-          .bg-slate-800.rounded-lg.p-4
-            .flex.items-center.justify-between
-              div(class="flex items-center gap-3")
-                img(
-                  class="h-14 w-14 object-contain"
-                  :src="getTeamInfo(matchup[1].roster?.user?.display_name).logo"
-                  :alt="getTeamInfo(matchup[1].roster?.user?.display_name).aiModel"
-                  :class="getTeamInfo(matchup[1].roster?.user?.display_name).invertLogo ? 'invert brightness-200' : ''"
-                )
-                div
-                  div(class="text-white font-bold text-base") {{ getTeamInfo(matchup[1].roster?.user?.display_name).aiModel }}
-                  div(class="text-blue-400 text-sm font-semibold") {{ getTeamInfo(matchup[1].roster?.user?.display_name).owner }}
-              div(class="text-white font-black text-2xl") {{ matchup[1].points?.toFixed(2) || '0.00' }}
-
-        //- Desktop Layout (side by side with VS in between)
+        //- Desktop Layout
         div(class="hidden sm:flex sm:items-center sm:gap-4")
           //- Team 1
           div(class="flex-1 text-center bg-slate-800 rounded-lg p-6")
@@ -78,9 +45,12 @@
             )
             div(class="text-white font-bold text-2xl") {{ getTeamInfo(matchup[0].roster?.user?.display_name).aiModel }}
             div(class="text-blue-400 text-lg font-semibold") {{ getTeamInfo(matchup[0].roster?.user?.display_name).owner }}
-            div(class="text-white font-black text-5xl mt-4") {{ matchup[0].points?.toFixed(2) || '0.00' }}
+            div(
+              class="text-white font-black text-5xl mt-4 transition-all duration-300"
+              :class="{ 'score-pulse': isScoreAnimating(matchup[0].roster_id) }"
+            ) {{ matchup[0].points?.toFixed(2) || '0.00' }}
 
-          //- VS Separator (Desktop) - No absolute positioning
+          //- VS Separator
           div(class="flex-shrink-0 px-4")
             div(class="bg-slate-700 rounded-full px-4 py-2")
               span(class="text-white font-black text-lg") VS
@@ -95,125 +65,207 @@
             )
             div(class="text-white font-bold text-2xl") {{ getTeamInfo(matchup[1].roster?.user?.display_name).aiModel }}
             div(class="text-blue-400 text-lg font-semibold") {{ getTeamInfo(matchup[1].roster?.user?.display_name).owner }}
-            div(class="text-white font-black text-5xl mt-4") {{ matchup[1].points?.toFixed(2) || '0.00' }}
+            div(
+              class="text-white font-black text-5xl mt-4 transition-all duration-300"
+              :class="{ 'score-pulse': isScoreAnimating(matchup[1].roster_id) }"
+            ) {{ matchup[1].points?.toFixed(2) || '0.00' }}
 
-    //- Rosters
+        //- Mobile Layout
+        div(class="flex flex-col gap-3 sm:hidden")
+          //- Team 1
+          .bg-slate-800.rounded-lg.p-4
+            .flex.items-center.justify-between
+              div(class="flex items-center gap-3")
+                img(
+                  class="h-14 w-14 object-contain"
+                  :src="getTeamInfo(matchup[0].roster?.user?.display_name).logo"
+                  :alt="getTeamInfo(matchup[0].roster?.user?.display_name).aiModel"
+                  :class="getTeamInfo(matchup[0].roster?.user?.display_name).invertLogo ? 'invert brightness-200' : ''"
+                )
+                div
+                  div(class="text-white font-bold text-base") {{ getTeamInfo(matchup[0].roster?.user?.display_name).aiModel }}
+                  div(class="text-blue-400 text-sm font-semibold") {{ getTeamInfo(matchup[0].roster?.user?.display_name).owner }}
+              div(
+                class="text-white font-black text-2xl transition-all duration-300"
+                :class="{ 'score-pulse': isScoreAnimating(matchup[0].roster_id) }"
+              ) {{ matchup[0].points?.toFixed(2) || '0.00' }}
+
+          //- VS
+          div(class="text-center")
+            span(class="text-gray-400 font-semibold text-xs uppercase") vs
+
+          //- Team 2
+          .bg-slate-800.rounded-lg.p-4
+            .flex.items-center.justify-between
+              div(class="flex items-center gap-3")
+                img(
+                  class="h-14 w-14 object-contain"
+                  :src="getTeamInfo(matchup[1].roster?.user?.display_name).logo"
+                  :alt="getTeamInfo(matchup[1].roster?.user?.display_name).aiModel"
+                  :class="getTeamInfo(matchup[1].roster?.user?.display_name).invertLogo ? 'invert brightness-200' : ''"
+                )
+                div
+                  div(class="text-white font-bold text-base") {{ getTeamInfo(matchup[1].roster?.user?.display_name).aiModel }}
+                  div(class="text-blue-400 text-sm font-semibold") {{ getTeamInfo(matchup[1].roster?.user?.display_name).owner }}
+              div(
+                class="text-white font-black text-2xl transition-all duration-300"
+                :class="{ 'score-pulse': isScoreAnimating(matchup[1].roster_id) }"
+              ) {{ matchup[1].points?.toFixed(2) || '0.00' }}
+
+        //- Point Differential Graph (like Home page)
+        .mt-6.pt-6.border-t.border-slate-700(v-if="(matchup[0].points || 0) !== (matchup[1].points || 0)")
+          .text-center.text-gray-400.text-sm.font-semibold.mb-3 POINT DIFFERENTIAL
+          .relative.h-12.flex.items-center.bg-slate-800.rounded-lg.overflow-hidden
+            //- Center Line
+            div(class="absolute left-1/2 transform -translate-x-1/2 w-0.5 h-full bg-slate-600 z-10")
+
+            //- Team 1 winning bar (left side)
+            div(
+              v-if="matchup[0].points > matchup[1].points"
+              class="absolute right-1/2 h-8 bg-gradient-to-l from-green-500 to-green-600 flex items-center justify-start pl-3 transition-all duration-500"
+              :style="{ width: `${Math.min(((matchup[0].points - matchup[1].points) / Math.max(matchup[0].points, matchup[1].points)) * 45, 45)}%` }"
+            )
+              span.text-white.text-sm.font-bold +{{ Math.abs((matchup[0].points || 0) - (matchup[1].points || 0)).toFixed(2) }}
+
+            //- Team 2 winning bar (right side)
+            div(
+              v-else-if="matchup[1].points > matchup[0].points"
+              class="absolute left-1/2 h-8 bg-gradient-to-r from-green-500 to-green-600 flex items-center justify-end pr-3 transition-all duration-500"
+              :style="{ width: `${Math.min(((matchup[1].points - matchup[0].points) / Math.max(matchup[0].points, matchup[1].points)) * 45, 45)}%` }"
+            )
+              span.text-white.text-sm.font-bold +{{ Math.abs((matchup[0].points || 0) - (matchup[1].points || 0)).toFixed(2) }}
+
+            //- Tie indicator
+            div(v-else class="absolute left-1/2 transform -translate-x-1/2 bg-yellow-500 rounded px-3 py-1 z-20")
+              span.text-black.text-xs.font-bold TIE
+
+    //- Head-to-Head Player Matchups
     section.mb-8
       .bg-gradient-to-r.from-purple-600.to-purple-800.rounded-t-lg.px-6.py-4.border-b-4.border-yellow-400
-        h2.text-white.text-2xl.font-black.uppercase.tracking-wide Rosters
+        h2.text-white.text-2xl.font-black.uppercase.tracking-wide Head to Head
+
+      div(class="bg-slate-900 rounded-b-lg p-4 sm:p-6 space-y-3")
+        //- Position Groups
+        div(v-for="position in ['QB', 'RB', 'WR', 'TE', 'K', 'DEF']" :key="position")
+          div(v-if="getPositionPlayers(position).team1.length > 0 || getPositionPlayers(position).team2.length > 0")
+            //- Position Header
+            .text-gray-400.font-bold.text-sm.uppercase.tracking-wider.mb-2 {{ position }}
+
+            //- Player matchups for this position
+            .space-y-2
+              div(v-for="index in Math.max(getPositionPlayers(position).team1.length, getPositionPlayers(position).team2.length)" :key="index")
+                div(class="grid grid-cols-1 md:grid-cols-2 gap-2")
+                  //- Team 1 Player
+                  div(v-if="getPositionPlayers(position).team1[index - 1]")
+                    .bg-slate-800.rounded.p-3(:class="{ 'matchup-highlight': isPlayerScoreAnimating(getPositionPlayers(position).team1[index - 1]) }")
+                      .flex.items-center.gap-3
+                        img.h-10.w-10.rounded-full.object-cover(
+                          v-if="getPlayerPortrait(getPositionPlayers(position).team1[index - 1])"
+                          :src="getPlayerPortrait(getPositionPlayers(position).team1[index - 1])"
+                          :alt="getPlayerName(getPositionPlayers(position).team1[index - 1])"
+                          @error="$event.target.style.display='none'"
+                        )
+                        .flex-1
+                          .flex.items-center.gap-2
+                            .text-white.font-semibold.text-sm {{ getPlayerName(getPositionPlayers(position).team1[index - 1]) }}
+                            div(
+                              v-if="getPlayerInjury(getPositionPlayers(position).team1[index - 1])"
+                              class="px-2 py-0.5 rounded text-xs font-bold"
+                              :class="getPlayerInjury(getPositionPlayers(position).team1[index - 1]) === 'O' || getPlayerInjury(getPositionPlayers(position).team1[index - 1]) === 'IR' ? 'bg-red-600 text-white' : getPlayerInjury(getPositionPlayers(position).team1[index - 1]) === 'D' ? 'bg-orange-500 text-white' : 'bg-yellow-500 text-black'"
+                            ) {{ getPlayerInjury(getPositionPlayers(position).team1[index - 1]) }}
+                          .text-gray-500.text-xs {{ getPlayerTeam(getPositionPlayers(position).team1[index - 1]) }}
+                        .text-right.flex-shrink-0
+                          .text-blue-400.font-bold.text-lg(
+                            :class="{ 'score-pulse': isPlayerScoreAnimating(getPositionPlayers(position).team1[index - 1]) }"
+                          ) {{ getPlayerPoints(matchup[0], getPositionPlayers(position).team1[index - 1]) }}
+                  div(v-else)
+                    .bg-slate-800.rounded.p-3.opacity-30
+                      .text-center.text-gray-600 -
+
+                  //- Team 2 Player
+                  div(v-if="getPositionPlayers(position).team2[index - 1]")
+                    .bg-slate-800.rounded.p-3(:class="{ 'matchup-highlight': isPlayerScoreAnimating(getPositionPlayers(position).team2[index - 1]) }")
+                      .flex.items-center.gap-3
+                        img.h-10.w-10.rounded-full.object-cover(
+                          v-if="getPlayerPortrait(getPositionPlayers(position).team2[index - 1])"
+                          :src="getPlayerPortrait(getPositionPlayers(position).team2[index - 1])"
+                          :alt="getPlayerName(getPositionPlayers(position).team2[index - 1])"
+                          @error="$event.target.style.display='none'"
+                        )
+                        .flex-1
+                          .flex.items-center.gap-2
+                            .text-white.font-semibold.text-sm {{ getPlayerName(getPositionPlayers(position).team2[index - 1]) }}
+                            div(
+                              v-if="getPlayerInjury(getPositionPlayers(position).team2[index - 1])"
+                              class="px-2 py-0.5 rounded text-xs font-bold"
+                              :class="getPlayerInjury(getPositionPlayers(position).team2[index - 1]) === 'O' || getPlayerInjury(getPositionPlayers(position).team2[index - 1]) === 'IR' ? 'bg-red-600 text-white' : getPlayerInjury(getPositionPlayers(position).team2[index - 1]) === 'D' ? 'bg-orange-500 text-white' : 'bg-yellow-500 text-black'"
+                            ) {{ getPlayerInjury(getPositionPlayers(position).team2[index - 1]) }}
+                          .text-gray-500.text-xs {{ getPlayerTeam(getPositionPlayers(position).team2[index - 1]) }}
+                        .text-right.flex-shrink-0
+                          .text-blue-400.font-bold.text-lg(
+                            :class="{ 'score-pulse': isPlayerScoreAnimating(getPositionPlayers(position).team2[index - 1]) }"
+                          ) {{ getPlayerPoints(matchup[1], getPositionPlayers(position).team2[index - 1]) }}
+                  div(v-else)
+                    .bg-slate-800.rounded.p-3.opacity-30
+                      .text-center.text-gray-600 -
+
+    //- Bench Players
+    section.mb-8
+      .bg-gradient-to-r.from-gray-600.to-gray-800.rounded-t-lg.px-6.py-4.border-b-4.border-yellow-400
+        h2.text-white.text-2xl.font-black.uppercase.tracking-wide Bench
 
       div(class="grid grid-cols-1 md:grid-cols-2 gap-6 bg-slate-900 rounded-b-lg p-6")
-        //- Team 1 Roster
+        //- Team 1 Bench
         div
           h3.text-white.font-bold.text-xl.mb-4 {{ getTeamInfo(matchup[0].roster?.user?.display_name).aiModel }}
-
-          //- Starters
-          .space-y-2.mb-6
-            .bg-slate-800.rounded.p-3(v-for="playerId in matchup[0].starters" :key="playerId")
-              .flex.items-center.gap-3
-                img.h-12.w-12.rounded-full.object-cover(
+          .space-y-2(v-if="getBenchPlayers(matchup[0]).length > 0")
+            div(v-for="playerId in getBenchPlayers(matchup[0])" :key="playerId" class="bg-slate-800/50 rounded p-2")
+              .flex.items-center.gap-2
+                img.h-8.w-8.rounded-full.object-cover(
                   v-if="getPlayerPortrait(playerId)"
                   :src="getPlayerPortrait(playerId)"
                   :alt="getPlayerName(playerId)"
                   @error="$event.target.style.display='none'"
                 )
-                div.w-10.h-10.rounded.flex.items-center.justify-center.text-xs.font-bold.flex-shrink-0(
+                div.w-8.h-8.rounded.flex.items-center.justify-center.text-xs.font-bold.flex-shrink-0(
                   :class="getPositionColor(getPlayerPosition(playerId))"
                 )
                   | {{ getPlayerPosition(playerId) }}
                 .flex-1
-                  .flex.items-center.gap-2
-                    .text-white.font-semibold {{ getPlayerName(playerId) }}
-                    div(
-                      v-if="getPlayerInjury(playerId)"
-                      class="px-2 py-0.5 rounded text-xs font-bold"
-                      :class="getPlayerInjury(playerId) === 'O' || getPlayerInjury(playerId) === 'IR' ? 'bg-red-600 text-white' : getPlayerInjury(playerId) === 'D' ? 'bg-orange-500 text-white' : 'bg-yellow-500 text-black'"
-                    ) {{ getPlayerInjury(playerId) }}
-                  .text-gray-400.text-xs {{ getPlayerTeam(playerId) }}
+                  .text-white.font-semibold.text-xs {{ getPlayerName(playerId) }}
+                  .text-gray-500.text-xs {{ getPlayerTeam(playerId) }}
                 .text-right.flex-shrink-0
-                  .text-blue-400.font-bold.text-lg {{ getPlayerPoints(matchup[0], playerId) }}
-                  .text-gray-400.text-xs VORP: {{ getPlayerVORP(playerId) }}
-                  .text-gray-400.text-xs ROS: {{ getPlayerROS(playerId) }}
+                  .text-gray-400.font-bold(
+                    :class="{ 'score-pulse': isPlayerScoreAnimating(playerId) }"
+                  ) {{ getPlayerPoints(matchup[0], playerId) }}
+          div(v-else)
+            .text-gray-500.text-sm No bench players
 
-          //- Bench
-          div(v-if="getBenchPlayers(matchup[0]).length > 0")
-            h4.text-gray-400.font-bold.text-sm.uppercase.tracking-wider.mb-3 Bench
-            .space-y-2
-              div(v-for="playerId in getBenchPlayers(matchup[0])" :key="playerId" class="bg-slate-800/50 rounded p-3")
-                .flex.items-center.gap-3
-                  img.h-10.w-10.rounded-full.object-cover(
-                    v-if="getPlayerPortrait(playerId)"
-                    :src="getPlayerPortrait(playerId)"
-                    :alt="getPlayerName(playerId)"
-                    @error="$event.target.style.display='none'"
-                  )
-                  div.w-8.h-8.rounded.flex.items-center.justify-center.text-xs.font-bold.flex-shrink-0(
-                    :class="getPositionColor(getPlayerPosition(playerId))"
-                  )
-                    | {{ getPlayerPosition(playerId) }}
-                  .flex-1
-                    .text-white.font-semibold.text-sm {{ getPlayerName(playerId) }}
-                    .text-gray-400.text-xs {{ getPlayerTeam(playerId) }}
-                  .text-right.flex-shrink-0
-                    .text-blue-400.font-bold.text-lg {{ getPlayerPoints(matchup[0], playerId) }}
-                    .text-gray-400.text-xs VORP: {{ getPlayerVORP(playerId) }}
-                    .text-gray-400.text-xs ROS: {{ getPlayerROS(playerId) }}
-
-        //- Team 2 Roster
+        //- Team 2 Bench
         div
           h3.text-white.font-bold.text-xl.mb-4 {{ getTeamInfo(matchup[1].roster?.user?.display_name).aiModel }}
-
-          //- Starters
-          .space-y-2.mb-6
-            .bg-slate-800.rounded.p-3(v-for="playerId in matchup[1].starters" :key="playerId")
-              .flex.items-center.gap-3
-                img.h-12.w-12.rounded-full.object-cover(
+          .space-y-2(v-if="getBenchPlayers(matchup[1]).length > 0")
+            div(v-for="playerId in getBenchPlayers(matchup[1])" :key="playerId" class="bg-slate-800/50 rounded p-2")
+              .flex.items-center.gap-2
+                img.h-8.w-8.rounded-full.object-cover(
                   v-if="getPlayerPortrait(playerId)"
                   :src="getPlayerPortrait(playerId)"
                   :alt="getPlayerName(playerId)"
                   @error="$event.target.style.display='none'"
                 )
-                div.w-10.h-10.rounded.flex.items-center.justify-center.text-xs.font-bold.flex-shrink-0(
+                div.w-8.h-8.rounded.flex.items-center.justify-center.text-xs.font-bold.flex-shrink-0(
                   :class="getPositionColor(getPlayerPosition(playerId))"
                 )
                   | {{ getPlayerPosition(playerId) }}
                 .flex-1
-                  .flex.items-center.gap-2
-                    .text-white.font-semibold {{ getPlayerName(playerId) }}
-                    div(
-                      v-if="getPlayerInjury(playerId)"
-                      class="px-2 py-0.5 rounded text-xs font-bold"
-                      :class="getPlayerInjury(playerId) === 'O' || getPlayerInjury(playerId) === 'IR' ? 'bg-red-600 text-white' : getPlayerInjury(playerId) === 'D' ? 'bg-orange-500 text-white' : 'bg-yellow-500 text-black'"
-                    ) {{ getPlayerInjury(playerId) }}
-                  .text-gray-400.text-xs {{ getPlayerTeam(playerId) }}
+                  .text-white.font-semibold.text-xs {{ getPlayerName(playerId) }}
+                  .text-gray-500.text-xs {{ getPlayerTeam(playerId) }}
                 .text-right.flex-shrink-0
-                  .text-blue-400.font-bold.text-lg {{ getPlayerPoints(matchup[1], playerId) }}
-                  .text-gray-400.text-xs VORP: {{ getPlayerVORP(playerId) }}
-                  .text-gray-400.text-xs ROS: {{ getPlayerROS(playerId) }}
-
-          //- Bench
-          div(v-if="getBenchPlayers(matchup[1]).length > 0")
-            h4.text-gray-400.font-bold.text-sm.uppercase.tracking-wider.mb-3 Bench
-            .space-y-2
-              div(v-for="playerId in getBenchPlayers(matchup[1])" :key="playerId" class="bg-slate-800/50 rounded p-3")
-                .flex.items-center.gap-3
-                  img.h-10.w-10.rounded-full.object-cover(
-                    v-if="getPlayerPortrait(playerId)"
-                    :src="getPlayerPortrait(playerId)"
-                    :alt="getPlayerName(playerId)"
-                    @error="$event.target.style.display='none'"
-                  )
-                  div.w-8.h-8.rounded.flex.items-center.justify-center.text-xs.font-bold.flex-shrink-0(
-                    :class="getPositionColor(getPlayerPosition(playerId))"
-                  )
-                    | {{ getPlayerPosition(playerId) }}
-                  .flex-1
-                    .text-white.font-semibold.text-sm {{ getPlayerName(playerId) }}
-                    .text-gray-400.text-xs {{ getPlayerTeam(playerId) }}
-                  .text-right.flex-shrink-0
-                    .text-blue-400.font-bold.text-lg {{ getPlayerPoints(matchup[1], playerId) }}
-                    .text-gray-400.text-xs VORP: {{ getPlayerVORP(playerId) }}
-                    .text-gray-400.text-xs ROS: {{ getPlayerROS(playerId) }}
+                  .text-gray-400.font-bold(
+                    :class="{ 'score-pulse': isPlayerScoreAnimating(playerId) }"
+                  ) {{ getPlayerPoints(matchup[1], playerId) }}
+          div(v-else)
+            .text-gray-500.text-sm No bench players
 
     //- Tokens
     section.mb-8(v-if="markdownContents.length > 0" id="tokens")
@@ -235,7 +287,7 @@
 </template>
 
 <script>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, onUnmounted, computed, watch, nextTick } from 'vue'
 import { useRoute } from 'vue-router'
 import { getTeamInfo } from '../teamMappings.js'
 import { getPlayerInjuryStatus, getInjuryIndicator } from '../fantasyNerdsApi.js'
@@ -256,9 +308,109 @@ export default {
     const injuries = ref({})
     const markdownContents = ref([])
     const draftData = ref({})
+    const lastUpdated = ref(null)
+    const isAutoRefreshActive = ref(false)
+    const autoRefreshInterval = ref(null)
+    const autoRefreshCheckInterval = ref(null)
+
+    // Score animation tracking
+    const animatingScores = ref(new Set())
+    const animatingPlayerScores = ref(new Set())
+    const previousScores = ref({})
+    const previousPlayerScores = ref({})
 
     // Use computed property to access players from store
     const players = computed(() => leagueStore.players)
+
+    // Check if current time is during NFL game hours (Thursday 8PM - Monday 11:59PM EST)
+    const isNFLGameTime = () => {
+      const now = new Date()
+      const day = now.getDay() // 0 = Sunday, 1 = Monday, etc.
+      const hour = now.getHours()
+
+      // Thursday after 8PM EST through Monday
+      if (day === 4 && hour >= 20) return true // Thursday 8PM+
+      if (day === 5) return true // Friday all day
+      if (day === 6) return true // Saturday all day
+      if (day === 0) return true // Sunday all day
+      if (day === 1) return true // Monday all day
+
+      return false
+    }
+
+    // Check if a score is animating
+    const isScoreAnimating = (rosterId) => {
+      return animatingScores.value.has(rosterId)
+    }
+
+    const isPlayerScoreAnimating = (playerId) => {
+      return animatingPlayerScores.value.has(playerId)
+    }
+
+    // Trigger score animation
+    const animateScore = (rosterId) => {
+      animatingScores.value.add(rosterId)
+      setTimeout(() => {
+        animatingScores.value.delete(rosterId)
+      }, 2000)
+    }
+
+    const animatePlayerScore = (playerId) => {
+      animatingPlayerScores.value.add(playerId)
+      setTimeout(() => {
+        animatingPlayerScores.value.delete(playerId)
+      }, 2000)
+    }
+
+    // Play hit sound effect
+    const playHitSound = () => {
+      try {
+        const audio = new Audio('/sounds/hit.wav')
+        audio.volume = 0.3
+        audio.play().catch(err => console.error('Error playing sound:', err))
+      } catch (err) {
+        console.error('Error creating audio:', err)
+      }
+    }
+
+    // Watch for score changes
+    watch(matchup, (newMatchup, oldMatchup) => {
+      if (!newMatchup || !oldMatchup) return
+
+      let scoreChanged = false
+
+      // Check team scores
+      newMatchup.forEach((team, index) => {
+        const rosterId = team.roster_id
+        const oldScore = previousScores.value[rosterId]
+        const newScore = team.points
+
+        if (oldScore !== undefined && oldScore !== newScore) {
+          animateScore(rosterId)
+          scoreChanged = true
+        }
+        previousScores.value[rosterId] = newScore
+
+        // Check player scores
+        if (team.players_points) {
+          Object.entries(team.players_points).forEach(([playerId, points]) => {
+            const key = `${rosterId}-${playerId}`
+            const oldPoints = previousPlayerScores.value[key]
+
+            if (oldPoints !== undefined && oldPoints !== points) {
+              animatePlayerScore(playerId)
+              scoreChanged = true
+            }
+            previousPlayerScores.value[key] = points
+          })
+        }
+      })
+
+      // Play sound if any score changed
+      if (scoreChanged) {
+        playHitSound()
+      }
+    }, { deep: true })
 
     const loadMatchupData = async () => {
       try {
@@ -291,16 +443,86 @@ export default {
           throw new Error('Matchup not found')
         }
 
+        // Initialize previous scores
+        matchup.value.forEach(team => {
+          previousScores.value[team.roster_id] = team.points
+          if (team.players_points) {
+            Object.entries(team.players_points).forEach(([playerId, points]) => {
+              previousPlayerScores.value[`${team.roster_id}-${playerId}`] = points
+            })
+          }
+        })
+
         // Load injury data for this week
         injuries.value = await leagueStore.fetchInjuriesForWeek(week.value)
 
         // Try to load markdown file for this matchup
         loadMarkdownFile()
+
+        lastUpdated.value = new Date()
       } catch (err) {
         error.value = 'Failed to load matchup data. Please try again later.'
         console.error(err)
       } finally {
         loading.value = false
+      }
+    }
+
+    // Refresh matchup data without showing loading state
+    const refreshMatchupData = async () => {
+      try {
+        // Fetch fresh data from API, forcing refresh
+        const matchupsData = await leagueStore.fetchMatchupForWeek(week.value, true)
+
+        // Find the specific matchup from the week's matchups
+        const matchupGroups = {}
+        matchupsData.forEach(matchupGroup => {
+          const matchupIdKey = matchupGroup[0].matchup_id
+          matchupGroups[matchupIdKey] = matchupGroup
+        })
+
+        const newMatchup = matchupGroups[matchupId.value]
+        if (newMatchup) {
+          matchup.value = newMatchup
+        }
+
+        // Update injury data
+        injuries.value = await leagueStore.fetchInjuriesForWeek(week.value)
+
+        lastUpdated.value = new Date()
+      } catch (err) {
+        console.error('Error refreshing matchup:', err)
+      }
+    }
+
+    // Start auto-refresh
+    const startAutoRefresh = () => {
+      if (autoRefreshInterval.value) return
+
+      console.log('Starting auto-refresh for matchup detail')
+      isAutoRefreshActive.value = true
+      // Refresh every 1 minute
+      autoRefreshInterval.value = setInterval(refreshMatchupData, 60000)
+    }
+
+    // Stop auto-refresh
+    const stopAutoRefresh = () => {
+      if (autoRefreshInterval.value) {
+        clearInterval(autoRefreshInterval.value)
+        autoRefreshInterval.value = null
+      }
+      isAutoRefreshActive.value = false
+      console.log('Stopped auto-refresh for matchup detail')
+    }
+
+    // Check if auto-refresh should be active
+    const checkAutoRefreshStatus = () => {
+      const shouldRefresh = isNFLGameTime()
+
+      if (shouldRefresh && !autoRefreshInterval.value) {
+        startAutoRefresh()
+      } else if (!shouldRefresh && autoRefreshInterval.value) {
+        stopAutoRefresh()
       }
     }
 
@@ -448,8 +670,40 @@ export default {
       return getInjuryIndicator(injury)
     }
 
-    onMounted(() => {
-      loadMatchupData()
+    // Get players for each team by position for head-to-head display
+    const getPositionPlayers = (position) => {
+      const team1Players = matchup.value[0].starters.filter(playerId => {
+        const player = players.value[playerId]
+        return player?.position === position
+      })
+
+      const team2Players = matchup.value[1].starters.filter(playerId => {
+        const player = players.value[playerId]
+        return player?.position === position
+      })
+
+      return {
+        team1: team1Players,
+        team2: team2Players
+      }
+    }
+
+    onMounted(async () => {
+      await loadMatchupData()
+
+      // Check if we should start auto-refresh
+      checkAutoRefreshStatus()
+
+      // Check every minute if we should start/stop auto-refresh
+      autoRefreshCheckInterval.value = setInterval(checkAutoRefreshStatus, 60000)
+    })
+
+    onUnmounted(() => {
+      // Clean up intervals
+      stopAutoRefresh()
+      if (autoRefreshCheckInterval.value) {
+        clearInterval(autoRefreshCheckInterval.value)
+      }
     })
 
     return {
@@ -458,6 +712,8 @@ export default {
       matchup,
       loading,
       error,
+      lastUpdated,
+      isAutoRefreshActive,
       getTeamInfo,
       getPlayerName,
       getPlayerPoints,
@@ -469,7 +725,10 @@ export default {
       getBenchPlayers,
       getPositionColor,
       getPlayerInjury,
-      markdownContents
+      getPositionPlayers,
+      markdownContents,
+      isScoreAnimating,
+      isPlayerScoreAnimating
     }
   }
 }
@@ -529,5 +788,50 @@ export default {
 .markdown-body hr {
   background-color: #475569 !important;
   border-color: #475569 !important;
+}
+
+/* Score animation */
+@keyframes scorePulse {
+  0% {
+    transform: scale(1);
+    color: rgb(255, 255, 255);
+  }
+  25% {
+    transform: scale(1.15);
+    color: rgb(34, 197, 94);
+  }
+  50% {
+    transform: scale(1.2);
+    color: rgb(74, 222, 128);
+  }
+  75% {
+    transform: scale(1.1);
+    color: rgb(34, 197, 94);
+  }
+  100% {
+    transform: scale(1);
+    color: rgb(255, 255, 255);
+  }
+}
+
+.score-pulse {
+  animation: scorePulse 2s ease-out;
+}
+
+@keyframes matchupHighlight {
+  0% {
+    background-color: rgba(34, 197, 94, 0.1);
+  }
+  50% {
+    background-color: rgba(34, 197, 94, 0.2);
+  }
+  100% {
+    background-color: rgba(34, 197, 94, 0.1);
+  }
+}
+
+.matchup-highlight {
+  animation: matchupHighlight 2s ease-out;
+  position: relative;
 }
 </style>
