@@ -588,7 +588,14 @@ export default {
 
     const loadData = async () => {
       try {
-        loading.value = true
+        // Check if we have cached data in the store before showing loading spinner
+        const hasData = leagueStore.allMatchups && Object.keys(leagueStore.allMatchups).length > 0
+
+        // Only show loading spinner if we don't have cached data
+        if (!hasData) {
+          loading.value = true
+        }
+
         error.value = null
 
         // Load from Pinia cache first (fast), then refresh in background if stale
