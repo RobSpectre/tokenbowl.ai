@@ -451,6 +451,9 @@ export default {
     const players = computed(() => leagueStore.players)
     const enrichedPlayers = computed(() => leagueStore.enrichedPlayers)
 
+    // Use computed property to access fresh rosters from store
+    const rosters = computed(() => leagueStore.rosters)
+
     // Compute game status
     const gameStatus = computed(() => {
       if (!matchup.value || !leagueStore.league) return 'Unknown'
@@ -613,11 +616,12 @@ export default {
         matchupId.value = parseInt(route.params.matchupId)
 
         // Use the store to fetch all needed data (uses cache if available)
-        const [matchupsData, , enrichedPlayersData, draftPicks] = await Promise.all([
+        const [matchupsData, , enrichedPlayersData, draftPicks, leagueData] = await Promise.all([
           leagueStore.fetchMatchupForWeek(week.value),
           leagueStore.fetchPlayers(), // Fetch to ensure data is loaded in store
           leagueStore.fetchEnrichedPlayers(), // Fetch enriched player data
-          leagueStore.fetchDraft()
+          leagueStore.fetchDraft(),
+          leagueStore.fetchLeagueData() // Fetch fresh roster data
         ])
 
         draftData.value = draftPicks
@@ -665,7 +669,10 @@ export default {
     const refreshMatchupData = async () => {
       try {
         // Fetch fresh data from API, forcing refresh
-        const matchupsData = await leagueStore.fetchMatchupForWeek(week.value, true)
+        const [matchupsData, leagueData] = await Promise.all([
+          leagueStore.fetchMatchupForWeek(week.value, true),
+          leagueStore.fetchLeagueData(true) // Also refresh roster data
+        ])
 
         // Find the specific matchup from the week's matchups
         const matchupGroups = {}
@@ -842,8 +849,15 @@ export default {
     }
 
     const getBenchPlayers = (team) => {
-      if (!team.roster || !team.roster.players) return []
-      return team.roster.players.filter(playerId => !team.starters.includes(playerId))
+      // Use fresh roster data from the store instead of cached roster from matchup
+      if (!team || !team.roster_id || !rosters.value) return []
+
+      // Find the current roster data from the store
+      const currentRoster = rosters.value.find(r => r.roster_id === team.roster_id)
+      if (!currentRoster || !currentRoster.players) return []
+
+      // Filter out starters to get bench players
+      return currentRoster.players.filter(playerId => !team.starters.includes(playerId))
     }
 
     const getPositionColor = (position) => {
@@ -938,6 +952,7 @@ export default {
 
       try {
         // Collect all player IDs from both teams
+        // Note: getBenchPlayers now uses fresh roster data from store
         const playerIds = [
           ...matchup.value[0].starters,
           ...matchup.value[1].starters,
