@@ -1160,6 +1160,11 @@ export default {
     }
 
     const getPlayerName = (playerId) => {
+      // Check if this is an empty roster spot
+      if (playerId === '0' || playerId === 0) {
+        return 'Empty'
+      }
+
       // Check if this is a defense team
       if (isDefenseTeam(playerId)) {
         return getTeamNameFromAbbr(playerId)

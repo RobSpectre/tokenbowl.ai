@@ -310,6 +310,10 @@ export default {
     }
 
     const getPlayerName = (playerId) => {
+      // Check if this is an empty roster spot
+      if (playerId === '0' || playerId === 0) {
+        return 'Empty'
+      }
       const player = players.value[playerId]
       if (!player) return `Player ${playerId}`
       return `${player.first_name} ${player.last_name}`

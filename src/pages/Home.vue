@@ -848,6 +848,11 @@ export default {
     }
 
     const getPlayerNameFromId = (playerId) => {
+      // Check if this is an empty roster spot
+      if (playerId === '0' || playerId === 0) {
+        return 'Empty'
+      }
+
       // Check if this is a defense team (2-3 uppercase letters)
       if (isDefenseTeam(playerId)) {
         return getTeamNameFromAbbr(playerId)

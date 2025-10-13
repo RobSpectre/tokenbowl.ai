@@ -18,6 +18,19 @@ const FULL_CACHE_DURATION = 24 * 60 * 60 * 1000 // 24 hours
  * @returns {Object|null} Player data or null if not found
  */
 export async function getPlayer(playerId, existingPlayers = {}) {
+  // Check if it's an empty roster spot (player ID "0")
+  if (playerId === '0' || playerId === 0) {
+    return {
+      player_id: '0',
+      full_name: 'Empty',
+      first_name: 'Empty',
+      last_name: '',
+      position: '?',
+      team: 'FA',
+      fantasy_positions: []
+    }
+  }
+
   // Check if it's a defense team (2-3 uppercase letters)
   if (isDefenseTeam(playerId)) {
     return {
@@ -67,7 +80,17 @@ export async function getPlayers(playerIds, existingPlayers = {}) {
 
   // First pass: collect what we have and what's missing
   for (const playerId of playerIds) {
-    if (isDefenseTeam(playerId)) {
+    if (playerId === '0' || playerId === 0) {
+      result[playerId] = {
+        player_id: '0',
+        full_name: 'Empty',
+        first_name: 'Empty',
+        last_name: '',
+        position: '?',
+        team: 'FA',
+        fantasy_positions: []
+      }
+    } else if (isDefenseTeam(playerId)) {
       result[playerId] = {
         player_id: playerId,
         full_name: getTeamNameFromAbbr(playerId),
