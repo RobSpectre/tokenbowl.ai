@@ -12,6 +12,7 @@
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
+    "@vueuse/head": "^2.0.0",
     "echarts": "^6.0.0",
     "github-markdown-css": "^5.8.1",
     "marked": "^16.3.0",

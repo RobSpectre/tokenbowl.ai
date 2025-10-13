@@ -333,3 +333,94 @@ export async function getTransactions(week) {
 
   return allTransactions
 }
+
+// Cache for player stats to prevent duplicate API calls
+let playerStatsCache = {}
+let playerStatsCacheTimestamp = {}
+const PLAYER_STATS_CACHE_DURATION = 5 * 60 * 1000 // 5 minutes
+
+/**
+ * Get detailed weekly stats for a player from the undocumented Sleeper stats API
+ * WARNING: This endpoint is undocumented and could be deprecated at any time
+ * @param {string} playerId - Sleeper player ID
+ * @param {number} season - Season year (e.g., 2025)
+ * @param {number} week - NFL week number
+ * @returns {Promise<Object|null>} Player stats for the specified week or null if unavailable
+ */
+export async function getPlayerWeeklyStats(playerId, season = 2025, week) {
+  if (!playerId || !week) return null
+
+  const cacheKey = `${playerId}-${season}-${week}`
+
+  // Check cache first
+  const isCacheFresh = playerStatsCacheTimestamp[cacheKey] &&
+                       (Date.now() - playerStatsCacheTimestamp[cacheKey] < PLAYER_STATS_CACHE_DURATION)
+
+  if (isCacheFresh && playerStatsCache[cacheKey]) {
+    return playerStatsCache[cacheKey]
+  }
+
+  try {
+    // Use undocumented stats endpoint (note: .com not .app)
+    const response = await fetch(
+      `https://api.sleeper.com/stats/nfl/player/${playerId}?season=${season}&season_type=regular&grouping=week`
+    )
+
+    if (!response.ok) {
+      console.warn(`Failed to fetch stats for player ${playerId}: ${response.status}`)
+      return null
+    }
+
+    const allWeekStats = await response.json()
+
+    // Extract stats for the specific week
+    const weekStats = allWeekStats[week.toString()]
+
+    if (!weekStats) {
+      return null
+    }
+
+    // Cache the result
+    playerStatsCache[cacheKey] = weekStats
+    playerStatsCacheTimestamp[cacheKey] = Date.now()
+
+    return weekStats
+  } catch (error) {
+    console.error(`Error fetching player stats for ${playerId}:`, error)
+    return null
+  }
+}
+
+/**
+ * Get detailed weekly stats for multiple players at once
+ * @param {Array<string>} playerIds - Array of Sleeper player IDs
+ * @param {number} season - Season year
+ * @param {number} week - NFL week number
+ * @returns {Promise<Object>} Object mapping player IDs to their stats
+ */
+export async function getMultiplePlayerStats(playerIds, season, week) {
+  if (!playerIds || playerIds.length === 0) return {}
+
+  try {
+    const statsPromises = playerIds.map(playerId =>
+      getPlayerWeeklyStats(playerId, season, week)
+        .then(stats => ({ playerId, stats }))
+        .catch(() => ({ playerId, stats: null }))
+    )
+
+    const results = await Promise.all(statsPromises)
+
+    // Convert array to object mapping
+    const statsMap = {}
+    results.forEach(({ playerId, stats }) => {
+      if (stats) {
+        statsMap[playerId] = stats
+      }
+    })
+
+    return statsMap
+  } catch (error) {
+    console.error('Error fetching multiple player stats:', error)
+    return {}
+  }
+}

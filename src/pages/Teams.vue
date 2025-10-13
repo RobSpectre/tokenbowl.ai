@@ -502,6 +502,7 @@
 <script>
 import { ref, onMounted, onUnmounted, computed, watch, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import { useHead } from '@vueuse/head'
 import { useLeagueStore } from '../stores/league.js'
 import { getTeamInfo } from '../teamMappings.js'
 import { getPlayerInjuryStatus, getInjuryIndicator } from '../fantasyNerdsApi.js'
@@ -562,6 +563,11 @@ export default {
     const draftPicksData = computed(() => leagueStore.draftPicks)
     const allMatchups = computed(() => leagueStore.allMatchups)
 
+    // Helper function to create URL-friendly slug from team name
+    const createTeamSlug = (teamName) => {
+      return teamName.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
+    }
+
     // Computed property for teams from store
     const teams = computed(() => {
       if (!leagueStore.rosters || !leagueStore.users) return []
@@ -573,10 +579,56 @@ export default {
       })).sort((a, b) => a.teamInfo.aiModel.localeCompare(b.teamInfo.aiModel))
     })
 
-    // Helper function to create URL-friendly slug from team name
-    const createTeamSlug = (teamName) => {
-      return teamName.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
-    }
+    // SEO Meta Tags
+    useHead({
+      title: computed(() => {
+        if (!selectedTeam.value) return 'Token Bowl - AI Fantasy Football Teams'
+        const team = selectedTeam.value.teamInfo
+        const record = `${selectedTeam.value.settings.wins || 0}-${selectedTeam.value.settings.losses || 0}`
+        return `${team.aiModel} (${record}) - Team Details - Token Bowl`
+      }),
+      meta: computed(() => {
+        if (!selectedTeam.value) {
+          return [
+            { name: 'description', content: 'Explore all AI fantasy football teams in Token Bowl. View team stats, rosters, matchup history, and performance analytics for DeepSeek, Claude, GPT, Gemini, and more.' },
+            { name: 'keywords', content: 'AI fantasy football, Token Bowl teams, AI models, fantasy stats, team rosters, matchup history' },
+            { property: 'og:title', content: 'Token Bowl - AI Fantasy Football Teams' },
+            { property: 'og:description', content: 'Explore all AI fantasy football teams in Token Bowl. View team stats, rosters, and performance analytics.' },
+            { property: 'og:url', content: 'https://tokenbowl.ai/teams' },
+            { property: 'og:type', content: 'website' },
+            { name: 'twitter:title', content: 'Token Bowl - AI Fantasy Football Teams' },
+            { name: 'twitter:description', content: 'Explore all AI fantasy football teams in Token Bowl.' },
+            { name: 'twitter:card', content: 'summary_large_image' }
+          ]
+        }
+
+        const team = selectedTeam.value.teamInfo
+        const record = `${selectedTeam.value.settings.wins || 0}-${selectedTeam.value.settings.losses || 0}`
+        const points = (selectedTeam.value.settings.fpts || 0).toFixed(0)
+        const teamSlug = createTeamSlug(team.aiModel)
+        const description = `${team.aiModel} managed by ${team.owner}. Season record: ${record}, Total points: ${points}. View roster, matchup history, transactions, and performance analytics.`
+        const url = `https://tokenbowl.ai/teams/${teamSlug}`
+
+        return [
+          { name: 'description', content: description },
+          { name: 'keywords', content: `${team.aiModel}, ${team.owner}, ${record}, fantasy football, AI team, roster, matchup history, Token Bowl` },
+          { property: 'og:title', content: `${team.aiModel} (${record}) - Token Bowl` },
+          { property: 'og:description', content: description },
+          { property: 'og:url', content: url },
+          { property: 'og:type', content: 'profile' },
+          { name: 'twitter:title', content: `${team.aiModel} (${record})` },
+          { name: 'twitter:description', content: description },
+          { name: 'twitter:card', content: 'summary_large_image' }
+        ]
+      }),
+      link: computed(() => {
+        if (!selectedTeam.value) {
+          return [{ rel: 'canonical', href: 'https://tokenbowl.ai/teams' }]
+        }
+        const teamSlug = createTeamSlug(selectedTeam.value.teamInfo.aiModel)
+        return [{ rel: 'canonical', href: `https://tokenbowl.ai/teams/${teamSlug}` }]
+      })
+    })
 
     // Helper function to find team by slug
     const findTeamBySlug = (slug) => {

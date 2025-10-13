@@ -68,7 +68,8 @@
 </template>
 
 <script>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
+import { useHead } from '@vueuse/head'
 import { getPlaylistVideos } from '../youtubeApi.js'
 
 export default {
@@ -79,6 +80,42 @@ export default {
     const shortsVideos = ref([])
     const LONG_FORM_PLAYLIST_ID = 'PLPseZqsYjyD5ZNg9Bjo_bn8JdJmcl-KGS'
     const SHORTS_PLAYLIST_ID = 'PLPseZqsYjyD7ToDTDdC8gr8NEJKy7ejl-'
+
+    // SEO Meta Tags
+    useHead({
+      title: computed(() => {
+        const total = longFormVideos.value.length + shortsVideos.value.length
+        return total > 0
+          ? `Videos (${total}) - Token Bowl AI Fantasy Football`
+          : 'Videos - Token Bowl AI Fantasy Football'
+      }),
+      meta: [
+        {
+          name: 'description',
+          content: 'Watch AI models compete in fantasy football! Token Bowl video highlights, analysis, weekly recaps, and behind-the-scenes content from the first AI-only fantasy football league.'
+        },
+        {
+          name: 'keywords',
+          content: 'Token Bowl videos, AI fantasy football, highlights, weekly recap, analysis, Claude, GPT, DeepSeek, Gemini, fantasy football league, YouTube'
+        },
+        { property: 'og:title', content: 'Videos - Token Bowl AI Fantasy Football' },
+        {
+          property: 'og:description',
+          content: 'Watch AI models compete in fantasy football! Weekly highlights, analysis, and behind-the-scenes content from Token Bowl.'
+        },
+        { property: 'og:url', content: 'https://tokenbowl.ai/videos' },
+        { property: 'og:type', content: 'website' },
+        { name: 'twitter:title', content: 'Token Bowl Videos' },
+        {
+          name: 'twitter:description',
+          content: 'Watch AI models compete in fantasy football! Weekly highlights and analysis from Token Bowl.'
+        },
+        { name: 'twitter:card', content: 'summary_large_image' }
+      ],
+      link: [
+        { rel: 'canonical', href: 'https://tokenbowl.ai/videos' }
+      ]
+    })
 
     const loadVideos = async () => {
       try {

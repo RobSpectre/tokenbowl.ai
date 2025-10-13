@@ -22,9 +22,15 @@
     //- Matchup Header with Auto-refresh Status
     section.mb-8
       div(class="bg-gradient-to-r from-blue-600 to-blue-800 rounded-t-lg px-4 sm:px-6 py-3 sm:py-4 border-b-4 border-yellow-400")
-        .flex.items-center.justify-between
-          h1(class="text-white text-xl sm:text-3xl font-black uppercase tracking-wide")
-            | Week {{ week }} Matchup
+        .flex.items-center.justify-between.flex-wrap.gap-3
+          .flex.items-center.gap-3
+            h1(class="text-white text-xl sm:text-3xl font-black uppercase tracking-wide")
+              | Week {{ week }} Matchup
+            //- Game Status Badge
+            div(
+              class="px-3 py-1 rounded-full text-xs font-bold uppercase"
+              :class="gameStatus === 'Final' ? 'bg-gray-600 text-white' : gameStatus === 'In Progress' ? 'bg-green-500 text-white animate-pulse' : 'bg-blue-500 text-white'"
+            ) {{ gameStatus }}
           //- Auto-refresh indicator
           div(v-if="isAutoRefreshActive" class="flex items-center gap-2 text-xs")
             div(class="w-2 h-2 rounded-full bg-green-500 animate-pulse")
@@ -151,33 +157,46 @@
             div(class="grid grid-cols-1 md:grid-cols-2 gap-2")
               //- Team 1 Player
               div(v-if="slot.team1Player")
-                .bg-slate-800.rounded.p-3(:class="{ 'matchup-highlight': isPlayerScoreAnimating(slot.team1Player) }")
-                  .flex.items-center.gap-3
-                    //- Position Label with Color
-                    div(class="w-16 h-16 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0"
-                      :class="getSlotColor(slot.name)"
-                    )
-                      div(class="text-center")
-                        div {{ slot.name }}
-                    img.h-12.w-12.rounded-full.object-cover(
-                      v-if="getPlayerPortrait(slot.team1Player)"
-                      :src="getPlayerPortrait(slot.team1Player)"
-                      :alt="getPlayerName(slot.team1Player)"
-                      @error="$event.target.style.display='none'"
-                    )
-                    .flex-1
-                      .flex.items-center.gap-2
-                        .text-white.font-semibold.text-sm {{ getPlayerName(slot.team1Player) }}
-                        div(
-                          v-if="getPlayerInjury(slot.team1Player)"
-                          class="px-2 py-0.5 rounded text-xs font-bold"
-                          :class="getPlayerInjury(slot.team1Player) === 'O' || getPlayerInjury(slot.team1Player) === 'IR' ? 'bg-red-600 text-white' : getPlayerInjury(slot.team1Player) === 'D' ? 'bg-orange-500 text-white' : 'bg-yellow-500 text-black'"
-                        ) {{ getPlayerInjury(slot.team1Player) }}
-                      .text-gray-500.text-xs {{ getPlayerTeam(slot.team1Player) }} • {{ getPlayerPosition(slot.team1Player) }}
-                    .text-right.flex-shrink-0
-                      .text-blue-400.font-bold.text-lg(
-                        :class="{ 'score-pulse': isPlayerScoreAnimating(slot.team1Player) }"
-                      ) {{ getPlayerPoints(matchup[0], slot.team1Player) }}
+                .bg-slate-800.rounded(:class="{ 'matchup-highlight': isPlayerScoreAnimating(slot.team1Player) }")
+                  .p-3.cursor-pointer(@click="togglePlayerStats(slot.team1Player)")
+                    .flex.items-center.gap-3
+                      //- Position Label with Color
+                      div(class="w-16 h-16 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0"
+                        :class="getSlotColor(slot.name)"
+                      )
+                        div(class="text-center")
+                          div {{ slot.name }}
+                      img.h-12.w-12.rounded-full.object-cover(
+                        v-if="getPlayerPortrait(slot.team1Player)"
+                        :src="getPlayerPortrait(slot.team1Player)"
+                        :alt="getPlayerName(slot.team1Player)"
+                        @error="$event.target.style.display='none'"
+                      )
+                      .flex-1
+                        .flex.items-center.gap-2
+                          .text-white.font-semibold.text-sm {{ getPlayerName(slot.team1Player) }}
+                          div(
+                            v-if="getPlayerInjury(slot.team1Player)"
+                            class="px-2 py-0.5 rounded text-xs font-bold"
+                            :class="getPlayerInjury(slot.team1Player) === 'O' || getPlayerInjury(slot.team1Player) === 'IR' ? 'bg-red-600 text-white' : getPlayerInjury(slot.team1Player) === 'D' ? 'bg-orange-500 text-white' : 'bg-yellow-500 text-black'"
+                          ) {{ getPlayerInjury(slot.team1Player) }}
+                        .text-gray-500.text-xs {{ getPlayerTeam(slot.team1Player) }} • {{ getPlayerPosition(slot.team1Player) }}
+                      .text-right.flex-shrink-0.flex.items-center.gap-2
+                        .text-blue-400.font-bold.text-lg(
+                          :class="{ 'score-pulse': isPlayerScoreAnimating(slot.team1Player) }"
+                        ) {{ getPlayerPoints(matchup[0], slot.team1Player) }}
+                        //- Expand/collapse icon
+                        div(class="text-gray-400 text-xs")
+                          span(v-if="isPlayerExpanded(slot.team1Player)") ▼
+                          span(v-else) ▶
+
+                  //- Stat breakdown (collapsible)
+                  .px-3.pb-3(v-if="isPlayerExpanded(slot.team1Player) && getPlayerStatsBreakdown(slot.team1Player)")
+                    .border-t.border-slate-700.pt-2.mt-2
+                      .grid.grid-cols-2.gap-2.text-xs
+                        div(v-for="stat in getPlayerStatsBreakdown(slot.team1Player)" :key="stat.label" class="flex justify-between")
+                          span.text-gray-400 {{ stat.label }}:
+                          span.text-white.font-semibold {{ stat.value }}
               div(v-else)
                 .bg-slate-800.rounded.p-3.opacity-30
                   .flex.items-center.gap-3
@@ -188,33 +207,46 @@
 
               //- Team 2 Player
               div(v-if="slot.team2Player")
-                .bg-slate-800.rounded.p-3(:class="{ 'matchup-highlight': isPlayerScoreAnimating(slot.team2Player) }")
-                  .flex.items-center.gap-3.flex-row-reverse
-                    //- Position Label with Color
-                    div(class="w-16 h-16 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0"
-                      :class="getSlotColor(slot.name)"
-                    )
-                      div(class="text-center")
-                        div {{ slot.name }}
-                    img.h-12.w-12.rounded-full.object-cover(
-                      v-if="getPlayerPortrait(slot.team2Player)"
-                      :src="getPlayerPortrait(slot.team2Player)"
-                      :alt="getPlayerName(slot.team2Player)"
-                      @error="$event.target.style.display='none'"
-                    )
-                    .flex-1.text-right
-                      .flex.items-center.gap-2.justify-end
-                        div(
-                          v-if="getPlayerInjury(slot.team2Player)"
-                          class="px-2 py-0.5 rounded text-xs font-bold"
-                          :class="getPlayerInjury(slot.team2Player) === 'O' || getPlayerInjury(slot.team2Player) === 'IR' ? 'bg-red-600 text-white' : getPlayerInjury(slot.team2Player) === 'D' ? 'bg-orange-500 text-white' : 'bg-yellow-500 text-black'"
-                        ) {{ getPlayerInjury(slot.team2Player) }}
-                        .text-white.font-semibold.text-sm {{ getPlayerName(slot.team2Player) }}
-                      .text-gray-500.text-xs {{ getPlayerTeam(slot.team2Player) }} • {{ getPlayerPosition(slot.team2Player) }}
-                    .text-left.flex-shrink-0
-                      .text-blue-400.font-bold.text-lg(
-                        :class="{ 'score-pulse': isPlayerScoreAnimating(slot.team2Player) }"
-                      ) {{ getPlayerPoints(matchup[1], slot.team2Player) }}
+                .bg-slate-800.rounded(:class="{ 'matchup-highlight': isPlayerScoreAnimating(slot.team2Player) }")
+                  .p-3.cursor-pointer(@click="togglePlayerStats(slot.team2Player)")
+                    .flex.items-center.gap-3.flex-row-reverse
+                      //- Position Label with Color
+                      div(class="w-16 h-16 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0"
+                        :class="getSlotColor(slot.name)"
+                      )
+                        div(class="text-center")
+                          div {{ slot.name }}
+                      img.h-12.w-12.rounded-full.object-cover(
+                        v-if="getPlayerPortrait(slot.team2Player)"
+                        :src="getPlayerPortrait(slot.team2Player)"
+                        :alt="getPlayerName(slot.team2Player)"
+                        @error="$event.target.style.display='none'"
+                      )
+                      .flex-1.text-right
+                        .flex.items-center.gap-2.justify-end
+                          div(
+                            v-if="getPlayerInjury(slot.team2Player)"
+                            class="px-2 py-0.5 rounded text-xs font-bold"
+                            :class="getPlayerInjury(slot.team2Player) === 'O' || getPlayerInjury(slot.team2Player) === 'IR' ? 'bg-red-600 text-white' : getPlayerInjury(slot.team2Player) === 'D' ? 'bg-orange-500 text-white' : 'bg-yellow-500 text-black'"
+                          ) {{ getPlayerInjury(slot.team2Player) }}
+                          .text-white.font-semibold.text-sm {{ getPlayerName(slot.team2Player) }}
+                        .text-gray-500.text-xs {{ getPlayerTeam(slot.team2Player) }} • {{ getPlayerPosition(slot.team2Player) }}
+                      .text-left.flex-shrink-0.flex.items-center.gap-2
+                        //- Expand/collapse icon
+                        div(class="text-gray-400 text-xs")
+                          span(v-if="isPlayerExpanded(slot.team2Player)") ▼
+                          span(v-else) ▶
+                        .text-blue-400.font-bold.text-lg(
+                          :class="{ 'score-pulse': isPlayerScoreAnimating(slot.team2Player) }"
+                        ) {{ getPlayerPoints(matchup[1], slot.team2Player) }}
+
+                  //- Stat breakdown (collapsible)
+                  .px-3.pb-3(v-if="isPlayerExpanded(slot.team2Player) && getPlayerStatsBreakdown(slot.team2Player)")
+                    .border-t.border-slate-700.pt-2.mt-2
+                      .grid.grid-cols-2.gap-2.text-xs
+                        div(v-for="stat in getPlayerStatsBreakdown(slot.team2Player)" :key="stat.label" class="flex justify-between")
+                          span.text-gray-400 {{ stat.label }}:
+                          span.text-white.font-semibold {{ stat.value }}
               div(v-else)
                 .bg-slate-800.rounded.p-3.opacity-30
                   .flex.items-center.gap-3.flex-row-reverse
@@ -326,8 +358,10 @@
 <script>
 import { ref, onMounted, onUnmounted, computed, watch, nextTick } from 'vue'
 import { useRoute } from 'vue-router'
+import { useHead } from '@vueuse/head'
 import { getTeamInfo } from '../teamMappings.js'
 import { getPlayerInjuryStatus, getInjuryIndicator } from '../fantasyNerdsApi.js'
+import { getMultiplePlayerStats } from '../sleeperApi.js'
 import { useLeagueStore } from '../stores/league.js'
 import { marked } from 'marked'
 import 'github-markdown-css/github-markdown-dark.css'
@@ -349,6 +383,9 @@ export default {
     const isAutoRefreshActive = ref(false)
     const autoRefreshInterval = ref(null)
     const autoRefreshCheckInterval = ref(null)
+    const playerStats = ref({}) // Player stats from undocumented Sleeper API
+    const expandedPlayers = ref(new Set()) // Track which players have expanded stats
+    const currentSeason = ref(2025)
 
     // Score animation tracking
     const animatingScores = ref(new Set())
@@ -358,6 +395,69 @@ export default {
 
     // Use computed property to access players from store
     const players = computed(() => leagueStore.players)
+
+    // Compute game status
+    const gameStatus = computed(() => {
+      if (!matchup.value || !leagueStore.league) return 'Unknown'
+
+      const currentWeek = leagueStore.league.settings?.leg || 0
+      const matchupWeek = week.value
+
+      // If matchup week is in the future
+      if (matchupWeek > currentWeek) {
+        return 'Not Started'
+      }
+
+      // If matchup week is in the past
+      if (matchupWeek < currentWeek) {
+        return 'Final'
+      }
+
+      // Current week - check if games are still being played
+      // During NFL game hours (Thu 8PM - Mon 11:59PM EST), show "In Progress"
+      if (isNFLGameTime()) {
+        return 'In Progress'
+      }
+
+      // After game hours on current week, show "Final"
+      return 'Final'
+    })
+
+    // SEO Meta Tags
+    useHead({
+      title: computed(() => {
+        if (!matchup.value) return 'Token Bowl - Week Matchup'
+        const team1 = getTeamInfo(matchup.value[0].roster?.user?.display_name)
+        const team2 = getTeamInfo(matchup.value[1].roster?.user?.display_name)
+        const score1 = matchup.value[0].points?.toFixed(2) || '0.00'
+        const score2 = matchup.value[1].points?.toFixed(2) || '0.00'
+        return `Week ${week.value}: ${team1.aiModel} ${score1} vs ${team2.aiModel} ${score2} - Token Bowl`
+      }),
+      meta: computed(() => {
+        if (!matchup.value) return []
+        const team1 = getTeamInfo(matchup.value[0].roster?.user?.display_name)
+        const team2 = getTeamInfo(matchup.value[1].roster?.user?.display_name)
+        const score1 = matchup.value[0].points?.toFixed(2) || '0.00'
+        const score2 = matchup.value[1].points?.toFixed(2) || '0.00'
+        const description = `Week ${week.value} matchup: ${team1.aiModel} (${score1}) vs ${team2.aiModel} (${score2}). Watch AI models compete in fantasy football with live stats, injury updates, and detailed player breakdowns.`
+        const url = `https://tokenbowl.ai/matchup/${week.value}/${matchupId.value}`
+
+        return [
+          { name: 'description', content: description },
+          { name: 'keywords', content: `${team1.aiModel}, ${team2.aiModel}, week ${week.value}, fantasy football, AI matchup, ${gameStatus.value}` },
+          { property: 'og:title', content: `Week ${week.value}: ${team1.aiModel} vs ${team2.aiModel} - Token Bowl` },
+          { property: 'og:description', content: description },
+          { property: 'og:url', content: url },
+          { property: 'og:type', content: 'article' },
+          { name: 'twitter:title', content: `Week ${week.value}: ${team1.aiModel} vs ${team2.aiModel}` },
+          { name: 'twitter:description', content: description },
+          { name: 'twitter:card', content: 'summary_large_image' }
+        ]
+      }),
+      link: computed(() => [
+        { rel: 'canonical', href: `https://tokenbowl.ai/matchup/${week.value}/${matchupId.value}` }
+      ])
+    })
 
     // Check if current time is during NFL game hours (Thursday 8PM - Monday 11:59PM EST)
     const isNFLGameTime = () => {
@@ -765,8 +865,106 @@ export default {
       }
     }
 
+    // Fetch player stats for all players in the matchup
+    const fetchPlayerStats = async () => {
+      if (!matchup.value || !week.value) return
+
+      try {
+        // Collect all player IDs from both teams
+        const playerIds = [
+          ...matchup.value[0].starters,
+          ...matchup.value[1].starters,
+          ...getBenchPlayers(matchup.value[0]),
+          ...getBenchPlayers(matchup.value[1])
+        ].filter(id => id) // Remove nulls/undefined
+
+        // Fetch stats for all players
+        const stats = await getMultiplePlayerStats(playerIds, currentSeason.value, week.value)
+        playerStats.value = stats
+      } catch (err) {
+        console.error('Error fetching player stats:', err)
+      }
+    }
+
+    // Toggle stat breakdown for a player
+    const togglePlayerStats = (playerId) => {
+      const expanded = new Set(expandedPlayers.value)
+      if (expanded.has(playerId)) {
+        expanded.delete(playerId)
+      } else {
+        expanded.add(playerId)
+      }
+      expandedPlayers.value = expanded
+    }
+
+    // Check if a player's stats are expanded
+    const isPlayerExpanded = (playerId) => {
+      return expandedPlayers.value.has(playerId)
+    }
+
+    // Format stat value for display
+    const formatStat = (value) => {
+      if (value === null || value === undefined) return '-'
+      return typeof value === 'number' ? value.toFixed(1) : value
+    }
+
+    // Get formatted stats for a player
+    const getPlayerStatsBreakdown = (playerId) => {
+      const stats = playerStats.value[playerId]
+      if (!stats) return null
+
+      const player = players.value[playerId]
+      const position = player?.position
+
+      // Return relevant stats based on position
+      const breakdown = []
+
+      if (position === 'QB') {
+        breakdown.push(
+          { label: 'Pass Yards', value: formatStat(stats.pass_yd) },
+          { label: 'Pass TDs', value: formatStat(stats.pass_td) },
+          { label: 'INTs', value: formatStat(stats.pass_int) },
+          { label: 'Rush Yards', value: formatStat(stats.rush_yd) },
+          { label: 'Rush TDs', value: formatStat(stats.rush_td) }
+        )
+      } else if (position === 'RB') {
+        breakdown.push(
+          { label: 'Rush Yards', value: formatStat(stats.rush_yd) },
+          { label: 'Rush TDs', value: formatStat(stats.rush_td) },
+          { label: 'Receptions', value: formatStat(stats.rec) },
+          { label: 'Rec Yards', value: formatStat(stats.rec_yd) },
+          { label: 'Rec TDs', value: formatStat(stats.rec_td) }
+        )
+      } else if (position === 'WR' || position === 'TE') {
+        breakdown.push(
+          { label: 'Receptions', value: formatStat(stats.rec) },
+          { label: 'Rec Yards', value: formatStat(stats.rec_yd) },
+          { label: 'Rec TDs', value: formatStat(stats.rec_td) },
+          { label: 'Targets', value: formatStat(stats.rec_tgt) }
+        )
+      } else if (position === 'K') {
+        breakdown.push(
+          { label: 'FG Made', value: formatStat(stats.fgm) },
+          { label: 'FG Missed', value: formatStat(stats.fgmiss) },
+          { label: 'XP Made', value: formatStat(stats.xpm) }
+        )
+      } else if (position === 'DEF') {
+        breakdown.push(
+          { label: 'Sacks', value: formatStat(stats.def_st_td) },
+          { label: 'INTs', value: formatStat(stats.def_int) },
+          { label: 'Fumbles Rec', value: formatStat(stats.def_fumble_rec) },
+          { label: 'TDs', value: formatStat(stats.def_td) }
+        )
+      }
+
+      return breakdown.filter(stat => stat.value !== '-')
+    }
+
     onMounted(async () => {
       await loadMatchupData()
+
+      // Fetch player stats after matchup data is loaded
+      await fetchPlayerStats()
 
       // Check if we should start auto-refresh
       checkAutoRefreshStatus()
@@ -791,6 +989,7 @@ export default {
       error,
       lastUpdated,
       isAutoRefreshActive,
+      gameStatus,
       getTeamInfo,
       getPlayerName,
       getPlayerPoints,
@@ -807,7 +1006,10 @@ export default {
       getPositionDifferential,
       markdownContents,
       isScoreAnimating,
-      isPlayerScoreAnimating
+      isPlayerScoreAnimating,
+      togglePlayerStats,
+      isPlayerExpanded,
+      getPlayerStatsBreakdown
     }
   }
 }

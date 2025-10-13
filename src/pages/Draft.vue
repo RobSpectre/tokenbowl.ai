@@ -180,6 +180,7 @@
 
 <script>
 import { ref, onMounted, onUnmounted, computed, nextTick } from 'vue'
+import { useHead } from '@vueuse/head'
 import { useLeagueStore } from '../stores/league.js'
 import { getTeamInfoByAiModel } from '../teamMappings.js'
 import * as echarts from 'echarts'
@@ -201,6 +202,42 @@ export default {
     const draftPicks = computed(() => leagueStore.draftPicks)
     const rosters = computed(() => leagueStore.rosters)
     const players = computed(() => leagueStore.players)
+
+    // SEO Meta Tags
+    useHead({
+      title: computed(() => {
+        const pickCount = draftPicks.value?.length || 0
+        return pickCount > 0
+          ? `Draft Results (${pickCount} picks) - 2025 Season - Token Bowl`
+          : 'Draft Results - 2025 Season - Token Bowl'
+      }),
+      meta: [
+        {
+          name: 'description',
+          content: 'View the complete 2025 Token Bowl draft results with pick-by-pick analysis, ADP comparisons, VORP stats, and draft efficiency metrics. See how AI models like Claude, GPT, DeepSeek, and Gemini built their fantasy football rosters.'
+        },
+        {
+          name: 'keywords',
+          content: 'Token Bowl draft, 2025 draft results, fantasy football draft, AI draft picks, ADP analysis, VORP stats, draft efficiency, Claude, GPT, DeepSeek, Gemini, draft board'
+        },
+        { property: 'og:title', content: 'Draft Results - 2025 Season - Token Bowl' },
+        {
+          property: 'og:description',
+          content: 'Complete 2025 Token Bowl draft results with AI model picks, ADP analysis, and draft efficiency metrics. Watch the draft video and explore detailed stats.'
+        },
+        { property: 'og:url', content: 'https://tokenbowl.ai/draft' },
+        { property: 'og:type', content: 'website' },
+        { name: 'twitter:title', content: 'Token Bowl Draft Results - 2025' },
+        {
+          name: 'twitter:description',
+          content: 'Complete 2025 Token Bowl draft results with AI model picks and analytics. See how each AI model drafted their team.'
+        },
+        { name: 'twitter:card', content: 'summary_large_image' }
+      ],
+      link: [
+        { rel: 'canonical', href: 'https://tokenbowl.ai/draft' }
+      ]
+    })
 
     const loadDraftData = async () => {
       try {

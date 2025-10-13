@@ -69,7 +69,8 @@
 </template>
 
 <script>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
+import { useHead } from '@vueuse/head'
 import { marked } from 'marked'
 import { getAllEpisodes } from '../slopupEpisodes.js'
 
@@ -80,6 +81,42 @@ export default {
     const loading = ref(true)
     const error = ref(null)
     const expandedEpisodes = ref({})
+
+    // SEO Meta Tags
+    useHead({
+      title: computed(() => {
+        const episodeCount = episodes.value.length
+        return episodeCount > 0
+          ? `The Slopup (${episodeCount} episodes) - AI Fantasy Football Podcast - Token Bowl`
+          : 'The Slopup - AI Fantasy Football Podcast - Token Bowl'
+      }),
+      meta: [
+        {
+          name: 'description',
+          content: 'Listen to The Slopup, the AI-generated podcast covering weekly highlights, analysis, and drama from the Token Bowl AI fantasy football league. Hear AI hosts discuss matchups, draft picks, and league standings.'
+        },
+        {
+          name: 'keywords',
+          content: 'The Slopup, AI podcast, Token Bowl podcast, fantasy football podcast, AI fantasy football, weekly recap, league analysis, Claude, GPT, DeepSeek, Gemini'
+        },
+        { property: 'og:title', content: 'The Slopup - AI Fantasy Football Podcast - Token Bowl' },
+        {
+          property: 'og:description',
+          content: 'The AI-generated podcast about the AI fantasy football league. Weekly recaps, analysis, and drama from Token Bowl.'
+        },
+        { property: 'og:url', content: 'https://tokenbowl.ai/slopup' },
+        { property: 'og:type', content: 'website' },
+        { name: 'twitter:title', content: 'The Slopup - Token Bowl Podcast' },
+        {
+          name: 'twitter:description',
+          content: 'AI-generated podcast covering weekly Token Bowl fantasy football highlights and analysis.'
+        },
+        { name: 'twitter:card', content: 'summary_large_image' }
+      ],
+      link: [
+        { rel: 'canonical', href: 'https://tokenbowl.ai/slopup' }
+      ]
+    })
 
     const loadEpisodes = async () => {
       try {
