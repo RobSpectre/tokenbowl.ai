@@ -560,11 +560,14 @@ export default {
     // Play hit sound effect
     const playHitSound = () => {
       try {
+        console.log('🔊 Playing hit sound for score change')
         const audio = new Audio('/sounds/hit.wav')
         audio.volume = 0.3
-        audio.play().catch(err => console.error('Error playing sound:', err))
+        audio.play()
+          .then(() => console.log('✅ Hit sound played successfully'))
+          .catch(err => console.error('❌ Error playing sound:', err))
       } catch (err) {
-        console.error('Error creating audio:', err)
+        console.error('❌ Error creating audio:', err)
       }
     }
 
@@ -615,13 +618,13 @@ export default {
         week.value = parseInt(route.params.week)
         matchupId.value = parseInt(route.params.matchupId)
 
-        // Use the store to fetch all needed data (uses cache if available)
+        // Use the store to fetch all needed data (force refresh roster data for up-to-date bench)
         const [matchupsData, , enrichedPlayersData, draftPicks, leagueData] = await Promise.all([
           leagueStore.fetchMatchupForWeek(week.value),
           leagueStore.fetchPlayers(), // Fetch to ensure data is loaded in store
           leagueStore.fetchEnrichedPlayers(), // Fetch enriched player data
           leagueStore.fetchDraft(),
-          leagueStore.fetchLeagueData() // Fetch fresh roster data
+          leagueStore.fetchLeagueData(true) // Force refresh to get latest roster data
         ])
 
         draftData.value = draftPicks
@@ -668,6 +671,8 @@ export default {
     // Refresh matchup data without showing loading state
     const refreshMatchupData = async () => {
       try {
+        console.log('🔄 Refreshing matchup data at', new Date().toLocaleTimeString())
+
         // Fetch fresh data from API, forcing refresh
         const [matchupsData, leagueData] = await Promise.all([
           leagueStore.fetchMatchupForWeek(week.value, true),
@@ -683,6 +688,18 @@ export default {
 
         const newMatchup = matchupGroups[matchupId.value]
         if (newMatchup) {
+          // Log score changes for debugging
+          if (matchup.value) {
+            const oldScore1 = matchup.value[0].points
+            const oldScore2 = matchup.value[1].points
+            const newScore1 = newMatchup[0].points
+            const newScore2 = newMatchup[1].points
+
+            if (oldScore1 !== newScore1 || oldScore2 !== newScore2) {
+              console.log(`📊 Score update: Team 1: ${oldScore1} → ${newScore1}, Team 2: ${oldScore2} → ${newScore2}`)
+            }
+          }
+
           matchup.value = newMatchup
         }
 
@@ -690,19 +707,28 @@ export default {
         injuries.value = await leagueStore.fetchInjuriesForWeek(week.value)
 
         lastUpdated.value = new Date()
+        console.log('✅ Refresh complete at', lastUpdated.value.toLocaleTimeString())
       } catch (err) {
-        console.error('Error refreshing matchup:', err)
+        console.error('❌ Error refreshing matchup:', err)
       }
     }
 
     // Start auto-refresh
     const startAutoRefresh = () => {
-      if (autoRefreshInterval.value) return
+      if (autoRefreshInterval.value) {
+        console.log('⚠️ Auto-refresh already running')
+        return
+      }
 
-      console.log('Starting auto-refresh for matchup detail')
+      console.log('🎯 Starting auto-refresh for matchup detail at', new Date().toLocaleTimeString())
       isAutoRefreshActive.value = true
-      // Refresh every 1 minute
+
+      // Do an immediate refresh
+      refreshMatchupData()
+
+      // Then refresh every 1 minute
       autoRefreshInterval.value = setInterval(refreshMatchupData, 60000)
+      console.log('⏱️ Auto-refresh scheduled every 60 seconds')
     }
 
     // Stop auto-refresh
@@ -712,16 +738,23 @@ export default {
         autoRefreshInterval.value = null
       }
       isAutoRefreshActive.value = false
-      console.log('Stopped auto-refresh for matchup detail')
+      console.log('🛑 Stopped auto-refresh for matchup detail')
     }
 
     // Check if auto-refresh should be active
     const checkAutoRefreshStatus = () => {
+      const now = new Date()
+      const day = now.getDay()
+      const hour = now.getHours()
       const shouldRefresh = isNFLGameTime()
 
+      console.log(`🏈 NFL game time check: Day=${day}, Hour=${hour}, Should refresh=${shouldRefresh}`)
+
       if (shouldRefresh && !autoRefreshInterval.value) {
+        console.log('✅ NFL game time detected, starting auto-refresh')
         startAutoRefresh()
       } else if (!shouldRefresh && autoRefreshInterval.value) {
+        console.log('⏸️ Not NFL game time, stopping auto-refresh')
         stopAutoRefresh()
       }
     }
