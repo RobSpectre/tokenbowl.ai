@@ -234,7 +234,7 @@
               div(
                 v-if="getPositionDifferential(slot).team1Points > getPositionDifferential(slot).team2Points"
                 class="absolute right-1/2 h-6 bg-gradient-to-l from-blue-500 to-blue-600 flex items-center justify-start pl-2 transition-all duration-500"
-                :style="{ width: `${Math.min((getPositionDifferential(slot).differential / Math.max(getPositionDifferential(slot).team1Points, getPositionDifferential(slot).team2Points)) * 45, 45)}%` }"
+                :style="{ width: `${Math.min((getPositionDifferential(slot).differential / 25) * 45, 45)}%` }"
               )
                 span.text-white.text-xs.font-bold +{{ getPositionDifferential(slot).differential.toFixed(1) }}
 
@@ -242,7 +242,7 @@
               div(
                 v-else-if="getPositionDifferential(slot).team2Points > getPositionDifferential(slot).team1Points"
                 class="absolute left-1/2 h-6 bg-gradient-to-r from-green-500 to-green-600 flex items-center justify-end pr-2 transition-all duration-500"
-                :style="{ width: `${Math.min((getPositionDifferential(slot).differential / Math.max(getPositionDifferential(slot).team1Points, getPositionDifferential(slot).team2Points)) * 45, 45)}%` }"
+                :style="{ width: `${Math.min((getPositionDifferential(slot).differential / 25) * 45, 45)}%` }"
               )
                 span.text-white.text-xs.font-bold +{{ getPositionDifferential(slot).differential.toFixed(1) }}
 
