@@ -1163,6 +1163,122 @@ export const useLeagueStore = defineStore('league', {
       }
     },
 
+    /**
+     * Generate badges for a team based on roster status
+     * Single source of truth for badge generation
+     * @param {Array} starterIds - Array of player IDs in the starting lineup
+     * @returns {Array} Array of badge objects with type, label, and color
+     */
+    getTeamBadges(starterIds) {
+      if (!starterIds || !Array.isArray(starterIds)) return []
+
+      const badges = []
+
+      // Track different injury severities and statuses
+      let hasOut = false
+      let hasDoubtful = false
+      let hasQuestionable = false
+      let hasSuspended = false
+      let hasBye = false
+      let hasEmpty = false
+
+      // Check each starter
+      starterIds.forEach(playerId => {
+        // Check for empty slots
+        if (playerId === '0' || playerId === 0) {
+          hasEmpty = true
+          return
+        }
+
+        // Use enriched player data if available, fallback to base player data
+        const enrichedPlayer = this.enrichedPlayers[playerId]
+        const basePlayer = this.players[playerId]
+
+        if (enrichedPlayer) {
+          // Check for BYE week
+          if (enrichedPlayer.bye_week) {
+            hasBye = true
+          }
+
+          // Check for suspension
+          if (enrichedPlayer.is_suspended) {
+            hasSuspended = true
+          }
+
+          // Check injury status using consolidated injury_status_combined field
+          const statusToCheck = enrichedPlayer.injury_status_combined?.toUpperCase()
+
+          if (statusToCheck) {
+            // Check for Doubtful BEFORE Out (since "DOUBTFUL" contains "OUT")
+            if (statusToCheck.includes('DOUBTFUL') || (statusToCheck.includes('D ') || statusToCheck === 'D') && !statusToCheck.includes('SUSPENDED')) {
+              hasDoubtful = true
+            }
+            // Check for Out/IR
+            else if (statusToCheck.includes('OUT') || statusToCheck.includes('IR') || statusToCheck.includes('INJURED RESERVE')) {
+              hasOut = true
+            }
+            // Check for Questionable/PUP
+            else if (statusToCheck.includes('QUESTIONABLE') || statusToCheck.includes('Q ') || statusToCheck === 'Q' || statusToCheck.includes('PUP') || statusToCheck.includes('PHYSICALLY UNABLE')) {
+              hasQuestionable = true
+            }
+          }
+
+          // Also check the injury_indicator field as a fallback
+          if (!statusToCheck && enrichedPlayer.injury_indicator) {
+            switch(enrichedPlayer.injury_indicator) {
+              case 'O':
+              case 'IR':
+                hasOut = true
+                break
+              case 'D':
+                hasDoubtful = true
+                break
+              case 'Q':
+              case 'PUP':
+                hasQuestionable = true
+                break
+            }
+          }
+        } else if (basePlayer) {
+          // Fallback to base player injury status if enriched data not available
+          const sleeperStatus = basePlayer.injury_status?.toUpperCase()
+          if (sleeperStatus) {
+            if (sleeperStatus.includes('OUT') || sleeperStatus.includes('IR')) {
+              hasOut = true
+            } else if (sleeperStatus.includes('DOUBTFUL') || sleeperStatus === 'D') {
+              hasDoubtful = true
+            } else if (sleeperStatus.includes('QUESTIONABLE') || sleeperStatus === 'Q') {
+              hasQuestionable = true
+            } else if (sleeperStatus === 'SUS' || sleeperStatus.includes('SUSPENDED')) {
+              hasSuspended = true
+            }
+          }
+        }
+      })
+
+      // Add badges in priority order (most severe first)
+      if (hasEmpty) {
+        badges.push({ type: 'empty', label: 'EMPTY', color: 'bg-red-600' })
+      }
+      if (hasBye) {
+        badges.push({ type: 'bye', label: 'BYE', color: 'bg-gray-600' })
+      }
+      if (hasSuspended) {
+        badges.push({ type: 'suspended', label: 'SUSP', color: 'bg-purple-600' })
+      }
+      if (hasOut) {
+        badges.push({ type: 'out', label: 'O/IR', color: 'bg-red-600' })
+      }
+      if (hasDoubtful) {
+        badges.push({ type: 'doubtful', label: 'D', color: 'bg-orange-500' })
+      }
+      if (hasQuestionable) {
+        badges.push({ type: 'questionable', label: 'Q', color: 'bg-yellow-500' })
+      }
+
+      return badges
+    },
+
     // Clear all cached data
     clearCache() {
       this.league = null

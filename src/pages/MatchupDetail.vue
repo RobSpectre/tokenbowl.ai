@@ -51,6 +51,13 @@
             )
             div(class="text-white font-bold text-2xl") {{ getTeamInfo(matchup[0].roster?.user?.display_name).aiModel }}
             div(class="text-blue-400 text-lg font-semibold") {{ getTeamInfo(matchup[0].roster?.user?.display_name).owner }}
+            div(class="flex items-center justify-center gap-2 flex-wrap mt-2")
+              div(
+                v-for="badge in getTeamBadges(matchup[0])"
+                :key="badge.type"
+                :class="[badge.color, badge.color === 'bg-yellow-500' ? 'text-black' : 'text-white']"
+                class="px-2 py-0.5 rounded text-xs font-bold"
+              ) {{ badge.label }}
             div(
               class="text-white font-black text-5xl mt-4 transition-all duration-300"
               :class="{ 'score-pulse': isScoreAnimating(matchup[0].roster_id) }"
@@ -75,6 +82,13 @@
             )
             div(class="text-white font-bold text-2xl") {{ getTeamInfo(matchup[1].roster?.user?.display_name).aiModel }}
             div(class="text-blue-400 text-lg font-semibold") {{ getTeamInfo(matchup[1].roster?.user?.display_name).owner }}
+            div(class="flex items-center justify-center gap-2 flex-wrap mt-2")
+              div(
+                v-for="badge in getTeamBadges(matchup[1])"
+                :key="badge.type"
+                :class="[badge.color, badge.color === 'bg-yellow-500' ? 'text-black' : 'text-white']"
+                class="px-2 py-0.5 rounded text-xs font-bold"
+              ) {{ badge.label }}
 
         //- Mobile Layout
         div(class="flex flex-col gap-3 sm:hidden")
@@ -91,6 +105,13 @@
                 div
                   div(class="text-white font-bold text-base") {{ getTeamInfo(matchup[0].roster?.user?.display_name).aiModel }}
                   div(class="text-blue-400 text-sm font-semibold") {{ getTeamInfo(matchup[0].roster?.user?.display_name).owner }}
+                  div(class="flex items-center gap-1 flex-wrap mt-1")
+                    div(
+                      v-for="badge in getTeamBadges(matchup[0])"
+                      :key="badge.type"
+                      :class="[badge.color, badge.color === 'bg-yellow-500' ? 'text-black' : 'text-white']"
+                      class="px-1.5 py-0.5 rounded text-[10px] font-bold"
+                    ) {{ badge.label }}
               div(
                 class="text-white font-black text-2xl transition-all duration-300"
                 :class="{ 'score-pulse': isScoreAnimating(matchup[0].roster_id) }"
@@ -111,6 +132,13 @@
                 div(class="text-right")
                   div(class="text-white font-bold text-base") {{ getTeamInfo(matchup[1].roster?.user?.display_name).aiModel }}
                   div(class="text-blue-400 text-sm font-semibold") {{ getTeamInfo(matchup[1].roster?.user?.display_name).owner }}
+                  div(class="flex items-center gap-1 flex-wrap justify-end mt-1")
+                    div(
+                      v-for="badge in getTeamBadges(matchup[1])"
+                      :key="badge.type"
+                      :class="[badge.color, badge.color === 'bg-yellow-500' ? 'text-black' : 'text-white']"
+                      class="px-1.5 py-0.5 rounded text-[10px] font-bold"
+                    ) {{ badge.label }}
                 img(
                   class="h-14 w-14 object-contain"
                   :src="getTeamInfo(matchup[1].roster?.user?.display_name).logo"
@@ -186,11 +214,6 @@
                             class="px-2 py-0.5 rounded text-xs font-bold"
                             :class="getPlayerInjury(slot.team1Player) === 'O' || getPlayerInjury(slot.team1Player) === 'IR' ? 'bg-red-600 text-white' : getPlayerInjury(slot.team1Player) === 'D' ? 'bg-orange-500 text-white' : 'bg-yellow-500 text-black'"
                           ) {{ getPlayerInjury(slot.team1Player) }}
-                          //- Playing badge for healthy players
-                          div(
-                            v-else
-                            class="px-2 py-0.5 rounded text-xs font-bold bg-green-600 text-white"
-                          ) ACTIVE
                         .text-gray-500.text-xs {{ getPlayerTeam(slot.team1Player) }} • {{ getPlayerPosition(slot.team1Player) }}
                       .text-right.flex-shrink-0.flex.items-center.gap-2
                         .text-blue-400.font-bold.text-lg(
@@ -235,14 +258,9 @@
                       )
                       .flex-1.text-right
                         .flex.items-center.gap-2.justify-end
-                          //- Playing badge for healthy players
-                          div(
-                            v-if="slot.team2Player !== '0' && slot.team2Player !== 0 && !getPlayerInjury(slot.team2Player)"
-                            class="px-2 py-0.5 rounded text-xs font-bold bg-green-600 text-white"
-                          ) ACTIVE
                           //- Injury badges
                           div(
-                            v-else-if="getPlayerInjury(slot.team2Player)"
+                            v-if="getPlayerInjury(slot.team2Player)"
                             class="px-2 py-0.5 rounded text-xs font-bold"
                             :class="getPlayerInjury(slot.team2Player) === 'O' || getPlayerInjury(slot.team2Player) === 'IR' ? 'bg-red-600 text-white' : getPlayerInjury(slot.team2Player) === 'D' ? 'bg-orange-500 text-white' : 'bg-yellow-500 text-black'"
                           ) {{ getPlayerInjury(slot.team2Player) }}
@@ -323,7 +341,14 @@
                 )
                   | {{ getPlayerPosition(playerId) }}
                 .flex-1
-                  .text-white.font-semibold.text-xs {{ getPlayerName(playerId) }}
+                  .flex.items-center.gap-2
+                    .text-white.font-semibold.text-xs {{ getPlayerName(playerId) }}
+                    //- Injury badges
+                    div(
+                      v-if="getPlayerInjury(playerId)"
+                      class="px-1.5 py-0.5 rounded text-xs font-bold"
+                      :class="getPlayerInjury(playerId) === 'O' || getPlayerInjury(playerId) === 'IR' ? 'bg-red-600 text-white' : getPlayerInjury(playerId) === 'D' ? 'bg-orange-500 text-white' : 'bg-yellow-500 text-black'"
+                    ) {{ getPlayerInjury(playerId) }}
                   .text-gray-500.text-xs {{ getPlayerTeam(playerId) }}
                 .text-right.flex-shrink-0
                   .text-gray-400.font-bold(
@@ -349,7 +374,14 @@
                 )
                   | {{ getPlayerPosition(playerId) }}
                 .flex-1
-                  .text-white.font-semibold.text-xs {{ getPlayerName(playerId) }}
+                  .flex.items-center.gap-2
+                    .text-white.font-semibold.text-xs {{ getPlayerName(playerId) }}
+                    //- Injury badges
+                    div(
+                      v-if="getPlayerInjury(playerId)"
+                      class="px-1.5 py-0.5 rounded text-xs font-bold"
+                      :class="getPlayerInjury(playerId) === 'O' || getPlayerInjury(playerId) === 'IR' ? 'bg-red-600 text-white' : getPlayerInjury(playerId) === 'D' ? 'bg-orange-500 text-white' : 'bg-yellow-500 text-black'"
+                    ) {{ getPlayerInjury(playerId) }}
                   .text-gray-500.text-xs {{ getPlayerTeam(playerId) }}
                 .text-right.flex-shrink-0
                   .text-gray-400.font-bold(
@@ -382,7 +414,7 @@ import { ref, onMounted, onUnmounted, computed, watch, nextTick } from 'vue'
 import { useRoute } from 'vue-router'
 import { useHead } from '@vueuse/head'
 import { getTeamInfo } from '../teamMappings.js'
-import { getPlayerInjuryStatus, getInjuryIndicator } from '../fantasyNerdsApi.js'
+// Removed: import { getPlayerInjuryStatus, getInjuryIndicator } from '../fantasyNerdsApi.js' - Now using enriched players from store
 import { getMultiplePlayerStats } from '../sleeperApi.js'
 import { useLeagueStore } from '../stores/league.js'
 import { marked } from 'marked'
@@ -417,6 +449,7 @@ export default {
 
     // Use computed property to access players from store
     const players = computed(() => leagueStore.players)
+    const enrichedPlayers = computed(() => leagueStore.enrichedPlayers)
 
     // Compute game status
     const gameStatus = computed(() => {
@@ -580,9 +613,10 @@ export default {
         matchupId.value = parseInt(route.params.matchupId)
 
         // Use the store to fetch all needed data (uses cache if available)
-        const [matchupsData, , draftPicks] = await Promise.all([
+        const [matchupsData, , enrichedPlayersData, draftPicks] = await Promise.all([
           leagueStore.fetchMatchupForWeek(week.value),
           leagueStore.fetchPlayers(), // Fetch to ensure data is loaded in store
+          leagueStore.fetchEnrichedPlayers(), // Fetch enriched player data
           leagueStore.fetchDraft()
         ])
 
@@ -825,9 +859,19 @@ export default {
     }
 
     const getPlayerInjury = (playerId) => {
-      const playerName = getPlayerName(playerId)
-      const injury = getPlayerInjuryStatus(injuries.value, playerName)
-      return getInjuryIndicator(injury)
+      // Use enriched player data from store which consolidates all sources
+      const enrichedPlayer = enrichedPlayers.value[playerId]
+      if (!enrichedPlayer) return null
+
+      // Return the injury indicator directly from enriched data
+      return enrichedPlayer.injury_indicator || null
+    }
+
+    // Get team badges using the shared function from the store
+    const getTeamBadges = (team) => {
+      if (!team || !team.starters) return []
+      // Use the shared badge generation function from the store
+      return leagueStore.getTeamBadges(team.starters)
     }
 
     // Map starters to specific roster slots with position-specific colors
@@ -1024,6 +1068,7 @@ export default {
       getBenchPlayers,
       getPositionColor,
       getPlayerInjury,
+      getTeamBadges,
       getRosterSlots,
       getSlotColor,
       getPositionDifferential,

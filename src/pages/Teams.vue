@@ -92,7 +92,14 @@
               div
                 h2(class="text-white text-xl sm:text-3xl font-bold") {{ selectedTeam.teamInfo.aiModel }}
                 p(class="text-white/90 text-sm sm:text-lg") {{ selectedTeam.teamInfo.owner }}
-                p(class="text-white/80 text-xs sm:text-sm") {{ selectedTeam.settings.wins || 0 }}-{{ selectedTeam.settings.losses || 0 }} • {{ (selectedTeam.settings.fpts || 0).toFixed(0) }} pts
+                div(class="flex items-center gap-2 flex-wrap")
+                  p(class="text-white/80 text-xs sm:text-sm") {{ selectedTeam.settings.wins || 0 }}-{{ selectedTeam.settings.losses || 0 }} • {{ (selectedTeam.settings.fpts || 0).toFixed(0) }} pts
+                  div(
+                    v-for="badge in getTeamBadges()"
+                    :key="badge.type"
+                    :class="[badge.color, badge.color === 'bg-yellow-500' ? 'text-black' : 'text-white']"
+                    class="px-2 py-0.5 rounded text-xs font-bold"
+                  ) {{ badge.label }}
 
           //- Model Info
           div(class="bg-slate-900 rounded-b-lg p-4 sm:p-6" v-if="selectedTeam.modelInfo")
@@ -505,7 +512,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { useHead } from '@vueuse/head'
 import { useLeagueStore } from '../stores/league.js'
 import { getTeamInfo } from '../teamMappings.js'
-import { getPlayerInjuryStatus, getInjuryIndicator } from '../fantasyNerdsApi.js'
+import { getPlayerInjuryStatus } from '../fantasyNerdsApi.js' // Still needed for injury charts
 import { trackButtonClick } from '../analytics.js'
 import * as echarts from 'echarts'
 
@@ -559,6 +566,7 @@ export default {
 
     // Computed properties from store
     const players = computed(() => leagueStore.players)
+    const enrichedPlayers = computed(() => leagueStore.enrichedPlayers)
     const currentWeek = computed(() => leagueStore.league?.settings?.leg || 5)
     const draftPicksData = computed(() => leagueStore.draftPicks)
     const allMatchups = computed(() => leagueStore.allMatchups)
@@ -653,6 +661,9 @@ export default {
 
         // fetchLeagueData includes players, but make sure they're loaded
         await leagueStore.fetchPlayers()
+
+        // Fetch enriched player data
+        await leagueStore.fetchEnrichedPlayers()
 
         // Now load other data in parallel
         await Promise.all([
@@ -1301,14 +1312,19 @@ export default {
     }
 
     const getPlayerInjury = (playerId) => {
-      // Get current week injuries
-      const weekInjuries = leagueStore.getInjuriesForWeek(currentWeek.value)
-      const player = players.value[playerId]
-      if (!player) return null
+      // Use enriched player data from store which consolidates all sources
+      const enrichedPlayer = enrichedPlayers.value[playerId]
+      if (!enrichedPlayer) return null
 
-      const playerName = `${player.first_name} ${player.last_name}`
-      const injuryStatus = getPlayerInjuryStatus(weekInjuries, playerName)
-      return getInjuryIndicator(injuryStatus)
+      // Return the injury indicator directly from enriched data
+      return enrichedPlayer.injury_indicator || null
+    }
+
+    // Get team badges using the shared function from the store
+    const getTeamBadges = () => {
+      if (!currentMatchup.value || !currentMatchup.value.starters) return []
+      // Use the shared badge generation function from the store
+      return leagueStore.getTeamBadges(currentMatchup.value.starters)
     }
 
     const getTransactionDelta = (transaction) => {
@@ -1926,6 +1942,7 @@ export default {
       getPlayerVORP,
       getPlayerROS,
       getPlayerInjury,
+      getTeamBadges,
       getTransactionDelta,
       formatTransactionDate,
       formatReleaseDate,
