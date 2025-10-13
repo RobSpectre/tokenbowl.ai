@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 import { getLeagueData, getRelevantPlayers, getMatchups, getTransactions } from '../sleeperApi.js'
 import { getTeamInfo } from '../teamMappings.js'
 import { getLatestVideoAndShorts } from '../youtubeApi.js'
-import { getInjuries } from '../fantasyNerdsApi.js'
+import { getInjuries, getPlayerInjuryStatus, getInjuryIndicator } from '../fantasyNerdsApi.js'
 import { getPlayers as getPlayersFromService, enrichPlayerData } from '../utils/playerService.js'
 
 // Cache duration: 5 minutes
@@ -10,7 +10,7 @@ const CACHE_DURATION = 5 * 60 * 1000
 // YouTube cache duration: 24 hours
 const YOUTUBE_CACHE_DURATION = 24 * 60 * 60 * 1000
 // Cache version - increment this when making breaking changes to data structure
-const CACHE_VERSION = 7 // v7: Fixed YouTube Shorts detection using UUSH playlist for vertical vs horizontal videos
+const CACHE_VERSION = 8 // v8: Added enrichedPlayers with consolidated data from all sources
 
 export const useLeagueStore = defineStore('league', {
   state: () => ({
@@ -26,6 +26,9 @@ export const useLeagueStore = defineStore('league', {
     // Players data
     players: {},
 
+    // Enriched player data with all sources consolidated
+    enrichedPlayers: {},
+
     // All matchups (weeks 1-18)
     allMatchups: {},
 
@@ -36,6 +39,18 @@ export const useLeagueStore = defineStore('league', {
     // Injuries by week (from Fantasy Nerds API)
     injuriesByWeek: {},
     injuriesTimestampsByWeek: {},
+
+    // Processed injury data - injuries grouped by team for all weeks (for charts)
+    processedInjuriesByTeam: {},
+    processedInjuriesTimestamp: null,
+
+    // Processed transaction stats - transaction counts and team data (for charts)
+    processedTransactionStats: {
+      byWeek: {},           // { week: count }
+      byTeam: {},           // { teamName: { total: count, byWeek: { week: count } } }
+      byTeamForWeek: {}     // { week: { teamName: count } }
+    },
+    processedTransactionsTimestamp: null,
 
     // Draft data (never expires - loaded once)
     draftPicks: [],
@@ -48,20 +63,25 @@ export const useLeagueStore = defineStore('league', {
     leagueDataTimestamp: null,
     matchupsTimestamp: null,
     playersTimestamp: null,
+    enrichedPlayersTimestamp: null,
     allMatchupsTimestamp: null,
     draftTimestamp: null,
     youtubeTimestamp: null,
+    processedInjuriesStatsTimestamp: null,
+    processedTransactionStatsTimestamp: null,
 
     // Loading states
     isLoadingLeagueData: false,
     isLoadingMatchups: false,
     isLoadingPlayers: false,
+    isLoadingEnrichedPlayers: false,
     isLoadingAllMatchups: false,
     isLoadingDraft: false,
     isLoadingYoutube: false,
 
     // Promise tracking for concurrent requests
     playersPromise: null,
+    enrichedPlayersPromise: null,
     leagueDataPromise: null,
     currentMatchupsPromise: null,
 
@@ -69,6 +89,7 @@ export const useLeagueStore = defineStore('league', {
     leagueDataError: null,
     matchupsError: null,
     playersError: null,
+    enrichedPlayersError: null,
     allMatchupsError: null,
     draftError: null,
     youtubeError: null
@@ -91,6 +112,12 @@ export const useLeagueStore = defineStore('league', {
     isPlayersFresh: (state) => {
       if (!state.playersTimestamp) return false
       return Date.now() - state.playersTimestamp < CACHE_DURATION
+    },
+
+    // Check if enriched players cache is valid
+    isEnrichedPlayersFresh: (state) => {
+      if (!state.enrichedPlayersTimestamp) return false
+      return Date.now() - state.enrichedPlayersTimestamp < CACHE_DURATION
     },
 
     // Check if all matchups cache is valid
@@ -126,6 +153,53 @@ export const useLeagueStore = defineStore('league', {
     // Get matchups for a specific week
     getMatchupsForWeek: (state) => {
       return (week) => state.allMatchups[week] || null
+    },
+
+    // Get enriched player by ID
+    getEnrichedPlayer: (state) => {
+      return (playerId) => state.enrichedPlayers[playerId] || null
+    },
+
+    // Get multiple enriched players
+    getEnrichedPlayers: (state) => {
+      return (playerIds) => {
+        const result = {}
+        playerIds.forEach(id => {
+          if (state.enrichedPlayers[id]) {
+            result[id] = state.enrichedPlayers[id]
+          }
+        })
+        return result
+      }
+    },
+
+    // Check if processed injuries cache is valid
+    isProcessedInjuriesFresh: (state) => {
+      if (!state.processedInjuriesTimestamp) return false
+      return Date.now() - state.processedInjuriesTimestamp < CACHE_DURATION
+    },
+
+    // Check if processed transactions cache is valid
+    isProcessedTransactionsFresh: (state) => {
+      if (!state.processedTransactionsTimestamp) return false
+      return Date.now() - state.processedTransactionsTimestamp < CACHE_DURATION
+    },
+
+    // Get processed injuries grouped by team for all weeks (for charts)
+    getProcessedInjuriesByTeam: (state) => state.processedInjuriesByTeam,
+
+    // Get processed transaction stats (for charts)
+    getProcessedTransactionStats: (state) => state.processedTransactionStats,
+
+    // Get transaction counts for each week
+    getTransactionCountsByWeek: (state) => state.processedTransactionStats.byWeek,
+
+    // Get transactions grouped by team
+    getTransactionsByTeam: (state) => state.processedTransactionStats.byTeam,
+
+    // Get transactions by team for a specific week
+    getTransactionsByTeamForWeek: (state) => {
+      return (week) => state.processedTransactionStats.byTeamForWeek[week] || {}
     }
   },
 
@@ -287,6 +361,192 @@ export const useLeagueStore = defineStore('league', {
       })()
 
       return await this.playersPromise
+    },
+
+    async fetchEnrichedPlayers(forceRefresh = false) {
+      // Return cached data if fresh and not forcing refresh
+      if (!forceRefresh && this.isEnrichedPlayersFresh && Object.keys(this.enrichedPlayers).length > 0) {
+        return this.enrichedPlayers
+      }
+
+      // If already loading, wait for the existing promise
+      if (this.isLoadingEnrichedPlayers && this.enrichedPlayersPromise) {
+        return await this.enrichedPlayersPromise
+      }
+
+      this.isLoadingEnrichedPlayers = true
+      this.enrichedPlayersError = null
+
+      // Create and store the promise so concurrent calls can await it
+      this.enrichedPlayersPromise = (async () => {
+        try {
+          // Fetch all data sources in parallel
+          const [players, draftData, leagueData] = await Promise.all([
+            this.fetchPlayers(),
+            this.fetchDraft(),
+            this.fetchLeagueData()
+          ])
+
+          // Get current week for injury data
+          const currentWeek = this.league?.settings?.leg || 1
+          const injuryData = await this.fetchInjuriesForWeek(currentWeek)
+
+          // Create map of draft data by sleeper_id
+          const draftDataBySleeperId = {}
+          draftData.forEach(pick => {
+            if (pick.sleeper_id) {
+              draftDataBySleeperId[pick.sleeper_id] = pick
+            }
+          })
+
+          // Consolidate all player data
+          const enriched = {}
+
+          // Process all players from Sleeper API
+          Object.entries(players).forEach(([playerId, player]) => {
+            try {
+              const draftInfo = draftDataBySleeperId[playerId]
+              const playerName = player.full_name || `${player.first_name || ''} ${player.last_name || ''}`.trim()
+              const injuryInfo = playerName ? getPlayerInjuryStatus(injuryData, playerName) : null
+
+              // Build comprehensive player object
+              enriched[playerId] = {
+                // Base Sleeper data
+                ...player,
+
+                // Draft data (VORP, ROS, projections)
+                vorp: draftInfo?.vorp || 0,
+                ros: draftInfo?.ros || 0,
+                adp: draftInfo?.adp || 999,
+                fantasy_points_2024: draftInfo?.fantasy_points_2024 || 0,
+                projected_points_2025: draftInfo?.projected_points_2025 || 0,
+
+                // Injury data from Fantasy Nerds
+                injury_from_ffn: injuryInfo,
+                injury_indicator: getInjuryIndicator(injuryInfo) || getInjuryIndicator({ game_status: player.injury_status }),
+
+                // Combine injury status from both sources
+                injury_status_combined: injuryInfo?.game_status || player.injury_status || null,
+                injury_notes: injuryInfo?.notes || player.injury_notes || null,
+
+                // Bye week status (check if player's team is on bye this week)
+                bye_week: this.getByeWeekForTeam(player.team, currentWeek),
+
+                // Game status for current week
+                game_status: this.getGameStatusForPlayer(playerId, currentWeek),
+
+                // Suspension status
+                is_suspended: player.status === 'Sus' || player.injury_status === 'Sus',
+
+                // Overall availability
+                is_available: !injuryInfo && player.status === 'Active' && !this.getByeWeekForTeam(player.team, currentWeek)
+              }
+            } catch (err) {
+              console.error(`Error enriching player ${playerId}:`, err)
+              // Add basic player data even if enrichment fails
+              enriched[playerId] = {
+                ...player,
+                vorp: 0,
+                ros: 0,
+                adp: 999,
+                fantasy_points_2024: 0,
+                projected_points_2025: 0,
+                injury_from_ffn: null,
+                injury_indicator: null,
+                injury_status_combined: player.injury_status || null,
+                injury_notes: null,
+                bye_week: false,
+                game_status: null,
+                is_suspended: false,
+                is_available: player.status === 'Active'
+              }
+            }
+          })
+
+          // Process any players from draft data that aren't in the Sleeper data
+          draftData.forEach(pick => {
+            if (pick.sleeper_id && !enriched[pick.sleeper_id]) {
+              const injuryInfo = getPlayerInjuryStatus(injuryData, pick.player_name)
+
+              enriched[pick.sleeper_id] = {
+                // Minimal player data from draft
+                player_id: pick.sleeper_id,
+                full_name: pick.player_name,
+                first_name: pick.player_name.split(' ')[0],
+                last_name: pick.player_name.split(' ').slice(1).join(' '),
+                position: pick.position,
+                team: pick.team,
+                age: pick.age,
+                college: pick.college,
+                years_exp: pick.years_exp,
+                status: pick.status || 'Active',
+
+                // Draft data
+                vorp: pick.vorp || 0,
+                ros: pick.ros || 0,
+                adp: pick.adp || 999,
+                fantasy_points_2024: pick.fantasy_points_2024 || 0,
+                projected_points_2025: pick.projected_points_2025 || 0,
+
+                // Injury data
+                injury_from_ffn: injuryInfo,
+                injury_indicator: getInjuryIndicator(injuryInfo),
+                injury_status_combined: injuryInfo?.game_status || null,
+                injury_notes: injuryInfo?.notes || null,
+
+                // Status fields
+                bye_week: this.getByeWeekForTeam(pick.team, currentWeek),
+                game_status: null,
+                is_suspended: false,
+                is_available: !injuryInfo && pick.status === 'Active'
+              }
+            }
+          })
+
+          this.enrichedPlayers = enriched
+          this.enrichedPlayersTimestamp = Date.now()
+
+          return enriched
+        } catch (error) {
+          console.error('Error fetching enriched players:', error)
+          this.enrichedPlayersError = error.message
+          throw error
+        } finally {
+          this.isLoadingEnrichedPlayers = false
+          this.enrichedPlayersPromise = null
+        }
+      })()
+
+      return await this.enrichedPlayersPromise
+    },
+
+    // Helper method to determine if a team is on bye for a specific week
+    getByeWeekForTeam(team, week) {
+      // TODO: This would ideally come from an NFL schedule API
+      // For now, return false - you can add bye week data later
+      return false
+    },
+
+    // Helper method to get game status for a player for a specific week
+    getGameStatusForPlayer(playerId, week) {
+      // Check if we have matchup data for this week
+      const weekMatchups = this.allMatchups[week]
+      if (!weekMatchups) return null
+
+      // Look through matchups to find if this player played
+      for (const matchup of weekMatchups) {
+        for (const team of matchup) {
+          if (team.players_points && team.players_points[playerId] !== undefined) {
+            return {
+              played: true,
+              points: team.players_points[playerId],
+              starter: team.starters?.includes(playerId)
+            }
+          }
+        }
+      }
+
+      return null
     },
 
     async fetchMatchupForWeek(week, forceRefresh = false) {
@@ -642,6 +902,165 @@ export const useLeagueStore = defineStore('league', {
       }
     },
 
+    /**
+     * Process injury data and group by team for all weeks
+     * This consolidates the injury processing logic that was duplicated in components
+     */
+    async processInjuriesData(maxWeek, forceRefresh = false) {
+      // Return cached data if fresh and not forcing refresh
+      if (!forceRefresh && this.isProcessedInjuriesFresh && Object.keys(this.processedInjuriesByTeam).length > 0) {
+        return this.processedInjuriesByTeam
+      }
+
+      try {
+        // Ensure we have all required data
+        await this.fetchLeagueData()
+        await this.fetchPlayers()
+
+        const transformedInjuries = {}
+
+        // Process injuries for each week
+        for (let week = 1; week <= Math.min(maxWeek, 18); week++) {
+          const weekInjuries = await this.fetchInjuriesForWeek(week)
+          const injuriesByTeam = {}
+
+          // Group injuries by team based on ALL players on rosters (not just starters)
+          if (this.rosters && this.rosters.length > 0) {
+            this.rosters.forEach(roster => {
+              if (roster.user?.display_name) {
+                const teamInfo = getTeamInfo(roster.user.display_name)
+                const teamName = teamInfo.aiModel
+                const teamInjuries = []
+
+                // Collect all players on this roster (players, starters, taxi, reserve)
+                const allPlayerIds = new Set([
+                  ...(roster.players || []),
+                  ...(roster.starters || []),
+                  ...(roster.taxi || []),
+                  ...(roster.reserve || [])
+                ])
+
+                // Check each player on the roster for injuries
+                allPlayerIds.forEach(playerId => {
+                  const player = this.players[playerId]
+                  if (player) {
+                    const playerName = player.full_name || `${player.first_name || ''} ${player.last_name || ''}`.trim()
+                    const injuryStatus = playerName ? getPlayerInjuryStatus(weekInjuries, playerName) : null
+                    if (injuryStatus) {
+                      teamInjuries.push({
+                        player: playerName,
+                        team: player.team,
+                        position: player.position,
+                        injury: injuryStatus.injury,
+                        gameStatus: injuryStatus.game_status,
+                        practice_status: injuryStatus.practice_status
+                      })
+                    }
+                  }
+                })
+
+                if (teamInjuries.length > 0) {
+                  injuriesByTeam[teamName] = teamInjuries
+                }
+              }
+            })
+          }
+
+          transformedInjuries[`week${week}`] = {
+            week: week,
+            injuries: injuriesByTeam
+          }
+        }
+
+        this.processedInjuriesByTeam = transformedInjuries
+        this.processedInjuriesTimestamp = Date.now()
+
+        return transformedInjuries
+      } catch (error) {
+        console.error('Error processing injuries data:', error)
+        return this.processedInjuriesByTeam
+      }
+    },
+
+    /**
+     * Process transaction data and generate stats for charts
+     * This consolidates the transaction processing logic that was duplicated in components
+     */
+    async processTransactionStats(maxWeek, forceRefresh = false) {
+      // Return cached data if fresh and not forcing refresh
+      if (!forceRefresh && this.isProcessedTransactionsFresh && Object.keys(this.processedTransactionStats.byWeek).length > 0) {
+        return this.processedTransactionStats
+      }
+
+      try {
+        // Ensure we have league data
+        await this.fetchLeagueData()
+
+        const byWeek = {}           // { week: count }
+        const byTeam = {}           // { teamName: { total: count, byWeek: { week: count } } }
+        const byTeamForWeek = {}    // { week: { teamName: count } }
+
+        // Initialize team stats
+        if (this.rosters && this.rosters.length > 0) {
+          this.rosters.forEach(roster => {
+            if (roster.user?.display_name) {
+              const teamInfo = getTeamInfo(roster.user.display_name)
+              byTeam[teamInfo.aiModel] = {
+                total: 0,
+                byWeek: {}
+              }
+            }
+          })
+        }
+
+        // Process transactions for each week
+        for (let week = 1; week <= Math.min(maxWeek, 18); week++) {
+          const weekTransactions = await this.fetchTransactionsForWeek(week)
+
+          // Count total transactions for this week
+          byWeek[week] = weekTransactions.length
+
+          // Initialize week stats
+          byTeamForWeek[week] = {}
+
+          // Initialize all teams to 0 for this week
+          Object.keys(byTeam).forEach(teamName => {
+            byTeamForWeek[week][teamName] = 0
+            byTeam[teamName].byWeek[week] = 0
+          })
+
+          // Count transactions by team for this week
+          weekTransactions.forEach(transaction => {
+            if (transaction.roster_ids && transaction.roster_ids.length > 0) {
+              transaction.roster_ids.forEach(rosterId => {
+                const roster = this.rosters?.find(r => r.roster_id === rosterId)
+                if (roster && roster.user?.display_name) {
+                  const teamInfo = getTeamInfo(roster.user.display_name)
+                  const teamName = teamInfo.aiModel
+
+                  // Increment counts
+                  if (byTeam[teamName]) {
+                    byTeam[teamName].total += 1
+                    byTeam[teamName].byWeek[week] = (byTeam[teamName].byWeek[week] || 0) + 1
+                    byTeamForWeek[week][teamName] = (byTeamForWeek[week][teamName] || 0) + 1
+                  }
+                }
+              })
+            }
+          })
+        }
+
+        const stats = { byWeek, byTeam, byTeamForWeek }
+        this.processedTransactionStats = stats
+        this.processedTransactionsTimestamp = Date.now()
+
+        return stats
+      } catch (error) {
+        console.error('Error processing transaction stats:', error)
+        return this.processedTransactionStats
+      }
+    },
+
     async fetchDraft(forceRefresh = false) {
       // Return cached data if loaded and not forcing refresh
       // Draft data never expires since it never changes
@@ -713,6 +1132,7 @@ export const useLeagueStore = defineStore('league', {
     // Fetch all data needed for the home page
     async fetchAllData(forceRefresh = false) {
       try {
+        // Fetch critical data first
         const [leagueData, matchupsData, players, allMatchups] = await Promise.all([
           this.fetchLeagueData(forceRefresh),
           this.fetchCurrentMatchups(forceRefresh),
@@ -720,10 +1140,21 @@ export const useLeagueStore = defineStore('league', {
           this.fetchAllMatchups(forceRefresh)
         ])
 
+        // Fetch enriched players separately so it doesn't block critical data
+        // If it fails, the app will still work with base player data
+        let enrichedPlayers = {}
+        try {
+          enrichedPlayers = await this.fetchEnrichedPlayers(forceRefresh)
+        } catch (err) {
+          console.error('Error fetching enriched players (non-critical):', err)
+          // Don't throw - allow app to continue with base player data
+        }
+
         return {
           leagueData,
           matchupsData,
           players,
+          enrichedPlayers,
           allMatchups
         }
       } catch (error) {
@@ -740,23 +1171,30 @@ export const useLeagueStore = defineStore('league', {
       this.currentMatchups = null
       this.currentWeek = null
       this.players = {}
+      this.enrichedPlayers = {}
       this.allMatchups = {}
       this.transactionsByWeek = {}
       this.transactionsTimestampsByWeek = {}
       this.injuriesByWeek = {}
       this.injuriesTimestampsByWeek = {}
+      this.processedInjuriesByTeam = {}
+      this.processedTransactionStats = { byWeek: {}, byTeam: {}, byTeamForWeek: {} }
       this.draftPicks = []
       this.latestVideo = null
       this.latestShorts = []
       this.leagueDataTimestamp = null
       this.matchupsTimestamp = null
       this.playersTimestamp = null
+      this.enrichedPlayersTimestamp = null
       this.allMatchupsTimestamp = null
       this.draftTimestamp = null
       this.youtubeTimestamp = null
+      this.processedInjuriesTimestamp = null
+      this.processedTransactionsTimestamp = null
       this.leagueDataError = null
       this.matchupsError = null
       this.playersError = null
+      this.enrichedPlayersError = null
       this.allMatchupsError = null
       this.draftError = null
       this.youtubeError = null
@@ -774,17 +1212,23 @@ export const useLeagueStore = defineStore('league', {
       'currentMatchups',
       'currentWeek',
       'players',
+      'enrichedPlayers',
       'allMatchups',
       'transactionsByWeek',
       'transactionsTimestampsByWeek',
       'injuriesByWeek',
       'injuriesTimestampsByWeek',
+      'processedInjuriesByTeam',
+      'processedInjuriesTimestamp',
+      'processedTransactionStats',
+      'processedTransactionsTimestamp',
       'draftPicks',
       'latestVideo',
       'latestShorts',
       'leagueDataTimestamp',
       'matchupsTimestamp',
       'playersTimestamp',
+      'enrichedPlayersTimestamp',
       'allMatchupsTimestamp',
       'draftTimestamp',
       'youtubeTimestamp'

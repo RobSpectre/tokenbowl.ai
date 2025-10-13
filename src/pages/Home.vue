@@ -1,7 +1,7 @@
 <template lang="pug">
 .bg-slate-950
-  //- Loading State (only show when no matchups exist yet)
-  .flex.items-center.justify-center(v-if="!error && Object.keys(allMatchups).length === 0 && loading" style="min-height: 80vh")
+  //- Loading State (show when actively loading and no content for current week)
+  .flex.items-center.justify-center(v-if="loading && !error" style="min-height: 80vh")
     .text-center
       .inline-block.animate-spin.rounded-full.h-20.w-20.border-4.border-blue-500.border-t-transparent.mb-4
       p.text-white.text-xl.font-bold.uppercase.tracking-wider Loading matchups...
@@ -12,27 +12,23 @@
       p.text-white.text-xl.font-bold {{ error }}
 
   //- Main Content
-  main.container.mx-auto.px-4.py-6.max-w-7xl(v-else)
+  main.container.mx-auto.px-4.py-6.max-w-7xl(v-else-if="!loading")
     //- Week Selector (Fixed)
     div(class="fixed top-20 left-0 right-0 z-30 bg-slate-950 pb-4 pt-4 shadow-lg")
       .container.mx-auto.px-4.max-w-7xl
         div(class="flex items-center justify-center gap-3 mb-3")
           button(class="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-700 disabled:text-slate-500 text-white font-bold rounded-lg transition-all duration-200 disabled:cursor-not-allowed"
             @click="handleWeekChange('prev')"
-            :disabled="selectedWeek === 1 || loading"
+            :disabled="selectedWeek === 1"
           ) ← PREV
           div(class="relative")
             select(class="px-4 py-2 bg-slate-800 text-white font-black text-xl rounded-lg border-2 border-blue-600 focus:outline-none focus:border-yellow-400 transition-colors uppercase"
               v-model="selectedWeek"
-              :disabled="loading"
             )
               option(v-for="week in 18" :key="week" :value="week") Week {{ week }}
-            //- Loading Spinner Overlay
-            div(v-if="loading" class="absolute inset-0 flex items-center justify-center bg-slate-800/50 rounded-lg")
-              .inline-block.animate-spin.rounded-full.h-6.w-6.border-3.border-blue-500.border-t-transparent
           button(class="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-700 disabled:text-slate-500 text-white font-bold rounded-lg transition-all duration-200 disabled:cursor-not-allowed"
             @click="handleWeekChange('next')"
-            :disabled="selectedWeek === 18 || loading"
+            :disabled="selectedWeek === 18"
           ) NEXT →
 
         //- Season Progress Bar
@@ -92,7 +88,14 @@
                     div(class="min-w-0 flex-1")
                       div(class="text-white font-bold text-sm truncate") {{ getTeamInfo(matchup[0].roster?.user?.display_name).aiModel }}
                       div(class="text-blue-400 text-xs font-semibold truncate") {{ getTeamInfo(matchup[0].roster?.user?.display_name).owner }}
-                      div(:class="getRecordColor(getRecordThroughWeek(matchup[0].roster_id, selectedWeek - 1).wins, getRecordThroughWeek(matchup[0].roster_id, selectedWeek - 1).losses)" class="text-xs font-bold") {{ getRecordThroughWeek(matchup[0].roster_id, selectedWeek - 1).wins }}-{{ getRecordThroughWeek(matchup[0].roster_id, selectedWeek - 1).losses }}
+                      div(class="flex items-center gap-1 flex-wrap")
+                        div(:class="getRecordColor(getRecordThroughWeek(matchup[0].roster_id, selectedWeek - 1).wins, getRecordThroughWeek(matchup[0].roster_id, selectedWeek - 1).losses)" class="text-xs font-bold") {{ getRecordThroughWeek(matchup[0].roster_id, selectedWeek - 1).wins }}-{{ getRecordThroughWeek(matchup[0].roster_id, selectedWeek - 1).losses }}
+                        div(
+                          v-for="badge in getTeamBadges(matchup[0])"
+                          :key="badge.type"
+                          :class="[badge.color, badge.color === 'bg-yellow-500' ? 'text-black' : 'text-white']"
+                          class="px-1.5 py-0.5 rounded text-[10px] font-bold"
+                        ) {{ badge.label }}
                   div(class="flex flex-col items-end flex-shrink-0 ml-2")
                     div(
                       class="text-white font-black text-xl transition-all duration-300"
@@ -121,7 +124,14 @@
                     div(class="min-w-0 flex-1")
                       div(class="text-white font-bold text-sm truncate") {{ getTeamInfo(matchup[1].roster?.user?.display_name).aiModel }}
                       div(class="text-blue-400 text-xs font-semibold truncate") {{ getTeamInfo(matchup[1].roster?.user?.display_name).owner }}
-                      div(:class="getRecordColor(getRecordThroughWeek(matchup[1].roster_id, selectedWeek - 1).wins, getRecordThroughWeek(matchup[1].roster_id, selectedWeek - 1).losses)" class="text-xs font-bold") {{ getRecordThroughWeek(matchup[1].roster_id, selectedWeek - 1).wins }}-{{ getRecordThroughWeek(matchup[1].roster_id, selectedWeek - 1).losses }}
+                      div(class="flex items-center gap-1 flex-wrap")
+                        div(:class="getRecordColor(getRecordThroughWeek(matchup[1].roster_id, selectedWeek - 1).wins, getRecordThroughWeek(matchup[1].roster_id, selectedWeek - 1).losses)" class="text-xs font-bold") {{ getRecordThroughWeek(matchup[1].roster_id, selectedWeek - 1).wins }}-{{ getRecordThroughWeek(matchup[1].roster_id, selectedWeek - 1).losses }}
+                        div(
+                          v-for="badge in getTeamBadges(matchup[1])"
+                          :key="badge.type"
+                          :class="[badge.color, badge.color === 'bg-yellow-500' ? 'text-black' : 'text-white']"
+                          class="px-1.5 py-0.5 rounded text-[10px] font-bold"
+                        ) {{ badge.label }}
                   div(class="flex flex-col items-end flex-shrink-0 ml-2")
                     div(
                       class="text-white font-black text-xl transition-all duration-300"
@@ -144,7 +154,14 @@
                     div
                       div(class="text-white font-bold text-lg") {{ getTeamInfo(matchup[0].roster?.user?.display_name).aiModel }}
                       div(class="text-blue-400 text-sm font-semibold") {{ getTeamInfo(matchup[0].roster?.user?.display_name).owner }}
-                      div(:class="getRecordColor(getRecordThroughWeek(matchup[0].roster_id, selectedWeek - 1).wins, getRecordThroughWeek(matchup[0].roster_id, selectedWeek - 1).losses)" class="text-xs font-bold") {{ getRecordThroughWeek(matchup[0].roster_id, selectedWeek - 1).wins }}-{{ getRecordThroughWeek(matchup[0].roster_id, selectedWeek - 1).losses }}
+                      div(class="flex items-center gap-2 flex-wrap")
+                        div(:class="getRecordColor(getRecordThroughWeek(matchup[0].roster_id, selectedWeek - 1).wins, getRecordThroughWeek(matchup[0].roster_id, selectedWeek - 1).losses)" class="text-xs font-bold") {{ getRecordThroughWeek(matchup[0].roster_id, selectedWeek - 1).wins }}-{{ getRecordThroughWeek(matchup[0].roster_id, selectedWeek - 1).losses }}
+                        div(
+                          v-for="badge in getTeamBadges(matchup[0])"
+                          :key="badge.type"
+                          :class="[badge.color, badge.color === 'bg-yellow-500' ? 'text-black' : 'text-white']"
+                          class="px-2 py-0.5 rounded text-xs font-bold"
+                        ) {{ badge.label }}
                   div(class="text-right")
                     div(
                       class="text-white font-black text-3xl transition-all duration-300"
@@ -173,7 +190,14 @@
                     div(class="text-right")
                       div(class="text-white font-bold text-lg") {{ getTeamInfo(matchup[1].roster?.user?.display_name).aiModel }}
                       div(class="text-blue-400 text-sm font-semibold") {{ getTeamInfo(matchup[1].roster?.user?.display_name).owner }}
-                      div(:class="getRecordColor(getRecordThroughWeek(matchup[1].roster_id, selectedWeek - 1).wins, getRecordThroughWeek(matchup[1].roster_id, selectedWeek - 1).losses)" class="text-xs font-bold") {{ getRecordThroughWeek(matchup[1].roster_id, selectedWeek - 1).wins }}-{{ getRecordThroughWeek(matchup[1].roster_id, selectedWeek - 1).losses }}
+                      div(class="flex items-center gap-2 flex-wrap justify-end")
+                        div(:class="getRecordColor(getRecordThroughWeek(matchup[1].roster_id, selectedWeek - 1).wins, getRecordThroughWeek(matchup[1].roster_id, selectedWeek - 1).losses)" class="text-xs font-bold") {{ getRecordThroughWeek(matchup[1].roster_id, selectedWeek - 1).wins }}-{{ getRecordThroughWeek(matchup[1].roster_id, selectedWeek - 1).losses }}
+                        div(
+                          v-for="badge in getTeamBadges(matchup[1])"
+                          :key="badge.type"
+                          :class="[badge.color, badge.color === 'bg-yellow-500' ? 'text-black' : 'text-white']"
+                          class="px-2 py-0.5 rounded text-xs font-bold"
+                        ) {{ badge.label }}
                     img(
                       class="h-12 w-12 object-contain"
                       :src="getTeamInfo(matchup[1].roster?.user?.display_name).logo"
@@ -222,14 +246,20 @@
         p.text-gray-500.text-lg No matchups available for Week {{ selectedWeek }}
 
     //- Video
-    section.mb-12(v-if="latestVideo || latestShorts.length > 0")
+    section.mb-12(v-if="latestVideo || latestShorts.length > 0 || loadingVideos")
       .bg-gradient-to-r.from-red-600.to-red-800.rounded-t-lg.px-6.py-4.border-b-4.border-yellow-400
         h2.text-white.text-3xl.font-black.uppercase.tracking-wide.flex.items-center.gap-3
           span.text-yellow-400 📺
           | Videos
 
-      .bg-slate-900.rounded-b-lg.p-4
-        div(class="flex flex-col md:flex-row gap-4 md:gap-6")
+      .bg-slate-900.rounded-b-lg.p-4.relative
+        //- Loading Spinner
+        div(v-if="loadingVideos" class="flex items-center justify-center py-12")
+          .text-center
+            .inline-block.animate-spin.rounded-full.h-12.w-12.border-4.border-red-500.border-t-transparent.mb-2
+            p.text-gray-400.text-sm Loading videos...
+
+        div(v-else class="flex flex-col md:flex-row gap-4 md:gap-6")
           //- Latest Video
           a(
             v-if="latestVideo"
@@ -278,7 +308,13 @@
           span.text-yellow-400 🏆
           | Standings
 
-      .bg-slate-900.rounded-b-lg.overflow-x-auto
+      .bg-slate-900.rounded-b-lg.overflow-x-auto.relative
+        //- Loading Spinner
+        div(v-if="loadingStandings" class="absolute inset-0 flex items-center justify-center bg-slate-900/90 z-10")
+          .text-center
+            .inline-block.animate-spin.rounded-full.h-12.w-12.border-4.border-purple-500.border-t-transparent.mb-2
+            p.text-gray-400.text-sm Loading standings...
+
         table.w-full.min-w-max
           thead.bg-slate-800.sticky.top-0
             tr.text-left.text-gray-300.uppercase.text-xs.font-bold.tracking-wider
@@ -312,63 +348,63 @@
                 div(class="text-white font-black text-base sm:text-xl") {{ roster.historicalPoints.toFixed(2) }}
 
     //- History
-    section.mb-12
+    section.mb-12(v-show="leagueData && allMatchups && Object.keys(allMatchups).length > 0")
       .bg-gradient-to-r.from-green-600.to-green-800.rounded-t-lg.px-6.py-4.border-b-4.border-yellow-400
         h2(class="text-white text-xl sm:text-3xl font-black uppercase tracking-wide flex items-center gap-2 sm:gap-3")
-          span.text-yellow-400 📈 
+          span.text-yellow-400 📈
           | History
 
-      div(class="bg-slate-900 rounded-b-lg p-3 sm:p-6 overflow-x-auto")
+      div(class="bg-slate-900 rounded-b-lg p-3 sm:p-6 overflow-x-auto relative")
         div(ref="standingsChartRef" class="w-full min-w-[350px] h-[250px] sm:h-[400px]")
 
     //- Points
-    section.mb-12
+    section.mb-12(v-show="leagueData && allMatchups && Object.keys(allMatchups).length > 0")
       .bg-gradient-to-r.from-cyan-600.to-cyan-800.rounded-t-lg.px-6.py-4.border-b-4.border-yellow-400
         h2(class="text-white text-xl sm:text-3xl font-black uppercase tracking-wide flex items-center gap-2 sm:gap-3")
-          span.text-yellow-400 📊 
+          span.text-yellow-400 📊
           | Total Points
 
-      div(class="bg-slate-900 rounded-b-lg p-3 sm:p-6 overflow-x-auto")
+      div(class="bg-slate-900 rounded-b-lg p-3 sm:p-6 overflow-x-auto relative")
         div(ref="pointsChartRef" class="w-full min-w-[350px] h-[300px] sm:h-[500px]")
 
     //- Transactions Volume by Week
-    section.mb-12
+    section.mb-12(v-show="transactionStats && Object.keys(transactionStats.byWeek || {}).length > 0")
       .bg-gradient-to-r.from-teal-600.to-teal-800.rounded-t-lg.px-6.py-4.border-b-4.border-yellow-400
         h2(class="text-white text-xl sm:text-3xl font-black uppercase tracking-wide flex items-center gap-2 sm:gap-3")
           span.text-yellow-400 📈
           | Transactions Volume by Week
 
-      div(class="bg-slate-900 rounded-b-lg p-3 sm:p-6")
+      div(class="bg-slate-900 rounded-b-lg p-3 sm:p-6 relative")
         div(ref="transactionsChartRef" class="w-full h-[300px] sm:h-[400px]")
 
     //- Transaction Volume by Model
-    section.mb-12
+    section.mb-12(v-show="transactionStats && Object.keys(transactionStats.byWeek || {}).length > 0")
       .bg-gradient-to-r.from-purple-600.to-purple-800.rounded-t-lg.px-6.py-4.border-b-4.border-yellow-400
         h2(class="text-white text-xl sm:text-3xl font-black uppercase tracking-wide flex items-center gap-2 sm:gap-3")
           span.text-yellow-400 🤖
           | Transaction Volume by Model
 
-      div(class="bg-slate-900 rounded-b-lg p-3 sm:p-6")
+      div(class="bg-slate-900 rounded-b-lg p-3 sm:p-6 relative")
         div(ref="modelTransactionsChartRef" class="w-full h-[300px] sm:h-[400px]")
 
     //- Injury Volume by Week
-    section.mb-12
+    section.mb-12(v-show="leagueData && allMatchups && Object.keys(allMatchups).length > 0")
       .bg-gradient-to-r.from-red-600.to-red-800.rounded-t-lg.px-6.py-4.border-b-4.border-yellow-400
         h2(class="text-white text-xl sm:text-3xl font-black uppercase tracking-wide flex items-center gap-2 sm:gap-3")
           span.text-yellow-400 🚑
           | Injury Volume by Week
 
-      div(class="bg-slate-900 rounded-b-lg p-3 sm:p-6")
+      div(class="bg-slate-900 rounded-b-lg p-3 sm:p-6 relative")
         div(ref="injuriesChartRef" class="w-full h-[300px] sm:h-[400px]")
 
     //- Injury Volume by Model
-    section.mb-12
+    section.mb-12(v-show="leagueData && allMatchups && Object.keys(allMatchups).length > 0")
       .bg-gradient-to-r.from-orange-600.to-orange-800.rounded-t-lg.px-6.py-4.border-b-4.border-yellow-400
         h2(class="text-white text-xl sm:text-3xl font-black uppercase tracking-wide flex items-center gap-2 sm:gap-3")
           span.text-yellow-400 🏥
           | Injury Volume by Model
 
-      div(class="bg-slate-900 rounded-b-lg p-3 sm:p-6")
+      div(class="bg-slate-900 rounded-b-lg p-3 sm:p-6 relative")
         div(ref="modelInjuriesChartRef" class="w-full h-[300px] sm:h-[400px]")
 
     //- Transactions
@@ -494,7 +530,6 @@ import { ref, onMounted, onUnmounted, watch, computed, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { useLeagueStore } from '../stores/league.js'
 import { getTeamInfo } from '../teamMappings.js'
-import { getPlayerInjuryStatus } from '../fantasyNerdsApi.js'
 import * as echarts from 'echarts'
 import { trackButtonClick } from '../analytics.js'
 
@@ -518,11 +553,14 @@ export default {
     let modelTransactionsChart = null
     let injuriesChart = null
     let modelInjuriesChart = null
-    const injuriesData = ref({})
     const lastUpdated = ref(null)
     const autoRefreshInterval = ref(null)
     const autoRefreshCheckInterval = ref(null)
     const isAutoRefreshActive = ref(false)
+
+    // Section loading states
+    const loadingStandings = ref(true)
+    const loadingVideos = ref(true)
 
     // Score animation tracking
     const animatingScores = ref(new Set())
@@ -538,7 +576,10 @@ export default {
 
     const allMatchups = computed(() => leagueStore.allMatchups)
     const players = computed(() => leagueStore.players)
+    const enrichedPlayers = computed(() => leagueStore.enrichedPlayers)
     const transactions = computed(() => leagueStore.getTransactionsForWeek(selectedWeek.value))
+    const injuriesData = computed(() => leagueStore.getProcessedInjuriesByTeam)
+    const transactionStats = computed(() => leagueStore.getProcessedTransactionStats)
     const latestVideo = computed(() => leagueStore.latestVideo)
     const latestShorts = computed(() => leagueStore.latestShorts)
 
@@ -588,144 +629,138 @@ export default {
 
     const loadData = async () => {
       try {
-        // Check if we have cached data in the store before showing loading spinner
-        const hasData = leagueStore.allMatchups && Object.keys(leagueStore.allMatchups).length > 0
+        // Check if we have ANY cached data in the store
+        const hasCachedMatchups = leagueStore.allMatchups && Object.keys(leagueStore.allMatchups).length > 0
+        const hasCachedLeagueData = leagueStore.rosters && leagueStore.rosters.length > 0
 
-        // Only show loading spinner if we don't have cached data
-        if (!hasData) {
+        // If we have cached matchups and league data, hide main spinner immediately
+        // Otherwise, keep showing it (it starts as true)
+        if (hasCachedMatchups && hasCachedLeagueData) {
+          loading.value = false
+        } else {
           loading.value = true
         }
 
+        // Set section loading states based on what data exists
+        loadingStandings.value = !hasCachedLeagueData
+        loadingVideos.value = !leagueStore.latestVideo
+
         error.value = null
 
-        // Load from Pinia cache first (fast), then refresh in background if stale
-        // This ensures matchups display immediately when navigating back to home
-        await leagueStore.fetchAllData(false)
+        // STEP 1: Load critical data for matchups section (fastest path to show content)
+        // This runs in parallel and uses cache if available
+        const [leagueData] = await Promise.all([
+          leagueStore.fetchLeagueData(false),
+          leagueStore.fetchPlayers(false)
+        ])
 
-        // Ensure players are loaded in the store
-        await leagueStore.fetchPlayers()
+        // Hide standings spinner once league data is loaded
+        loadingStandings.value = false
 
-        // Check URL for week parameter, otherwise use current week
+        // Get current week from league data or URL
         const weekParam = router.currentRoute.value.query.week
         const urlWeek = weekParam ? parseInt(weekParam) : null
         const currentWeek = leagueStore.league?.settings?.leg || 5
 
-        // Use URL week if valid, otherwise use current week
+        // Set selected week
         if (urlWeek && urlWeek >= 1 && urlWeek <= 18) {
           selectedWeek.value = urlWeek
         } else {
           selectedWeek.value = currentWeek
         }
 
-        // Load transactions for all weeks up to current week (for graphs)
-        const transactionPromises = []
-        for (let week = 1; week <= Math.min(currentWeek, 18); week++) {
-          transactionPromises.push(leagueStore.fetchTransactionsForWeek(week))
-        }
-        await Promise.all(transactionPromises)
+        // Render charts immediately if we have the data
+        await nextTick()
 
-        // Load injury data for all weeks (for charts)
-        const injuryPromises = []
-        for (let week = 1; week <= Math.min(currentWeek, 18); week++) {
-          injuryPromises.push(leagueStore.fetchInjuriesForWeek(week))
-        }
-        await Promise.all(injuryPromises)
-
-        // Transform injury data into the format expected by charts
-        const transformedInjuries = {}
-        for (let week = 1; week <= Math.min(currentWeek, 18); week++) {
-          const weekInjuries = leagueStore.getInjuriesForWeek(week)
-          const injuriesByTeam = {}
-
-          // Group injuries by team based on ALL players on rosters (not just starters)
-          if (leagueData.value.rosters) {
-            leagueData.value.rosters.forEach(roster => {
-              if (roster.user?.display_name) {
-                const teamInfo = getTeamInfo(roster.user.display_name)
-                const teamName = teamInfo.aiModel
-                const teamInjuries = []
-
-                // Collect all players on this roster (players, starters, taxi, reserve)
-                const allPlayerIds = new Set([
-                  ...(roster.players || []),
-                  ...(roster.starters || []),
-                  ...(roster.taxi || []),
-                  ...(roster.reserve || [])
-                ])
-
-                // Check each player on the roster for injuries
-                allPlayerIds.forEach(playerId => {
-                  // Get player from Pinia store
-                  const player = players.value[playerId]
-                  if (player) {
-                    const playerName = player.full_name || `${player.first_name} ${player.last_name}`
-                    const injuryStatus = getPlayerInjuryStatus(weekInjuries, playerName)
-                    if (injuryStatus) {
-                      teamInjuries.push({
-                        player: playerName,
-                        team: player.team,
-                        position: player.position,
-                        injury: injuryStatus.injury,
-                        gameStatus: injuryStatus.game_status,
-                        practice_status: injuryStatus.practice_status
-                      })
-                    }
-                  }
-                })
-
-                if (teamInjuries.length > 0) {
-                  injuriesByTeam[teamName] = teamInjuries
-                }
-              }
-            })
-          }
-
-          transformedInjuries[`week${week}`] = {
-            week: week,
-            injuries: injuriesByTeam
-          }
+        if (hasCachedMatchups && hasCachedLeagueData) {
+          renderStandingsChart()
+          renderPointsChart()
         }
 
-        injuriesData.value = transformedInjuries
+        // Check if we have chart data for rendering
+        const hasTransactions = transactionStats.value && Object.keys(transactionStats.value.byWeek || {}).length > 0
+        const hasInjuries = injuriesData.value && Object.keys(injuriesData.value).length > 0
 
-        // Set last updated timestamp
-        lastUpdated.value = new Date()
+        if (hasTransactions) {
+          renderTransactionsChart()
+          renderModelTransactionsChart()
+        }
+
+        // Always render injury charts (they'll show "No injuries" if no data)
+        renderInjuriesChart()
+        renderModelInjuriesChart()
+
+        // STEP 2: Load matchups for the selected week (show as soon as available)
+        await leagueStore.fetchMatchupForWeek(selectedWeek.value, false)
+
+        // Hide loading spinner once matchups are available - user can now see content!
+        loading.value = false
+
+        // STEP 3: Load remaining data in background (non-blocking)
+        // User already sees matchups, these just enhance the page as they load
+        Promise.all([
+          leagueStore.fetchAllMatchups(false),
+          leagueStore.fetchEnrichedPlayers(false),
+          leagueStore.processInjuriesData(currentWeek, false),
+          leagueStore.processTransactionStats(currentWeek, false)
+        ]).then(() => {
+          // Charts will render automatically via watchers when data arrives
+          console.log('[Background] Chart data processing complete')
+        }).catch(err => {
+          console.error('Error loading chart data:', err)
+        })
+
+        // Load YouTube data separately (non-critical)
+        leagueStore.fetchYoutube(false).then(() => {
+          loadingVideos.value = false
+          lastUpdated.value = new Date()
+        }).catch(err => {
+          console.error('Error loading videos:', err)
+          loadingVideos.value = false
+        })
+
       } catch (err) {
         error.value = 'Failed to load league data. Please try again later.'
         console.error(err)
-      } finally {
         loading.value = false
+        loadingStandings.value = false
+        loadingVideos.value = false
       }
     }
 
-    // Refresh matchups data without showing loading state
+    // Refresh all data silently in the background (no loading spinners)
+    // This is used for auto-refresh and manual refresh button
     const refreshMatchups = async () => {
       try {
+        console.log('[Refresh] Starting background refresh...')
+
         // Force refresh league data first, then other data that depends on it
         // This prevents duplicate API calls to /rosters and /users
         await leagueStore.fetchLeagueData(true)
 
-        // Now refresh matchups and transactions in parallel
-        // They will use the freshly cached league data
+        const currentWeek = leagueStore.league?.settings?.leg || selectedWeek.value
+
+        // Refresh all data in parallel - UI updates automatically via watchers
+        // No need to manually re-render charts - they watch the store data
         await Promise.all([
           leagueStore.fetchAllMatchups(true),
-          leagueStore.fetchTransactionsForWeek(selectedWeek.value, true)
+          leagueStore.fetchTransactionsForWeek(selectedWeek.value, true),
+          leagueStore.processInjuriesData(currentWeek, true),
+          leagueStore.processTransactionStats(currentWeek, true),
+          leagueStore.fetchEnrichedPlayers(true)
         ])
+
         lastUpdated.value = new Date()
-        console.log('Matchups refreshed at', lastUpdated.value.toLocaleTimeString())
+        console.log('[Refresh] Background refresh completed at', lastUpdated.value.toLocaleTimeString())
 
-        // Wait for Vue to update the DOM with new data
+        // Charts will auto-update via watchers, but we need to manually trigger
+        // them for data that doesn't have watchers (standings/points charts)
         await nextTick()
-
-        // Re-render all charts with refreshed data
         renderStandingsChart()
         renderPointsChart()
-        renderTransactionsChart()
-        renderModelTransactionsChart()
-        renderInjuriesChart()
-        renderModelInjuriesChart()
       } catch (err) {
-        console.error('Error refreshing matchups:', err)
+        console.error('[Refresh] Error during background refresh:', err)
+        // Don't show error to user - they still have the cached data displayed
       }
     }
 
@@ -1054,14 +1089,21 @@ export default {
 
         // Wait for Vue to update the DOM with new data
         await nextTick()
+        await nextTick() // Extra tick for v-show to take effect
 
-        // Re-render all charts with new week data
-        renderStandingsChart()
-        renderPointsChart()
-        renderTransactionsChart()
-        renderModelTransactionsChart()
-        renderInjuriesChart()
-        renderModelInjuriesChart()
+        // Re-render all charts with new week data if refs exist
+        if (standingsChartRef.value && pointsChartRef.value) {
+          renderStandingsChart()
+          renderPointsChart()
+        }
+        if (transactionsChartRef.value && modelTransactionsChartRef.value) {
+          renderTransactionsChart()
+          renderModelTransactionsChart()
+        }
+        if (injuriesChartRef.value && modelInjuriesChartRef.value) {
+          renderInjuriesChart()
+          renderModelInjuriesChart()
+        }
       }
     })
 
@@ -1074,6 +1116,59 @@ export default {
         }
       }
     })
+
+    // Watch for matchups data to render History and Points charts
+    watch(allMatchups, async (newData) => {
+      if (!newData || Object.keys(newData).length === 0) return
+      if (!leagueData.value) return
+
+      // Wait for DOM updates (v-show to take effect)
+      await nextTick()
+      await nextTick()
+
+      // Check if the chart refs exist before rendering
+      if (standingsChartRef.value && pointsChartRef.value) {
+        console.log('[Charts] Rendering history/points charts - matchups loaded')
+        renderStandingsChart()
+        renderPointsChart()
+      }
+    }, { deep: true })
+
+    // Watch for injury data changes to re-render injury charts
+    watch(injuriesData, async (newData, oldData) => {
+      if (!newData || Object.keys(newData).length === 0) return
+
+      // Wait for Vue to update the DOM (v-show to take effect)
+      await nextTick()
+
+      // Wait one more tick to ensure DOM is fully ready
+      await nextTick()
+
+      // Check if the chart refs exist before rendering
+      if (injuriesChartRef.value && modelInjuriesChartRef.value) {
+        console.log('[Charts] Rendering injury charts - data loaded')
+        renderInjuriesChart()
+        renderModelInjuriesChart()
+      }
+    }, { deep: true })
+
+    // Watch for transaction data changes to re-render transaction charts
+    watch(transactionStats, async (newData, oldData) => {
+      if (!newData || Object.keys(newData.byWeek || {}).length === 0) return
+
+      // Wait for Vue to update the DOM (v-show to take effect)
+      await nextTick()
+
+      // Wait one more tick to ensure DOM is fully ready
+      await nextTick()
+
+      // Check if the chart refs exist before rendering
+      if (transactionsChartRef.value && modelTransactionsChartRef.value) {
+        console.log('[Charts] Rendering transaction charts - data loaded')
+        renderTransactionsChart()
+        renderModelTransactionsChart()
+      }
+    }, { deep: true })
 
     const loadVideos = async () => {
       try {
@@ -1120,6 +1215,113 @@ export default {
       if (wins > losses) return 'text-green-400'
       else if (wins < losses) return 'text-red-400'
       return 'text-gray-400'
+    }
+
+    // Get team badges (injury, empty, bye, suspended) for a matchup
+    const getTeamBadges = (matchup) => {
+      if (!matchup || !matchup.starters) return []
+
+      const badges = []
+
+      // Track different injury severities and statuses
+      let hasOut = false
+      let hasDoubtful = false
+      let hasQuestionable = false
+      let hasSuspended = false
+      let hasBye = false
+
+      // Only check starters (rostered players), not bench
+      matchup.starters.forEach(playerId => {
+        if (playerId === '0' || playerId === 0) return // Skip empty slots
+
+        // Use enriched player data from store which consolidates all sources
+        const enrichedPlayer = enrichedPlayers.value?.[playerId]
+        const player = players.value[playerId] // Fallback to base player data
+
+        if (enrichedPlayer) {
+          // Check for BYE week
+          if (enrichedPlayer.bye_week) {
+            hasBye = true
+          }
+
+          // Check for suspension
+          if (enrichedPlayer.is_suspended) {
+            hasSuspended = true
+          }
+
+          // Check injury status using the consolidated injury_status_combined field
+          const statusToCheck = enrichedPlayer.injury_status_combined?.toUpperCase()
+
+          if (statusToCheck) {
+            // Check for Doubtful BEFORE Out (since "DOUBTFUL" contains "OUT")
+            if (statusToCheck.includes('DOUBTFUL') || (statusToCheck.includes('D ') || statusToCheck === 'D') && !statusToCheck.includes('SUSPENDED')) {
+              hasDoubtful = true
+            }
+            // Check for Out/IR
+            else if (statusToCheck.includes('OUT') || statusToCheck.includes('IR') || statusToCheck.includes('INJURED RESERVE')) {
+              hasOut = true
+            }
+            // Check for Questionable/PUP
+            else if (statusToCheck.includes('QUESTIONABLE') || statusToCheck.includes('Q ') || statusToCheck === 'Q' || statusToCheck.includes('PUP') || statusToCheck.includes('PHYSICALLY UNABLE')) {
+              hasQuestionable = true
+            }
+          }
+
+          // Also check the injury_indicator field as a fallback
+          if (!statusToCheck && enrichedPlayer.injury_indicator) {
+            switch(enrichedPlayer.injury_indicator) {
+              case 'O':
+              case 'IR':
+                hasOut = true
+                break
+              case 'D':
+                hasDoubtful = true
+                break
+              case 'Q':
+              case 'PUP':
+                hasQuestionable = true
+                break
+            }
+          }
+        } else if (player) {
+          // Fallback to base player injury status if enriched data not available
+          const sleeperStatus = player.injury_status?.toUpperCase()
+          if (sleeperStatus) {
+            if (sleeperStatus.includes('OUT') || sleeperStatus.includes('IR')) {
+              hasOut = true
+            } else if (sleeperStatus.includes('DOUBTFUL') || sleeperStatus === 'D') {
+              hasDoubtful = true
+            } else if (sleeperStatus.includes('QUESTIONABLE') || sleeperStatus === 'Q') {
+              hasQuestionable = true
+            }
+          }
+        }
+      })
+
+      // Add badges in severity order
+      if (hasBye) {
+        badges.push({ type: 'bye', label: 'BYE', color: 'bg-gray-600' })
+      }
+      if (hasSuspended) {
+        badges.push({ type: 'suspended', label: 'SUSP', color: 'bg-purple-600' })
+      }
+      if (hasOut) {
+        badges.push({ type: 'out', label: 'O/IR', color: 'bg-red-600' })
+      }
+      if (hasDoubtful) {
+        badges.push({ type: 'doubtful', label: 'D', color: 'bg-orange-500' })
+      }
+      if (hasQuestionable) {
+        badges.push({ type: 'questionable', label: 'Q', color: 'bg-yellow-500' })
+      }
+
+      // Check for empty slots in starters
+      const hasEmpty = matchup.starters?.some(playerId => playerId === '0' || playerId === 0)
+      if (hasEmpty) {
+        badges.push({ type: 'empty', label: 'EMPTY', color: 'bg-red-600' })
+      }
+
+      return badges
     }
 
     // Calculate total points through a specific week
@@ -1256,6 +1458,9 @@ export default {
         }
       }))
 
+      // Check if mobile
+      const isMobile = window.innerWidth < 768
+
       const option = {
         backgroundColor: 'transparent',
         animation: true,
@@ -1272,18 +1477,26 @@ export default {
             name: t.name,
             icon: 'image://' + t.logo,
             textStyle: {
-              color: colors[index % colors.length]
+              color: colors[index % colors.length],
+              fontSize: isMobile ? 10 : 12
             }
           })),
-          top: 10,
-          itemWidth: 20,
-          itemHeight: 20
+          top: isMobile ? 5 : 10,
+          itemWidth: isMobile ? 15 : 20,
+          itemHeight: isMobile ? 15 : 20,
+          itemGap: isMobile ? 5 : 10,
+          type: isMobile ? 'scroll' : 'plain',
+          orient: 'horizontal',
+          pageIconSize: isMobile ? 12 : 15,
+          pageTextStyle: {
+            color: '#9ca3af'
+          }
         },
         grid: {
           left: '3%',
           right: '4%',
           bottom: '3%',
-          top: 60,
+          top: isMobile ? 100 : 60,
           containLabel: true
         },
         xAxis: {
@@ -1452,7 +1665,7 @@ export default {
 
     // Render transactions volume by week line chart
     const renderTransactionsChart = async () => {
-      if (!transactionsChartRef.value || !leagueData.value) return
+      if (!transactionsChartRef.value || !leagueData.value || !transactionStats.value) return
 
       await nextTick()
 
@@ -1462,13 +1675,13 @@ export default {
 
       const targetWeek = selectedWeek.value || leagueData.value.league?.settings?.leg || 5
 
-      // Fetch transactions for all weeks up to selected week
+      // Get transaction counts from processed data in Pinia store
+      const stats = transactionStats.value
       const transactionCounts = []
       for (let week = 1; week <= Math.min(targetWeek, 18); week++) {
-        const weekTransactions = leagueStore.getTransactionsForWeek(week)
         transactionCounts.push({
           week,
-          count: weekTransactions.length
+          count: stats.byWeek[week] || 0
         })
       }
 
@@ -1544,7 +1757,7 @@ export default {
 
     // Render transaction volume by model chart
     const renderModelTransactionsChart = async () => {
-      if (!modelTransactionsChartRef.value || !leagueData.value) return
+      if (!modelTransactionsChartRef.value || !leagueData.value || !transactionStats.value) return
 
       await nextTick()
 
@@ -1553,49 +1766,19 @@ export default {
       }
 
       const targetWeek = selectedWeek.value || leagueData.value.league?.settings?.leg || 5
-      const currentWeek = leagueData.value.league?.settings?.leg || 5
 
-      // Initialize counts for all teams
-      const teamWeeklyTransactions = {}
+      // Get transaction stats from processed data in Pinia store
+      const stats = transactionStats.value
+      const teamWeeklyTransactions = stats.byTeamForWeek[targetWeek] || {}
       const teamSeasonTransactions = {}
 
-      if (leagueData.value.rosters) {
-        leagueData.value.rosters.forEach(roster => {
-          const teamInfo = getTeamInfo(roster.user?.display_name)
-          teamWeeklyTransactions[teamInfo.aiModel] = 0
-          teamSeasonTransactions[teamInfo.aiModel] = 0
-        })
-      }
-
-      // Count transactions for selected week
-      const weekTransactions = leagueStore.getTransactionsForWeek(targetWeek)
-      weekTransactions.forEach(transaction => {
-        if (transaction.roster_ids && transaction.roster_ids.length > 0) {
-          transaction.roster_ids.forEach(rosterId => {
-            const roster = leagueData.value.rosters?.find(r => r.roster_id === rosterId)
-            if (roster) {
-              const teamInfo = getTeamInfo(roster.user?.display_name)
-              teamWeeklyTransactions[teamInfo.aiModel] = (teamWeeklyTransactions[teamInfo.aiModel] || 0) + 1
-            }
-          })
+      // Calculate season totals (sum of all weeks up to target week)
+      Object.keys(stats.byTeam).forEach(teamName => {
+        teamSeasonTransactions[teamName] = 0
+        for (let week = 1; week <= Math.min(targetWeek, 18); week++) {
+          teamSeasonTransactions[teamName] += stats.byTeamForWeek[week]?.[teamName] || 0
         }
       })
-
-      // Count season total transactions (all weeks up to selected week)
-      for (let week = 1; week <= Math.min(targetWeek, 18); week++) {
-        const allTransactions = leagueStore.getTransactionsForWeek(week)
-        allTransactions.forEach(transaction => {
-          if (transaction.roster_ids && transaction.roster_ids.length > 0) {
-            transaction.roster_ids.forEach(rosterId => {
-              const roster = leagueData.value.rosters?.find(r => r.roster_id === rosterId)
-              if (roster) {
-                const teamInfo = getTeamInfo(roster.user?.display_name)
-                teamSeasonTransactions[teamInfo.aiModel] = (teamSeasonTransactions[teamInfo.aiModel] || 0) + 1
-              }
-            })
-          }
-        })
-      }
 
       // Sort teams by season total transaction count and get team info with logos
       const sortedTeamsWithInfo = Object.entries(teamSeasonTransactions)
@@ -2009,36 +2192,47 @@ export default {
     }
 
 
+    // Debounce timer for resize
+    let resizeTimer = null
+
     // Handle window resize for responsive charts
     const handleResize = () => {
-      if (standingsChart) {
-        standingsChart.resize()
+      // Clear existing timer
+      if (resizeTimer) {
+        clearTimeout(resizeTimer)
       }
-      if (pointsChart) {
-        pointsChart.resize()
-      }
-      if (transactionsChart) {
-        transactionsChart.resize()
-      }
-      if (modelTransactionsChart) {
-        modelTransactionsChart.resize()
-      }
-      if (injuriesChart) {
-        injuriesChart.resize()
-      }
-      if (modelInjuriesChart) {
-        modelInjuriesChart.resize()
-      }
+
+      // Set a new timer for debouncing
+      resizeTimer = setTimeout(() => {
+        // Re-render standings chart to update responsive legend settings
+        if (standingsChart) {
+          renderStandingsChart() // Re-render with new responsive settings
+        }
+        if (pointsChart) {
+          pointsChart.resize()
+        }
+        if (transactionsChart) {
+          transactionsChart.resize()
+        }
+        if (modelTransactionsChart) {
+          modelTransactionsChart.resize()
+        }
+        if (injuriesChart) {
+          injuriesChart.resize()
+        }
+        if (modelInjuriesChart) {
+          modelInjuriesChart.resize()
+        }
+      }, 250) // 250ms debounce delay
     }
 
     onMounted(() => {
       loadData().then(() => {
+        // Standings and points charts don't have watchers, so render them here
+        // Transaction and injury charts are handled by watchers and loadData() cache rendering
         renderStandingsChart()
         renderPointsChart()
-        renderTransactionsChart()
-        renderModelTransactionsChart()
-        renderInjuriesChart()
-        renderModelInjuriesChart()
+
         // Check if we should start auto-refresh
         checkAutoRefreshStatus()
         // Check every minute if we should start/stop auto-refresh
@@ -2102,6 +2296,7 @@ export default {
       formatTransactionDate,
       getRecordThroughWeek,
       getRecordColor,
+      getTeamBadges,
       historicalStandings,
       standingsChartRef,
       pointsChartRef,

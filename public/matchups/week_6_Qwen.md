@@ -325,3 +325,210 @@ optimal decision. Do not play injured players. Make a decision fast!
 3. Drop Chuba Hubbard for a RB on waivers (e.g., Isaiah Davis) if no trade emerges.
 
 This lineup minimizes risk while maximizing upside against the league's top team—critical for snapping the 1-4 skid. 🏈
+
+
+## User prompt
+
+Analyze the team QwentrolGroup. It is current 1-4 and facing the only undefeated team this week. Make recommendations on who to start, bench,
+nd any trades or player moves that should be made to improve the team's performance in this league. Optimize for points scoring and getting back into a championship position. Use the tools that are available to you through the MCP server - think hard about how to get the data you need to make the optimal decision. Do not play injured players. Investigate trending players, especially when looking at one you are trying to replace - frequently their backup position player on the same team can be available and valuable. You can't replace a player who has already played or is on a bye. They have to be available to play tonight. I cannot start Michael Mayer because he has already played. Look at who has played this week to make recommendations for Monday night to save the week.
+
+## System prompt
+
+### **Fantasy Football Analyst Prompt**
+
+**Objective:**
+Analyze current NFL player news, matchups, and performance trends to provide expert insights for fantasy football managers. The goal is to:
+
+
+1. Make picks for manager Few_Shot in the league 1266471057523490816.
+1. Identify potential injuries and their impact on player availability and performance.
+2. Evaluate upcoming matchups to predict which players are likely to have big games.
+3. Assemble a competitive lineup for the week that balances risk and upside.
+4. Offer strategic advice on whether to start or bench key players based on the matchups.
+
+---
+
+### **Key Considerations**
+
+#### **1. Injury Analysis**
+- Check recent injury updates and trendlines for each player.
+- Assess the severity of injuries and expected recovery timelines.
+- Evaluate if a substitution or replacement is feasible due to injury.
+- Consider the impact of injuries on team dynamics and playcalling.
+
+#### **2. Matchup Analysis**
+- Review upcoming games and assess defensive rankings.
+- Identify favorable matchups (e.g., low-ranked defenses, divisional conflicts).
+- Consider home-field advantages and weather conditions.
+- Look for game剧本 (expected offensive/defensive strategies) to predict fantasy output.
+
+#### **3. Player Performance Trends**
+- Analyze recent performance (past 2–4 weeks) and career averages.
+- Identify players in a火热 or slump and adjust expectations accordingly.
+- Evaluate players with temporary changes in role or team dynamics.
+
+#### **4. Championship Team Construction**
+- Balance the lineup across all positions (QB, RB, WR, TE, Flex, K, DST).
+- Prioritize high-floor, low-risk players for consistency.
+- Have at least one low-cost, high-upside player ("breakout candidates").
+- Consider stacking (e.g., a quarterback with his top receivers).
+
+---
+
+### **Output Structure**
+
+#### **Section 1: Injury Watch**
+- **Players to Monitor:** List key players with minor injuries or recent setbacks.
+- **Injury Impact:** Describe how injuries could affect their gameplay (e.g., limited snaps, questionable status).
+- **Alternative Options:** If a player is questionable, recommend backups or replacements.
+
+**Example:**
+- **Player:** Joe Mixon (TB)
+- **Status:** Questionable (hamstring injury)
+- **Impact:** May limit his carrying workload.
+- **Alternative:** Raheem Mostert as a replacement.
+
+#### **Section 2: Matchup Analysis**
+- **Players with Favorable Matchups:** Highlight players facing weak defenses or favorable game setups.
+- **Players Facing Tough Matchups:** Warn about players facing high-tier defenses or challenging conditions.
+- **Key Trends:** Include any significant statistical anomalies or defensive changes.
+
+**Example:**
+- **Favorable:** Jalen Ramsey (ARZ) facing a run-heavy Cardinals defense.
+- **Tough:** Tyreek Hill (KC) facing a stingy Chiefs defense.
+
+#### **Section 3: Starting Lineup Recommendations**
+- Provide a suggested lineup motivated by injuries, matchups, and recent performance.
+- Include a "flex" position recommendation.
+- Offer depth chart considerations (bench players and couch choices).
+
+**Example:**
+- QB: Josh Allen (BUF)
+- RB1: Derrick Henry (TEN)
+- RB2: Austin Ekeler (LAC)
+- WR1: CeeDee Lamb (DAL)
+- WR2: Calvin Ridley (ATL)
+- TE: Tyler Higbee (NYG)
+- Flex: Celonta Lasting (NE)
+- K: Justin Tucker (BAL)
+- DST: Denver Broncos (D)
+
+#### **Section 4: Strategic Advice**
+- Offer starting/bench decisions based on matchups.
+- Discuss players with "start 'em or sit 'em" possibilities.
+- Address lineup trade-offs (e.g., starting a high-floor QB over a highly volatile wide receiver).
+
+**Example:**
+- **Start:** JuJu Smith-Schuster (PIT) facing Detroit Lions.
+- **Sit:** Ja'Marr Chase (CIN) facing Baltimore Ravens.
+
+#### **Section 5: Random Thoughts**
+- Mention any under-the-radar players with potential for a breakout game.
+- Warn about players whose recent success might be unsustainable.
+- Discuss any significant betting trends or expert consensus.
+
+---
+
+### **Final Deliverable**
+
+Provide a **concise and actionable analysis** for the current week, with clear recommendations and reasoning. Ensure the content is data-driven, actionable, and tailored to help fantasy managers make informed decisions.
+
+
+# Fantasy Football Analyst Report for QwentrolGroup (Roster ID 10)
+
+**League Record:** 1-4 | **Week:** 6 (Monday Night) | **Opponent:** Undefeated Team (Roster ID 3)
+
+---
+
+## Section 1: Injury Watch
+
+**Critical Injury Update:**
+
+* **Dalton Kincaid (TE, BUF)**
+  * Status: Questionable (Oblique injury; limited practice Saturday).
+  * Impact: If inactive, removes 10+ projected points from your TE slot. Do NOT start him if ruled out (per your rules).
+  * Alternative: Dawson Knox (TE, BUF) – Depth chart backup, trending with 53,508 adds this week. Will start if Kincaid is inactive.
+
+**Players to Drop Immediately:**
+
+* **Chuba Hubbard (RB, CAR)**
+  * Questionable (Calf), inactive for Week 6, and playing no snaps. Zero value this week.
+  * Why drop him? Frees a roster spot to claim Knox before the Monday night deadline.
+
+---
+
+## Section 2: Matchup Analysis
+
+**Monday Night's Make-or-Break Spot:**
+
+* **BUF @ ATL (TEs)**
+  * Falcons rank 28th vs. TE targets (NFL 2025 data).
+  * Knox's upside: If active, projects 5.5+ points (13+ targets in Kincaid's last 2 absences).
+  * Risk: Kincaid's questionable tag creates a 50/50 play probability – act ahead of final injury report.
+
+**Avoid This Trap:**
+
+* **Michael Mayer (TE, LV)** – Already played Week 6 (16.0 points, game final). Cannot be started per your rules (as noted in query).
+
+---
+
+## Section 3: Starting Lineup Recommendations
+
+**Optimized Monday Night Lineup:**
+
+| Position | Starter | Reason |
+|----------|---------|--------|
+| TE | Dawson Knox (if claimed) | Only Monday-night TE option. Sit Kincaid if ruled out (no injured players). If Kincaid plays, keep him. |
+| RB/Flex | Cam Skattebo (NYG) | Already locked 31.0 points (Sunday game), but highest ceiling on roster. |
+| WR | Ladd McConkey (LAC) | Locked 23.0 points from Sunday game. Focus on Monday-only plays. |
+
+**Critical Move:**
+
+* **DROP: Chuba Hubbard → CLAIM: Dawson Knox**
+  * Deadline: Before Monday night kickoff.
+  * Why? Knox is the only viable TE for tonight's game. Without him, you forfeit the TE slot (no bench options).
+
+---
+
+## Section 4: Strategic Advice
+
+**Start 'Em (Monday Night Only):**
+
+* **Dawson Knox (TE)** – Only if claimed. Upside due to ATL's weak TE defense.
+* **Jalen Hurts (QB)** is irrelevant – already locked 21.62 points (Sunday game).
+
+**Sit 'Em:**
+
+* **Dalton Kincaid** if ruled inactive (check final injury report at 6 PM ET).
+* **All bench players** – Zero value this week (Ridley/Slayton played Sunday, Hockenson/Mason on bye).
+
+**Trade Suggestion:**
+
+* **Offer: Calvin Ridley (WR, TEN) + Waiver Priority #4 → Target: Quincey Morgan (WR, DEN)** (available per waiver wire).
+  * Why? Ridley is inconsistent (2.8 points Week 6) and heading into bye week; Morgan has a better matchup long-term.
+
+---
+
+## Section 5: Random Thoughts
+
+* **Under-the-Radar Play:** Harold Fannin (TE, CLE) – Scored 15.1 points Week 6, but already played. Not usable Monday, but target for future weeks.
+* **Danger Zone:** Amon-Ra St. Brown – Locked 13.7 points but facing tough matchups next 3 weeks. Trade while valued highly.
+* **Championship Path:** 1-4 is recoverable! Focus on RB depth (Skattebo is carrying your backfield). Target Chuba Hubbard's replacement on waivers next week.
+
+---
+
+## Final Verdict
+
+**ACTION REQUIRED BEFORE MONDAY NIGHT:**
+
+1. DROP Chuba Hubbard → CLAIM Dawson Knox (waiver wire).
+2. START Knox if Kincaid is inactive (monitor injury reports).
+3. Forget Sunday's playing: Only Knox/Hurts (if Monday game) can add points, but Hurts already played.
+
+**Why This Wins:**
+
+* AVG TE production against ATL: 8.2 points (2025 data).
+* Without Knox, you lose 5-8 points – critical in a matchup vs. the league's #1 team.
+* One move changes your ceiling from "4th loss" → "W inside the top 4."
+
+Make the claim. Don't overthink it. 🔥
