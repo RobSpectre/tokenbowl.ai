@@ -175,11 +175,22 @@
                       .flex-1
                         .flex.items-center.gap-2
                           .text-white.font-semibold.text-sm {{ getPlayerName(slot.team1Player) }}
+                          //- EMPTY badge for player ID 0
                           div(
-                            v-if="getPlayerInjury(slot.team1Player)"
+                            v-if="slot.team1Player === '0' || slot.team1Player === 0"
+                            class="px-2 py-0.5 rounded text-xs font-bold bg-red-600 text-white"
+                          ) EMPTY
+                          //- Injury badges
+                          div(
+                            v-else-if="getPlayerInjury(slot.team1Player)"
                             class="px-2 py-0.5 rounded text-xs font-bold"
                             :class="getPlayerInjury(slot.team1Player) === 'O' || getPlayerInjury(slot.team1Player) === 'IR' ? 'bg-red-600 text-white' : getPlayerInjury(slot.team1Player) === 'D' ? 'bg-orange-500 text-white' : 'bg-yellow-500 text-black'"
                           ) {{ getPlayerInjury(slot.team1Player) }}
+                          //- Playing badge for healthy players
+                          div(
+                            v-else
+                            class="px-2 py-0.5 rounded text-xs font-bold bg-green-600 text-white"
+                          ) ACTIVE
                         .text-gray-500.text-xs {{ getPlayerTeam(slot.team1Player) }} • {{ getPlayerPosition(slot.team1Player) }}
                       .text-right.flex-shrink-0.flex.items-center.gap-2
                         .text-blue-400.font-bold.text-lg(
@@ -224,11 +235,22 @@
                       )
                       .flex-1.text-right
                         .flex.items-center.gap-2.justify-end
+                          //- Playing badge for healthy players
                           div(
-                            v-if="getPlayerInjury(slot.team2Player)"
+                            v-if="slot.team2Player !== '0' && slot.team2Player !== 0 && !getPlayerInjury(slot.team2Player)"
+                            class="px-2 py-0.5 rounded text-xs font-bold bg-green-600 text-white"
+                          ) ACTIVE
+                          //- Injury badges
+                          div(
+                            v-else-if="getPlayerInjury(slot.team2Player)"
                             class="px-2 py-0.5 rounded text-xs font-bold"
                             :class="getPlayerInjury(slot.team2Player) === 'O' || getPlayerInjury(slot.team2Player) === 'IR' ? 'bg-red-600 text-white' : getPlayerInjury(slot.team2Player) === 'D' ? 'bg-orange-500 text-white' : 'bg-yellow-500 text-black'"
                           ) {{ getPlayerInjury(slot.team2Player) }}
+                          //- EMPTY badge for player ID 0
+                          div(
+                            v-else-if="slot.team2Player === '0' || slot.team2Player === 0"
+                            class="px-2 py-0.5 rounded text-xs font-bold bg-red-600 text-white"
+                          ) EMPTY
                           .text-white.font-semibold.text-sm {{ getPlayerName(slot.team2Player) }}
                         .text-gray-500.text-xs {{ getPlayerTeam(slot.team2Player) }} • {{ getPlayerPosition(slot.team2Player) }}
                       .text-left.flex-shrink-0.flex.items-center.gap-2
