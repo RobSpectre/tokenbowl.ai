@@ -701,13 +701,6 @@ export default {
     // Refresh matchups data without showing loading state
     const refreshMatchups = async () => {
       try {
-        // Save scroll position and page height before refresh
-        const savedScrollPosition = window.scrollY
-        const savedHeight = document.body.scrollHeight
-
-        // Fix the page height temporarily to prevent browser scroll adjustment
-        document.body.style.minHeight = `${savedHeight}px`
-
         // Force refresh league data first, then other data that depends on it
         // This prevents duplicate API calls to /rosters and /users
         await leagueStore.fetchLeagueData(true)
@@ -731,16 +724,8 @@ export default {
         renderModelTransactionsChart()
         renderInjuriesChart()
         renderModelInjuriesChart()
-
-        // Give charts time to complete rendering, then restore scroll and release height constraint
-        setTimeout(() => {
-          window.scrollTo({ top: savedScrollPosition, behavior: 'instant' })
-          document.body.style.minHeight = ''
-        }, 150)
       } catch (err) {
         console.error('Error refreshing matchups:', err)
-        // Release height constraint even on error
-        document.body.style.minHeight = ''
       }
     }
 
@@ -798,7 +783,6 @@ export default {
         selectedWeek.value = Math.min(18, selectedWeek.value + 1)
         trackButtonClick('week_navigation', { direction: 'next', week: selectedWeek.value })
       }
-      // Note: Scroll position preservation is handled by the watch(selectedWeek) watcher
     }
 
     const isWeekComplete = (matchup) => {
@@ -1052,12 +1036,6 @@ export default {
       if (newWeek) {
         console.log(`[Week Change] ${oldWeek} → ${newWeek}`)
 
-        // Save current scroll position and measure matchups height
-        const savedScrollY = window.scrollY
-        const matchupsSection = document.querySelector('.mb-12')
-        const oldMatchupsHeight = matchupsSection?.offsetHeight || 0
-        console.log(`[Scroll Start] Y: ${savedScrollY}, Old Matchups Height: ${oldMatchupsHeight}`)
-
         // Fetch transactions for the new week
         await leagueStore.fetchTransactionsForWeek(newWeek)
 
@@ -1079,21 +1057,6 @@ export default {
         renderModelTransactionsChart()
         renderInjuriesChart()
         renderModelInjuriesChart()
-
-        // Give charts time to complete rendering, then restore scroll with height compensation
-        setTimeout(() => {
-          requestAnimationFrame(() => {
-            // Measure new matchups height after re-render
-            const newMatchupsHeight = matchupsSection?.offsetHeight || 0
-            const heightDiff = newMatchupsHeight - oldMatchupsHeight
-            const adjustedScrollY = savedScrollY + heightDiff
-
-            console.log(`[Height Change] Old: ${oldMatchupsHeight}, New: ${newMatchupsHeight}, Diff: ${heightDiff}`)
-            console.log(`[Restoring Scroll] Target: ${adjustedScrollY} (original: ${savedScrollY})`)
-            window.scrollTo({ top: Math.max(0, adjustedScrollY), behavior: 'auto' })
-            console.log(`[Scroll Restored] Final: ${window.scrollY}`)
-          })
-        }, 300)
       }
     })
 
