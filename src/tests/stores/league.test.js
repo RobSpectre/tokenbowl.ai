@@ -234,24 +234,68 @@ describe('League Store - Player Data Management', () => {
   })
 
   describe('Cache Freshness', () => {
-    it('should consider cache stale after 5 minutes', () => {
+    beforeEach(() => {
+      vi.useRealTimers()
+    })
+
+    afterEach(() => {
+      vi.useRealTimers()
+    })
+
+    it('should consider cache stale after cache duration', () => {
       const store = useLeagueStore()
 
-      // Set timestamp to 6 minutes ago
+      // Mock date to Tuesday (non-game time) for consistent testing
+      vi.useFakeTimers()
+      vi.setSystemTime(new Date('2024-01-09T14:00:00')) // Tuesday 2PM
+
+      // Set timestamp to 6 minutes ago (should be stale for 5-minute cache)
       store.playersTimestamp = Date.now() - (6 * 60 * 1000)
       store.players = { '4984': { full_name: 'Josh Allen' } }
 
       expect(store.isPlayersFresh).toBe(false)
+
+      vi.useRealTimers()
     })
 
-    it('should consider cache fresh within 5 minutes', () => {
+    it('should consider cache fresh within cache duration', () => {
       const store = useLeagueStore()
 
-      // Set timestamp to 2 minutes ago
+      // Mock date to Tuesday (non-game time) for consistent testing
+      vi.useFakeTimers()
+      vi.setSystemTime(new Date('2024-01-09T14:00:00')) // Tuesday 2PM
+
+      // Set timestamp to 2 minutes ago (should be fresh for 5-minute cache)
       store.playersTimestamp = Date.now() - (2 * 60 * 1000)
       store.players = { '4984': { full_name: 'Josh Allen' } }
 
       expect(store.isPlayersFresh).toBe(true)
+
+      vi.useRealTimers()
+    })
+
+    it('should use shorter cache during NFL game time', () => {
+      const store = useLeagueStore()
+
+      // Mock date to Sunday (game time) for testing
+      vi.useFakeTimers()
+      vi.setSystemTime(new Date('2024-01-07T14:00:00')) // Sunday 2PM
+
+      // Set timestamp to 45 seconds ago (stale for 30-second cache, fresh for 5-minute cache)
+      store.playersTimestamp = Date.now() - (45 * 1000)
+      store.players = { '4984': { full_name: 'Josh Allen' } }
+
+      // Should be stale during game time (30 second cache)
+      expect(store.isPlayersFresh).toBe(false)
+
+      // Now mock date to Tuesday (non-game time)
+      vi.setSystemTime(new Date('2024-01-09T14:00:00')) // Tuesday 2PM
+
+      // Same 45 second old data should be fresh outside game time (5 minute cache)
+      store.playersTimestamp = Date.now() - (45 * 1000)
+      expect(store.isPlayersFresh).toBe(true)
+
+      vi.useRealTimers()
     })
   })
 

@@ -5,8 +5,9 @@ import { getLatestVideoAndShorts } from '../youtubeApi.js'
 import { getInjuries, getPlayerInjuryStatus, getInjuryIndicator } from '../fantasyNerdsApi.js'
 import { getPlayers as getPlayersFromService, enrichPlayerData } from '../utils/playerService.js'
 
-// Cache duration: 5 minutes
+// Cache duration: 5 minutes (normal) or 30 seconds (during NFL games)
 const CACHE_DURATION = 5 * 60 * 1000
+const GAME_TIME_CACHE_DURATION = 30 * 1000 // 30 seconds during game time
 // YouTube cache duration: 24 hours
 const YOUTUBE_CACHE_DURATION = 24 * 60 * 60 * 1000
 // Cache version - increment this when making breaking changes to data structure
@@ -96,34 +97,39 @@ export const useLeagueStore = defineStore('league', {
   }),
 
   getters: {
-    // Check if league data cache is valid
-    isLeagueDataFresh: (state) => {
-      if (!state.leagueDataTimestamp) return false
-      return Date.now() - state.leagueDataTimestamp < CACHE_DURATION
+    // Check if league data cache is valid (use shorter cache during game time)
+    isLeagueDataFresh() {
+      if (!this.leagueDataTimestamp) return false
+      const duration = this.getCacheDuration()
+      return Date.now() - this.leagueDataTimestamp < duration
     },
 
-    // Check if matchups cache is valid
-    isMatchupsFresh: (state) => {
-      if (!state.matchupsTimestamp) return false
-      return Date.now() - state.matchupsTimestamp < CACHE_DURATION
+    // Check if matchups cache is valid (use shorter cache during game time)
+    isMatchupsFresh() {
+      if (!this.matchupsTimestamp) return false
+      const duration = this.getCacheDuration()
+      return Date.now() - this.matchupsTimestamp < duration
     },
 
-    // Check if players cache is valid
-    isPlayersFresh: (state) => {
-      if (!state.playersTimestamp) return false
-      return Date.now() - state.playersTimestamp < CACHE_DURATION
+    // Check if players cache is valid (use shorter cache during game time)
+    isPlayersFresh() {
+      if (!this.playersTimestamp) return false
+      const duration = this.getCacheDuration()
+      return Date.now() - this.playersTimestamp < duration
     },
 
-    // Check if enriched players cache is valid
-    isEnrichedPlayersFresh: (state) => {
-      if (!state.enrichedPlayersTimestamp) return false
-      return Date.now() - state.enrichedPlayersTimestamp < CACHE_DURATION
+    // Check if enriched players cache is valid (use shorter cache during game time)
+    isEnrichedPlayersFresh() {
+      if (!this.enrichedPlayersTimestamp) return false
+      const duration = this.getCacheDuration()
+      return Date.now() - this.enrichedPlayersTimestamp < duration
     },
 
-    // Check if all matchups cache is valid
-    isAllMatchupsFresh: (state) => {
-      if (!state.allMatchupsTimestamp) return false
-      return Date.now() - state.allMatchupsTimestamp < CACHE_DURATION
+    // Check if all matchups cache is valid (use shorter cache during game time)
+    isAllMatchupsFresh() {
+      if (!this.allMatchupsTimestamp) return false
+      const duration = this.getCacheDuration()
+      return Date.now() - this.allMatchupsTimestamp < duration
     },
 
     // Check if draft data is loaded (draft data never expires)
@@ -173,16 +179,18 @@ export const useLeagueStore = defineStore('league', {
       }
     },
 
-    // Check if processed injuries cache is valid
-    isProcessedInjuriesFresh: (state) => {
-      if (!state.processedInjuriesTimestamp) return false
-      return Date.now() - state.processedInjuriesTimestamp < CACHE_DURATION
+    // Check if processed injuries cache is valid (use shorter cache during game time)
+    isProcessedInjuriesFresh() {
+      if (!this.processedInjuriesTimestamp) return false
+      const duration = this.getCacheDuration()
+      return Date.now() - this.processedInjuriesTimestamp < duration
     },
 
-    // Check if processed transactions cache is valid
-    isProcessedTransactionsFresh: (state) => {
-      if (!state.processedTransactionsTimestamp) return false
-      return Date.now() - state.processedTransactionsTimestamp < CACHE_DURATION
+    // Check if processed transactions cache is valid (use shorter cache during game time)
+    isProcessedTransactionsFresh() {
+      if (!this.processedTransactionsTimestamp) return false
+      const duration = this.getCacheDuration()
+      return Date.now() - this.processedTransactionsTimestamp < duration
     },
 
     // Get processed injuries grouped by team for all weeks (for charts)
@@ -204,6 +212,40 @@ export const useLeagueStore = defineStore('league', {
   },
 
   actions: {
+    // Check if current time is during NFL game hours (Thursday 8PM - Monday 11:59PM EST)
+    isNFLGameTime() {
+      const now = new Date()
+      const day = now.getDay() // 0 = Sunday, 1 = Monday, etc.
+      const hour = now.getHours()
+
+      // Thursday after 8PM EST through Monday
+      if (day === 4 && hour >= 20) return true // Thursday 8PM+
+      if (day === 5) return true // Friday all day
+      if (day === 6) return true // Saturday all day
+      if (day === 0) return true // Sunday all day
+      if (day === 1) return true // Monday all day
+
+      return false
+    },
+
+    // Get appropriate cache duration based on current time
+    getCacheDuration() {
+      return this.isNFLGameTime() ? GAME_TIME_CACHE_DURATION : CACHE_DURATION
+    },
+
+    // Helper method to check if we're in game time mode
+    getCacheInfo() {
+      const isGameTime = this.isNFLGameTime()
+      const duration = this.getCacheDuration()
+      console.log(`🏈 Cache Mode: ${isGameTime ? 'NFL Game Time' : 'Normal'} - Duration: ${duration / 1000}s`)
+      return {
+        isGameTime,
+        duration,
+        durationSeconds: duration / 1000,
+        mode: isGameTime ? 'game-time' : 'normal'
+      }
+    },
+
     async fetchLeagueData(forceRefresh = false) {
       // Return cached data if fresh and not forcing refresh
       if (!forceRefresh && this.isLeagueDataFresh && this.rosters.length > 0) {
@@ -774,9 +816,9 @@ export const useLeagueStore = defineStore('league', {
     },
 
     async fetchTransactionsForWeek(week, forceRefresh = false) {
-      // Check if cached data is fresh (within 5 minutes)
+      // Check if cached data is fresh (within cache duration - shorter during game time)
       const timestamp = this.transactionsTimestampsByWeek[week]
-      const isFresh = timestamp && (Date.now() - timestamp < CACHE_DURATION)
+      const isFresh = timestamp && (Date.now() - timestamp < this.getCacheDuration())
 
       // Return cached data if exists, is fresh, and not forcing refresh
       if (!forceRefresh && isFresh && this.transactionsByWeek[week]) {
@@ -880,9 +922,9 @@ export const useLeagueStore = defineStore('league', {
     },
 
     async fetchInjuriesForWeek(week, forceRefresh = false) {
-      // Check if cached data is fresh (within 5 minutes)
+      // Check if cached data is fresh (within cache duration - shorter during game time)
       const timestamp = this.injuriesTimestampsByWeek[week]
-      const isFresh = timestamp && (Date.now() - timestamp < CACHE_DURATION)
+      const isFresh = timestamp && (Date.now() - timestamp < this.getCacheDuration())
 
       // Return cached data if exists, is fresh, and not forcing refresh
       if (!forceRefresh && isFresh && this.injuriesByWeek[week]) {
