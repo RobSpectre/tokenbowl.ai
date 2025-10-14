@@ -186,7 +186,7 @@
               //- Team 1 Player
               div(v-if="slot.team1Player")
                 .bg-slate-800.rounded(:class="{ 'matchup-highlight': isPlayerScoreAnimating(slot.team1Player) }")
-                  .p-3.cursor-pointer(@click="togglePlayerStats(slot.team1Player)")
+                  .p-3
                     .flex.items-center.gap-3
                       //- Position Label with Color
                       div(class="w-16 h-16 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0"
@@ -208,29 +208,41 @@
                             v-if="slot.team1Player === '0' || slot.team1Player === 0"
                             class="px-2 py-0.5 rounded text-xs font-bold bg-red-600 text-white"
                           ) EMPTY
+                          //- BYE badge
+                          div(
+                            v-if="getPlayerBye(slot.team1Player)"
+                            class="px-2 py-0.5 rounded text-xs font-bold bg-gray-600 text-white"
+                          ) BYE
+                          //- SUSP badge
+                          div(
+                            v-if="getPlayerSuspended(slot.team1Player)"
+                            class="px-2 py-0.5 rounded text-xs font-bold bg-purple-600 text-white"
+                          ) SUSP
                           //- Injury badges
                           div(
-                            v-else-if="getPlayerInjury(slot.team1Player)"
+                            v-if="getPlayerInjury(slot.team1Player)"
                             class="px-2 py-0.5 rounded text-xs font-bold"
                             :class="getPlayerInjury(slot.team1Player) === 'O' || getPlayerInjury(slot.team1Player) === 'IR' ? 'bg-red-600 text-white' : getPlayerInjury(slot.team1Player) === 'D' ? 'bg-orange-500 text-white' : 'bg-yellow-500 text-black'"
                           ) {{ getPlayerInjury(slot.team1Player) }}
                         .text-gray-500.text-xs {{ getPlayerTeam(slot.team1Player) }} • {{ getPlayerPosition(slot.team1Player) }}
-                      .text-right.flex-shrink-0.flex.items-center.gap-2
-                        .text-blue-400.font-bold.text-lg(
-                          :class="{ 'score-pulse': isPlayerScoreAnimating(slot.team1Player) }"
+                        //- Game info (day/time)
+                        div(class="text-xs mt-0.5" v-if="!isEmpty(slot.team1Player) && getPlayerGameInfo(slot.team1Player)")
+                          span(:class="getPlayerGameInfo(slot.team1Player).status === 'in_progress' ? 'text-green-400 font-bold animate-pulse' : getPlayerGameInfo(slot.team1Player).status === 'final' ? 'text-gray-400' : 'text-blue-400'")
+                            | {{ getGameStatusText(getPlayerGameInfo(slot.team1Player)) }}
+                            span(v-if="getPlayerGameInfo(slot.team1Player).status === 'scheduled'" class="text-gray-400 ml-1")
+                              | {{ getPlayerGameInfo(slot.team1Player).isHome ? 'vs' : '@' }} {{ getPlayerGameInfo(slot.team1Player).opponent }}
+                      .text-right.flex-shrink-0
+                        //- Score colored by game status
+                        div(
+                          class="font-bold text-lg transition-all duration-300"
+                          :class="[{ 'score-pulse': isPlayerScoreAnimating(slot.team1Player) }, getScoreColorClass(slot.team1Player)]"
                         ) {{ getPlayerPoints(matchup[0], slot.team1Player) }}
-                        //- Expand/collapse icon
-                        div(class="text-gray-400 text-xs")
-                          span(v-if="isPlayerExpanded(slot.team1Player)") ▼
-                          span(v-else) ▶
-
-                  //- Stat breakdown (collapsible)
-                  .px-3.pb-3(v-if="isPlayerExpanded(slot.team1Player) && getPlayerStatsBreakdown(slot.team1Player)")
-                    .border-t.border-slate-700.pt-2.mt-2
-                      .grid.grid-cols-2.gap-2.text-xs
-                        div(v-for="stat in getPlayerStatsBreakdown(slot.team1Player)" :key="stat.label" class="flex justify-between")
-                          span.text-gray-400 {{ stat.label }}:
-                          span.text-white.font-semibold {{ stat.value }}
+                        //- Projected score underneath
+                        div(class="text-xs text-gray-400 mt-0.5" v-if="!isEmpty(slot.team1Player) && getPlayerProjectedPoints(slot.team1Player) && getPlayerProjectedPoints(slot.team1Player) !== '-'")
+                          | Proj: {{ getPlayerProjectedPoints(slot.team1Player) }}
+                        //- Delta (actual vs projected) for final games
+                        div(class="text-xs font-bold mt-0.5" v-if="getPlayerDelta(matchup[0], slot.team1Player)" :class="getPlayerDelta(matchup[0], slot.team1Player).colorClass")
+                          | {{ getPlayerDelta(matchup[0], slot.team1Player).display }}
               div(v-else)
                 .bg-slate-800.rounded.p-3.opacity-30
                   .flex.items-center.gap-3
@@ -242,7 +254,7 @@
               //- Team 2 Player
               div(v-if="slot.team2Player")
                 .bg-slate-800.rounded(:class="{ 'matchup-highlight': isPlayerScoreAnimating(slot.team2Player) }")
-                  .p-3.cursor-pointer(@click="togglePlayerStats(slot.team2Player)")
+                  .p-3
                     .flex.items-center.gap-3.flex-row-reverse
                       //- Position Label with Color
                       div(class="w-16 h-16 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0"
@@ -264,29 +276,41 @@
                             class="px-2 py-0.5 rounded text-xs font-bold"
                             :class="getPlayerInjury(slot.team2Player) === 'O' || getPlayerInjury(slot.team2Player) === 'IR' ? 'bg-red-600 text-white' : getPlayerInjury(slot.team2Player) === 'D' ? 'bg-orange-500 text-white' : 'bg-yellow-500 text-black'"
                           ) {{ getPlayerInjury(slot.team2Player) }}
+                          //- SUSP badge
+                          div(
+                            v-if="getPlayerSuspended(slot.team2Player)"
+                            class="px-2 py-0.5 rounded text-xs font-bold bg-purple-600 text-white"
+                          ) SUSP
+                          //- BYE badge
+                          div(
+                            v-if="getPlayerBye(slot.team2Player)"
+                            class="px-2 py-0.5 rounded text-xs font-bold bg-gray-600 text-white"
+                          ) BYE
                           //- EMPTY badge for player ID 0
                           div(
-                            v-else-if="slot.team2Player === '0' || slot.team2Player === 0"
+                            v-if="slot.team2Player === '0' || slot.team2Player === 0"
                             class="px-2 py-0.5 rounded text-xs font-bold bg-red-600 text-white"
                           ) EMPTY
                           .text-white.font-semibold.text-sm {{ getPlayerName(slot.team2Player) }}
                         .text-gray-500.text-xs {{ getPlayerTeam(slot.team2Player) }} • {{ getPlayerPosition(slot.team2Player) }}
-                      .text-left.flex-shrink-0.flex.items-center.gap-2
-                        //- Expand/collapse icon
-                        div(class="text-gray-400 text-xs")
-                          span(v-if="isPlayerExpanded(slot.team2Player)") ▼
-                          span(v-else) ▶
-                        .text-blue-400.font-bold.text-lg(
-                          :class="{ 'score-pulse': isPlayerScoreAnimating(slot.team2Player) }"
+                        //- Game info (day/time)
+                        div(class="text-xs mt-0.5 text-right" v-if="!isEmpty(slot.team2Player) && getPlayerGameInfo(slot.team2Player)")
+                          span(:class="getPlayerGameInfo(slot.team2Player).status === 'in_progress' ? 'text-green-400 font-bold animate-pulse' : getPlayerGameInfo(slot.team2Player).status === 'final' ? 'text-gray-400' : 'text-blue-400'")
+                            span(v-if="getPlayerGameInfo(slot.team2Player).status === 'scheduled'" class="text-gray-400 mr-1")
+                              | {{ getPlayerGameInfo(slot.team2Player).isHome ? 'vs' : '@' }} {{ getPlayerGameInfo(slot.team2Player).opponent }}
+                            | {{ getGameStatusText(getPlayerGameInfo(slot.team2Player)) }}
+                      .text-left.flex-shrink-0
+                        //- Score colored by game status
+                        div(
+                          class="font-bold text-lg transition-all duration-300"
+                          :class="[{ 'score-pulse': isPlayerScoreAnimating(slot.team2Player) }, getScoreColorClass(slot.team2Player)]"
                         ) {{ getPlayerPoints(matchup[1], slot.team2Player) }}
-
-                  //- Stat breakdown (collapsible)
-                  .px-3.pb-3(v-if="isPlayerExpanded(slot.team2Player) && getPlayerStatsBreakdown(slot.team2Player)")
-                    .border-t.border-slate-700.pt-2.mt-2
-                      .grid.grid-cols-2.gap-2.text-xs
-                        div(v-for="stat in getPlayerStatsBreakdown(slot.team2Player)" :key="stat.label" class="flex justify-between")
-                          span.text-gray-400 {{ stat.label }}:
-                          span.text-white.font-semibold {{ stat.value }}
+                        //- Projected score underneath
+                        div(class="text-xs text-gray-400 mt-0.5" v-if="!isEmpty(slot.team2Player) && getPlayerProjectedPoints(slot.team2Player) && getPlayerProjectedPoints(slot.team2Player) !== '-'")
+                          | Proj: {{ getPlayerProjectedPoints(slot.team2Player) }}
+                        //- Delta (actual vs projected) for final games
+                        div(class="text-xs font-bold mt-0.5" v-if="getPlayerDelta(matchup[1], slot.team2Player)" :class="getPlayerDelta(matchup[1], slot.team2Player).colorClass")
+                          | {{ getPlayerDelta(matchup[1], slot.team2Player).display }}
               div(v-else)
                 .bg-slate-800.rounded.p-3.opacity-30
                   .flex.items-center.gap-3.flex-row-reverse
@@ -328,32 +352,60 @@
         div
           h3.text-white.font-bold.text-xl.mb-4 {{ getTeamInfo(matchup[0].roster?.user?.display_name).aiModel }}
           .space-y-2(v-if="getBenchPlayers(matchup[0]).length > 0")
-            div(v-for="playerId in getBenchPlayers(matchup[0])" :key="playerId" class="bg-slate-800/50 rounded p-2")
-              .flex.items-center.gap-2
-                img.h-8.w-8.rounded-full.object-cover(
-                  v-if="getPlayerPortrait(playerId)"
-                  :src="getPlayerPortrait(playerId)"
-                  :alt="getPlayerName(playerId)"
-                  @error="$event.target.style.display='none'"
-                )
-                div.w-8.h-8.rounded.flex.items-center.justify-center.text-xs.font-bold.flex-shrink-0(
-                  :class="getPositionColor(getPlayerPosition(playerId))"
-                )
-                  | {{ getPlayerPosition(playerId) }}
-                .flex-1
-                  .flex.items-center.gap-2
-                    .text-white.font-semibold.text-xs {{ getPlayerName(playerId) }}
-                    //- Injury badges
-                    div(
-                      v-if="getPlayerInjury(playerId)"
-                      class="px-1.5 py-0.5 rounded text-xs font-bold"
-                      :class="getPlayerInjury(playerId) === 'O' || getPlayerInjury(playerId) === 'IR' ? 'bg-red-600 text-white' : getPlayerInjury(playerId) === 'D' ? 'bg-orange-500 text-white' : 'bg-yellow-500 text-black'"
-                    ) {{ getPlayerInjury(playerId) }}
-                  .text-gray-500.text-xs {{ getPlayerTeam(playerId) }}
-                .text-right.flex-shrink-0
-                  .text-gray-400.font-bold(
-                    :class="{ 'score-pulse': isPlayerScoreAnimating(playerId) }"
-                  ) {{ getPlayerPoints(matchup[0], playerId) }}
+            div(v-for="playerId in getBenchPlayers(matchup[0])" :key="playerId")
+              .bg-slate-800.rounded(:class="{ 'matchup-highlight': isPlayerScoreAnimating(playerId) }")
+                .p-3
+                  .flex.items-center.gap-3
+                    //- Position Label with Color
+                    div(class="w-16 h-16 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0"
+                      :class="getPositionColor(getPlayerPosition(playerId))"
+                    )
+                      div(class="text-center")
+                        div {{ getPlayerPosition(playerId) }}
+                    img.h-12.w-12.rounded-full.object-cover(
+                      v-if="getPlayerPortrait(playerId)"
+                      :src="getPlayerPortrait(playerId)"
+                      :alt="getPlayerName(playerId)"
+                      @error="$event.target.style.display='none'"
+                    )
+                    .flex-1
+                      .flex.items-center.gap-2
+                        .text-white.font-semibold.text-sm {{ getPlayerName(playerId) }}
+                        //- BYE badge
+                        div(
+                          v-if="getPlayerBye(playerId)"
+                          class="px-2 py-0.5 rounded text-xs font-bold bg-gray-600 text-white"
+                        ) BYE
+                        //- SUSP badge
+                        div(
+                          v-if="getPlayerSuspended(playerId)"
+                          class="px-2 py-0.5 rounded text-xs font-bold bg-purple-600 text-white"
+                        ) SUSP
+                        //- Injury badges
+                        div(
+                          v-if="getPlayerInjury(playerId)"
+                          class="px-2 py-0.5 rounded text-xs font-bold"
+                          :class="getPlayerInjury(playerId) === 'O' || getPlayerInjury(playerId) === 'IR' ? 'bg-red-600 text-white' : getPlayerInjury(playerId) === 'D' ? 'bg-orange-500 text-white' : 'bg-yellow-500 text-black'"
+                        ) {{ getPlayerInjury(playerId) }}
+                      .text-gray-500.text-xs {{ getPlayerTeam(playerId) }} • {{ getPlayerPosition(playerId) }}
+                      //- Game info (day/time)
+                      div(class="text-xs mt-0.5" v-if="!isEmpty(playerId) && getPlayerGameInfo(playerId)")
+                        span(:class="getPlayerGameInfo(playerId).status === 'in_progress' ? 'text-green-400 font-bold animate-pulse' : getPlayerGameInfo(playerId).status === 'final' ? 'text-gray-400' : 'text-blue-400'")
+                          | {{ getGameStatusText(getPlayerGameInfo(playerId)) }}
+                          span(v-if="getPlayerGameInfo(playerId).status === 'scheduled'" class="text-gray-400 ml-1")
+                            | {{ getPlayerGameInfo(playerId).isHome ? 'vs' : '@' }} {{ getPlayerGameInfo(playerId).opponent }}
+                    .text-right.flex-shrink-0
+                      //- Score colored by game status
+                      div(
+                        class="font-bold text-lg transition-all duration-300"
+                        :class="[{ 'score-pulse': isPlayerScoreAnimating(playerId) }, getScoreColorClass(playerId)]"
+                      ) {{ getPlayerPoints(matchup[0], playerId) }}
+                      //- Projected score underneath
+                      div(class="text-xs text-gray-400 mt-0.5" v-if="!isEmpty(playerId) && getPlayerProjectedPoints(playerId) && getPlayerProjectedPoints(playerId) !== '-'")
+                        | Proj: {{ getPlayerProjectedPoints(playerId) }}
+                      //- Delta (actual vs projected) for final games
+                      div(class="text-xs font-bold mt-0.5" v-if="getPlayerDelta(matchup[0], playerId)" :class="getPlayerDelta(matchup[0], playerId).colorClass")
+                        | {{ getPlayerDelta(matchup[0], playerId).display }}
           div(v-else)
             .text-gray-500.text-sm No bench players
 
@@ -361,32 +413,60 @@
         div
           h3.text-white.font-bold.text-xl.mb-4 {{ getTeamInfo(matchup[1].roster?.user?.display_name).aiModel }}
           .space-y-2(v-if="getBenchPlayers(matchup[1]).length > 0")
-            div(v-for="playerId in getBenchPlayers(matchup[1])" :key="playerId" class="bg-slate-800/50 rounded p-2")
-              .flex.items-center.gap-2
-                img.h-8.w-8.rounded-full.object-cover(
-                  v-if="getPlayerPortrait(playerId)"
-                  :src="getPlayerPortrait(playerId)"
-                  :alt="getPlayerName(playerId)"
-                  @error="$event.target.style.display='none'"
-                )
-                div.w-8.h-8.rounded.flex.items-center.justify-center.text-xs.font-bold.flex-shrink-0(
-                  :class="getPositionColor(getPlayerPosition(playerId))"
-                )
-                  | {{ getPlayerPosition(playerId) }}
-                .flex-1
-                  .flex.items-center.gap-2
-                    .text-white.font-semibold.text-xs {{ getPlayerName(playerId) }}
-                    //- Injury badges
-                    div(
-                      v-if="getPlayerInjury(playerId)"
-                      class="px-1.5 py-0.5 rounded text-xs font-bold"
-                      :class="getPlayerInjury(playerId) === 'O' || getPlayerInjury(playerId) === 'IR' ? 'bg-red-600 text-white' : getPlayerInjury(playerId) === 'D' ? 'bg-orange-500 text-white' : 'bg-yellow-500 text-black'"
-                    ) {{ getPlayerInjury(playerId) }}
-                  .text-gray-500.text-xs {{ getPlayerTeam(playerId) }}
-                .text-right.flex-shrink-0
-                  .text-gray-400.font-bold(
-                    :class="{ 'score-pulse': isPlayerScoreAnimating(playerId) }"
-                  ) {{ getPlayerPoints(matchup[1], playerId) }}
+            div(v-for="playerId in getBenchPlayers(matchup[1])" :key="playerId")
+              .bg-slate-800.rounded(:class="{ 'matchup-highlight': isPlayerScoreAnimating(playerId) }")
+                .p-3
+                  .flex.items-center.gap-3
+                    //- Position Label with Color
+                    div(class="w-16 h-16 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0"
+                      :class="getPositionColor(getPlayerPosition(playerId))"
+                    )
+                      div(class="text-center")
+                        div {{ getPlayerPosition(playerId) }}
+                    img.h-12.w-12.rounded-full.object-cover(
+                      v-if="getPlayerPortrait(playerId)"
+                      :src="getPlayerPortrait(playerId)"
+                      :alt="getPlayerName(playerId)"
+                      @error="$event.target.style.display='none'"
+                    )
+                    .flex-1
+                      .flex.items-center.gap-2
+                        .text-white.font-semibold.text-sm {{ getPlayerName(playerId) }}
+                        //- BYE badge
+                        div(
+                          v-if="getPlayerBye(playerId)"
+                          class="px-2 py-0.5 rounded text-xs font-bold bg-gray-600 text-white"
+                        ) BYE
+                        //- SUSP badge
+                        div(
+                          v-if="getPlayerSuspended(playerId)"
+                          class="px-2 py-0.5 rounded text-xs font-bold bg-purple-600 text-white"
+                        ) SUSP
+                        //- Injury badges
+                        div(
+                          v-if="getPlayerInjury(playerId)"
+                          class="px-2 py-0.5 rounded text-xs font-bold"
+                          :class="getPlayerInjury(playerId) === 'O' || getPlayerInjury(playerId) === 'IR' ? 'bg-red-600 text-white' : getPlayerInjury(playerId) === 'D' ? 'bg-orange-500 text-white' : 'bg-yellow-500 text-black'"
+                        ) {{ getPlayerInjury(playerId) }}
+                      .text-gray-500.text-xs {{ getPlayerTeam(playerId) }} • {{ getPlayerPosition(playerId) }}
+                      //- Game info (day/time)
+                      div(class="text-xs mt-0.5" v-if="!isEmpty(playerId) && getPlayerGameInfo(playerId)")
+                        span(:class="getPlayerGameInfo(playerId).status === 'in_progress' ? 'text-green-400 font-bold animate-pulse' : getPlayerGameInfo(playerId).status === 'final' ? 'text-gray-400' : 'text-blue-400'")
+                          | {{ getGameStatusText(getPlayerGameInfo(playerId)) }}
+                          span(v-if="getPlayerGameInfo(playerId).status === 'scheduled'" class="text-gray-400 ml-1")
+                            | {{ getPlayerGameInfo(playerId).isHome ? 'vs' : '@' }} {{ getPlayerGameInfo(playerId).opponent }}
+                    .text-right.flex-shrink-0
+                      //- Score colored by game status
+                      div(
+                        class="font-bold text-lg transition-all duration-300"
+                        :class="[{ 'score-pulse': isPlayerScoreAnimating(playerId) }, getScoreColorClass(playerId)]"
+                      ) {{ getPlayerPoints(matchup[1], playerId) }}
+                      //- Projected score underneath
+                      div(class="text-xs text-gray-400 mt-0.5" v-if="!isEmpty(playerId) && getPlayerProjectedPoints(playerId) && getPlayerProjectedPoints(playerId) !== '-'")
+                        | Proj: {{ getPlayerProjectedPoints(playerId) }}
+                      //- Delta (actual vs projected) for final games
+                      div(class="text-xs font-bold mt-0.5" v-if="getPlayerDelta(matchup[1], playerId)" :class="getPlayerDelta(matchup[1], playerId).colorClass")
+                        | {{ getPlayerDelta(matchup[1], playerId).display }}
           div(v-else)
             .text-gray-500.text-sm No bench players
 
@@ -619,8 +699,9 @@ export default {
         matchupId.value = parseInt(route.params.matchupId)
 
         // Use the store to fetch all needed data (force refresh roster data for up-to-date bench)
+        // Pass false to fetchMatchupForWeek to avoid duplicate league data fetch
         const [matchupsData, , enrichedPlayersData, draftPicks, leagueData] = await Promise.all([
-          leagueStore.fetchMatchupForWeek(week.value),
+          leagueStore.fetchMatchupForWeek(week.value, false, false),  // Don't re-fetch league data
           leagueStore.fetchPlayers(), // Fetch to ensure data is loaded in store
           leagueStore.fetchEnrichedPlayers(), // Fetch enriched player data
           leagueStore.fetchDraft(),
@@ -653,8 +734,10 @@ export default {
           }
         })
 
-        // Load injury data for this week
+        // Load injury data, weekly projections, and NFL schedule for this week
         injuries.value = await leagueStore.fetchInjuriesForWeek(week.value)
+        await leagueStore.fetchWeeklyProjectionsForWeek(week.value)
+        await leagueStore.fetchNFLSchedule()
 
         // Try to load markdown file for this matchup
         loadMarkdownFile()
@@ -674,8 +757,9 @@ export default {
         console.log('🔄 Refreshing matchup data at', new Date().toLocaleTimeString())
 
         // Fetch fresh data from API, forcing refresh
+        // Pass false to fetchMatchupForWeek to avoid duplicate league data fetch
         const [matchupsData, leagueData] = await Promise.all([
-          leagueStore.fetchMatchupForWeek(week.value, true),
+          leagueStore.fetchMatchupForWeek(week.value, true, false),  // Don't re-fetch league data
           leagueStore.fetchLeagueData(true) // Also refresh roster data
         ])
 
@@ -881,16 +965,67 @@ export default {
       return draftPick?.projected_points_2025?.toFixed(1) || '-'
     }
 
+    const getPlayerProjectedPoints = (playerId) => {
+      if (!playerId || !week.value) return '-'
+
+      const projection = leagueStore.getPlayerWeeklyProjection(playerId, week.value)
+      if (!projection || !projection.projectedPoints) return '-'
+
+      return projection.projectedPoints.toFixed(1)
+    }
+
+    const getPlayerGameInfo = (playerId) => {
+      if (!playerId || isEmpty(playerId) || !week.value) return null
+      return leagueStore.getPlayerGameInfo(playerId, week.value)
+    }
+
+    const formatGameTime = (gameInfo) => {
+      if (!gameInfo) return null
+
+      const date = gameInfo.gameDate
+      const dayName = date.toLocaleDateString('en-US', { weekday: 'short' })
+      const time = date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })
+
+      return `${dayName} ${time}`
+    }
+
+    const getGameStatusText = (gameInfo) => {
+      if (!gameInfo) return null
+
+      switch (gameInfo.status) {
+        case 'in_progress':
+          return '🔴 LIVE'
+        case 'final':
+          return 'Final'
+        case 'scheduled':
+          return formatGameTime(gameInfo)
+        default:
+          return null
+      }
+    }
+
+    const isEmpty = (playerId) => {
+      return playerId === '0' || playerId === 0
+    }
+
     const getBenchPlayers = (team) => {
-      // Use fresh roster data from the store instead of cached roster from matchup
-      if (!team || !team.roster_id || !rosters.value) return []
+      // Use week-specific roster data from the store with pre-calculated bench
+      if (!team || !team.roster_id || !week.value) return []
 
-      // Find the current roster data from the store
-      const currentRoster = rosters.value.find(r => r.roster_id === team.roster_id)
-      if (!currentRoster || !currentRoster.players) return []
+      // Get the week-specific roster data from store
+      const weekRoster = leagueStore.getWeekRoster(week.value, team.roster_id)
 
-      // Filter out starters to get bench players
-      return currentRoster.players.filter(playerId => !team.starters.includes(playerId))
+      // If we have week roster data with bench, use it
+      if (weekRoster && weekRoster.bench) {
+        return weekRoster.bench
+      }
+
+      // Fallback: calculate from matchup data if week roster not available
+      if (team.players && team.starters) {
+        return team.players.filter(playerId => !team.starters.includes(playerId))
+      }
+
+      return []
     }
 
     const getPositionColor = (position) => {
@@ -908,10 +1043,114 @@ export default {
     const getPlayerInjury = (playerId) => {
       // Use enriched player data from store which consolidates all sources
       const enrichedPlayer = enrichedPlayers.value[playerId]
-      if (!enrichedPlayer) return null
 
-      // Return the injury indicator directly from enriched data
-      return enrichedPlayer.injury_indicator || null
+      // Try enriched player data first
+      if (enrichedPlayer) {
+        // Check injury_status_combined first (primary source)
+        const statusToCheck = enrichedPlayer.injury_status_combined?.toUpperCase()
+
+        if (statusToCheck) {
+          // Check for Doubtful BEFORE Out (since "DOUBTFUL" contains "OUT")
+          if (statusToCheck.includes('DOUBTFUL') || ((statusToCheck.includes('D ') || statusToCheck === 'D') && !statusToCheck.includes('SUSPENDED'))) {
+            return 'D'
+          }
+          // Check for IR first, then Out (to separate them)
+          if (statusToCheck.includes('INJURED RESERVE') || statusToCheck.includes('IR')) {
+            return 'IR'
+          }
+          if (statusToCheck.includes('OUT')) {
+            return 'O'
+          }
+          // Check for Questionable/PUP
+          if (statusToCheck.includes('QUESTIONABLE') || statusToCheck.includes('Q ') || statusToCheck === 'Q' || statusToCheck.includes('PUP') || statusToCheck.includes('PHYSICALLY UNABLE')) {
+            return 'Q'
+          }
+        }
+
+        // Fallback to injury_indicator
+        if (enrichedPlayer.injury_indicator) {
+          return enrichedPlayer.injury_indicator
+        }
+      }
+
+      // Final fallback: Check base Sleeper player injury status if enriched data doesn't have it
+      const player = players.value[playerId]
+      if (player) {
+        const sleeperStatus = player.injury_status?.toUpperCase()
+        if (sleeperStatus) {
+          if (sleeperStatus.includes('IR') || sleeperStatus.includes('INJURED RESERVE')) {
+            return 'IR'
+          }
+          if (sleeperStatus.includes('OUT')) {
+            return 'O'
+          }
+          if (sleeperStatus.includes('DOUBTFUL') || sleeperStatus === 'D') {
+            return 'D'
+          }
+          if (sleeperStatus.includes('QUESTIONABLE') || sleeperStatus === 'Q' || sleeperStatus.includes('PUP')) {
+            return 'Q'
+          }
+        }
+      }
+
+      return null
+    }
+
+    const getPlayerBye = (playerId) => {
+      // Check if player is on bye week FOR THIS SPECIFIC MATCHUP WEEK
+      const player = players.value[playerId]
+      if (!player || !player.team || !week.value) return false
+
+      // Use the store's getByeWeekForTeam method with the current matchup week
+      return leagueStore.getByeWeekForTeam(player.team, week.value)
+    }
+
+    const getPlayerSuspended = (playerId) => {
+      // Check if player is suspended
+      const enrichedPlayer = enrichedPlayers.value[playerId]
+      if (!enrichedPlayer) return false
+      return enrichedPlayer.is_suspended === true
+    }
+
+    // Get score color class based on game status
+    const getScoreColorClass = (playerId) => {
+      if (!playerId || isEmpty(playerId) || !week.value) return 'text-white'
+
+      const gameInfo = leagueStore.getPlayerGameInfo(playerId, week.value)
+      if (!gameInfo) return 'text-white'
+
+      switch (gameInfo.status) {
+        case 'scheduled':
+          return 'text-blue-400'
+        case 'in_progress':
+          return 'text-green-400'
+        case 'final':
+          return 'text-white'
+        default:
+          return 'text-white'
+      }
+    }
+
+    // Calculate delta between actual and projected points
+    const getPlayerDelta = (team, playerId) => {
+      if (!playerId || isEmpty(playerId) || !week.value) return null
+
+      const gameInfo = leagueStore.getPlayerGameInfo(playerId, week.value)
+      // Only show delta for final games
+      if (!gameInfo || gameInfo.status !== 'final') return null
+
+      const actualPoints = parseFloat(getPlayerPoints(team, playerId)) || 0
+      const projectedPointsStr = getPlayerProjectedPoints(playerId)
+      if (projectedPointsStr === '-') return null
+
+      const projectedPoints = parseFloat(projectedPointsStr) || 0
+      const delta = actualPoints - projectedPoints
+
+      return {
+        value: delta,
+        colorClass: delta >= 0 ? 'text-green-400' : 'text-red-400',
+        display: delta >= 0 ? `Δ +${delta.toFixed(1)}` : `Δ ${delta.toFixed(1)}`
+      }
     }
 
     // Get team badges using the shared function from the store
@@ -979,107 +1218,9 @@ export default {
       }
     }
 
-    // Fetch player stats for all players in the matchup
-    const fetchPlayerStats = async () => {
-      if (!matchup.value || !week.value) return
-
-      try {
-        // Collect all player IDs from both teams
-        // Note: getBenchPlayers now uses fresh roster data from store
-        const playerIds = [
-          ...matchup.value[0].starters,
-          ...matchup.value[1].starters,
-          ...getBenchPlayers(matchup.value[0]),
-          ...getBenchPlayers(matchup.value[1])
-        ].filter(id => id) // Remove nulls/undefined
-
-        // Fetch stats for all players
-        const stats = await getMultiplePlayerStats(playerIds, currentSeason.value, week.value)
-        playerStats.value = stats
-      } catch (err) {
-        console.error('Error fetching player stats:', err)
-      }
-    }
-
-    // Toggle stat breakdown for a player
-    const togglePlayerStats = (playerId) => {
-      const expanded = new Set(expandedPlayers.value)
-      if (expanded.has(playerId)) {
-        expanded.delete(playerId)
-      } else {
-        expanded.add(playerId)
-      }
-      expandedPlayers.value = expanded
-    }
-
-    // Check if a player's stats are expanded
-    const isPlayerExpanded = (playerId) => {
-      return expandedPlayers.value.has(playerId)
-    }
-
-    // Format stat value for display
-    const formatStat = (value) => {
-      if (value === null || value === undefined) return '-'
-      return typeof value === 'number' ? value.toFixed(1) : value
-    }
-
-    // Get formatted stats for a player
-    const getPlayerStatsBreakdown = (playerId) => {
-      const stats = playerStats.value[playerId]
-      if (!stats) return null
-
-      const player = players.value[playerId]
-      const position = player?.position
-
-      // Return relevant stats based on position
-      const breakdown = []
-
-      if (position === 'QB') {
-        breakdown.push(
-          { label: 'Pass Yards', value: formatStat(stats.pass_yd) },
-          { label: 'Pass TDs', value: formatStat(stats.pass_td) },
-          { label: 'INTs', value: formatStat(stats.pass_int) },
-          { label: 'Rush Yards', value: formatStat(stats.rush_yd) },
-          { label: 'Rush TDs', value: formatStat(stats.rush_td) }
-        )
-      } else if (position === 'RB') {
-        breakdown.push(
-          { label: 'Rush Yards', value: formatStat(stats.rush_yd) },
-          { label: 'Rush TDs', value: formatStat(stats.rush_td) },
-          { label: 'Receptions', value: formatStat(stats.rec) },
-          { label: 'Rec Yards', value: formatStat(stats.rec_yd) },
-          { label: 'Rec TDs', value: formatStat(stats.rec_td) }
-        )
-      } else if (position === 'WR' || position === 'TE') {
-        breakdown.push(
-          { label: 'Receptions', value: formatStat(stats.rec) },
-          { label: 'Rec Yards', value: formatStat(stats.rec_yd) },
-          { label: 'Rec TDs', value: formatStat(stats.rec_td) },
-          { label: 'Targets', value: formatStat(stats.rec_tgt) }
-        )
-      } else if (position === 'K') {
-        breakdown.push(
-          { label: 'FG Made', value: formatStat(stats.fgm) },
-          { label: 'FG Missed', value: formatStat(stats.fgmiss) },
-          { label: 'XP Made', value: formatStat(stats.xpm) }
-        )
-      } else if (position === 'DEF') {
-        breakdown.push(
-          { label: 'Sacks', value: formatStat(stats.def_st_td) },
-          { label: 'INTs', value: formatStat(stats.def_int) },
-          { label: 'Fumbles Rec', value: formatStat(stats.def_fumble_rec) },
-          { label: 'TDs', value: formatStat(stats.def_td) }
-        )
-      }
-
-      return breakdown.filter(stat => stat.value !== '-')
-    }
 
     onMounted(async () => {
       await loadMatchupData()
-
-      // Fetch player stats after matchup data is loaded
-      await fetchPlayerStats()
 
       // Check if we should start auto-refresh
       checkAutoRefreshStatus()
@@ -1113,19 +1254,24 @@ export default {
       getPlayerTeam,
       getPlayerVORP,
       getPlayerROS,
+      getPlayerProjectedPoints,
+      getPlayerGameInfo,
+      getGameStatusText,
+      getScoreColorClass,
+      getPlayerDelta,
+      isEmpty,
       getBenchPlayers,
       getPositionColor,
       getPlayerInjury,
+      getPlayerBye,
+      getPlayerSuspended,
       getTeamBadges,
       getRosterSlots,
       getSlotColor,
       getPositionDifferential,
       markdownContents,
       isScoreAnimating,
-      isPlayerScoreAnimating,
-      togglePlayerStats,
-      isPlayerExpanded,
-      getPlayerStatsBreakdown
+      isPlayerScoreAnimating
     }
   }
 }
