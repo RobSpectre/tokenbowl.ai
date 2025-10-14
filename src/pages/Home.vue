@@ -54,7 +54,7 @@
           ) Refresh Now
 
     //- Spacer for fixed nav (consistent height to prevent scroll jumps)
-    div(style="height: 240px")
+    div(style="height: 140px")
 
     //- Week Matchups
     .mb-12
@@ -324,7 +324,7 @@
               th(class="px-3 sm:px-6 py-4 text-right") Points
           tbody.divide-y.divide-slate-800
             tr(
-              v-for="(roster, index) in historicalStandings"
+              v-for="(roster, index) in leagueStore.currentStandings"
               :key="roster.roster_id"
               class="hover:bg-slate-800 transition-colors duration-150"
             )
@@ -343,9 +343,9 @@
                     div(class="text-white font-bold text-sm sm:text-lg") {{ getTeamInfo(roster.user?.display_name).aiModel }}
                     div(class="text-gray-400 text-xs sm:text-sm hidden sm:block") {{ getTeamInfo(roster.user?.display_name).owner }}
               td(class="px-3 sm:px-6 py-4 text-center")
-                div(:class="getRecordColor(roster.historicalRecord.wins, roster.historicalRecord.losses)" class="font-bold text-sm sm:text-lg") {{ roster.historicalRecord.wins }}-{{ roster.historicalRecord.losses }}
+                div(:class="getRecordColor(roster.currentRecord.wins, roster.currentRecord.losses)" class="font-bold text-sm sm:text-lg") {{ roster.currentRecord.wins }}-{{ roster.currentRecord.losses }}
               td(class="px-3 sm:px-6 py-4 text-right")
-                div(class="text-white font-black text-base sm:text-xl") {{ roster.historicalPoints.toFixed(2) }}
+                div(class="text-white font-black text-base sm:text-xl") {{ roster.currentPoints.toFixed(2) }}
 
     //- History
     section.mb-12(v-show="leagueData && allMatchups && Object.keys(allMatchups).length > 0")
@@ -2272,6 +2272,7 @@ export default {
     })
 
     return {
+      leagueStore,
       leagueData,
       allMatchups,
       loading,
