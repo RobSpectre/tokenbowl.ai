@@ -191,8 +191,8 @@ export default {
         loading.value = true
         error.value = null
 
-        // Use the store to fetch league data (uses cache if available)
-        await leagueStore.fetchLeagueData()
+        // Initialize store (loads all data if needed)
+        await leagueStore.initialize()
         leagueSettings.value = leagueStore.league
       } catch (err) {
         error.value = 'Failed to load scoring settings. Please try again later.'

@@ -244,12 +244,8 @@ export default {
         loading.value = true
         error.value = null
 
-        // Load all necessary data from store
-        await Promise.all([
-          leagueStore.fetchDraft(),
-          leagueStore.fetchLeagueData(),
-          leagueStore.fetchPlayers()
-        ])
+        // Initialize store (loads all data if needed)
+        await leagueStore.initialize()
       } catch (err) {
         error.value = 'Failed to load draft data. Please try again later.'
         console.error(err)

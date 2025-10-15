@@ -198,8 +198,8 @@ describe('League Store - Player Data Management', () => {
     it('should have consistent cache version between store and main.js', () => {
       const store = useLeagueStore()
 
-      // Both should use version 10 (enriched weekRosters with full user, team, and standings metadata)
-      expect(store.cacheVersion).toBe(10)
+      // Both should use version 12 (added permanent caching for past weeks)
+      expect(store.cacheVersion).toBe(12)
     })
 
     it('should clear cache when players data is missing after timestamp is set', async () => {

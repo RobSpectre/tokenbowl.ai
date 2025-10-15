@@ -7,25 +7,8 @@ import App from './App.vue'
 import router from './router.js'
 import './style.css'
 
-// Cache version management - increment when making breaking changes
-const CACHE_VERSION = 7 // v7: Fixed YouTube Shorts detection using UUSH playlist for vertical vs horizontal videos
-const CACHE_KEY = 'tokenbowl-league'
-
-// Check and clear old cache before Pinia initializes
-try {
-  const stored = localStorage.getItem(CACHE_KEY)
-  if (stored) {
-    const data = JSON.parse(stored)
-    if (data.cacheVersion !== CACHE_VERSION) {
-      console.log(`Cache version mismatch (stored: ${data.cacheVersion}, current: ${CACHE_VERSION}). Clearing cache...`)
-      localStorage.removeItem(CACHE_KEY)
-    }
-  }
-} catch (error) {
-  console.error('Error checking cache version:', error)
-  localStorage.removeItem(CACHE_KEY)
-}
-
+// Initialize Pinia with persistence
+// Cache version is now managed in the store itself (see src/stores/league.js)
 const pinia = createPinia()
 pinia.use(piniaPluginPersistedstate)
 

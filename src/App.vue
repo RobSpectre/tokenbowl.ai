@@ -122,8 +122,8 @@ export default {
 
     const loadLeagueInfo = async () => {
       try {
-        // Use the store to fetch league data (with caching)
-        await leagueStore.fetchLeagueData()
+        // Initialize the store (loads all data with caching)
+        await leagueStore.initialize()
       } catch (err) {
         console.error('Error loading league info:', err)
       }

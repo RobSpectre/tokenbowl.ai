@@ -698,17 +698,17 @@ export default {
         week.value = parseInt(route.params.week)
         matchupId.value = parseInt(route.params.matchupId)
 
-        // Use the store to fetch all needed data (force refresh roster data for up-to-date bench)
-        // Pass false to fetchMatchupForWeek to avoid duplicate league data fetch
-        const [matchupsData, , enrichedPlayersData, draftPicks, leagueData] = await Promise.all([
-          leagueStore.fetchMatchupForWeek(week.value, false, false),  // Don't re-fetch league data
-          leagueStore.fetchPlayers(), // Fetch to ensure data is loaded in store
-          leagueStore.fetchEnrichedPlayers(), // Fetch enriched player data
-          leagueStore.fetchDraft(),
-          leagueStore.fetchLeagueData(true) // Force refresh to get latest roster data
-        ])
+        // Initialize store (loads all data if needed)
+        await leagueStore.initialize()
 
-        draftData.value = draftPicks
+        // Get matchup data and draft data from store
+        const matchupsData = leagueStore.getMatchupsForWeek(week.value)
+        draftData.value = leagueStore.draftPicks
+
+        // Check if matchups data exists
+        if (!matchupsData || !Array.isArray(matchupsData)) {
+          throw new Error('No matchup data available for this week')
+        }
 
         // Find the specific matchup from the week's matchups
         const matchupGroups = {}
@@ -737,7 +737,7 @@ export default {
         // Load injury data, weekly projections, and NFL schedule for this week
         injuries.value = await leagueStore.fetchInjuriesForWeek(week.value)
         await leagueStore.fetchWeeklyProjectionsForWeek(week.value)
-        await leagueStore.fetchNFLSchedule()
+        await leagueStore.loadNFLSchedule()
 
         // Try to load markdown file for this matchup
         loadMarkdownFile()
@@ -756,12 +756,17 @@ export default {
       try {
         console.log('🔄 Refreshing matchup data at', new Date().toLocaleTimeString())
 
-        // Fetch fresh data from API, forcing refresh
-        // Pass false to fetchMatchupForWeek to avoid duplicate league data fetch
-        const [matchupsData, leagueData] = await Promise.all([
-          leagueStore.fetchMatchupForWeek(week.value, true, false),  // Don't re-fetch league data
-          leagueStore.fetchLeagueData(true) // Also refresh roster data
-        ])
+        // Refresh current week data in the background
+        await leagueStore.refreshCurrentWeek()
+
+        // Get fresh matchup data from store
+        const matchupsData = leagueStore.getMatchupsForWeek(week.value)
+
+        // Check if matchups data exists
+        if (!matchupsData || !Array.isArray(matchupsData)) {
+          console.error('❌ No matchup data available for refresh')
+          return
+        }
 
         // Find the specific matchup from the week's matchups
         const matchupGroups = {}

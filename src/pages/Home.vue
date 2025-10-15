@@ -629,33 +629,26 @@ export default {
 
     const loadData = async () => {
       try {
-        // Check if we have ANY cached data in the store
-        const hasCachedMatchups = leagueStore.allMatchups && Object.keys(leagueStore.allMatchups).length > 0
-        const hasCachedLeagueData = leagueStore.rosters && leagueStore.rosters.length > 0
+        // Check if we have cached data
+        const hasCachedData = leagueStore.league && leagueStore.rosters.length > 0
 
-        // If we have cached matchups and league data, hide main spinner immediately
-        // Otherwise, keep showing it (it starts as true)
-        if (hasCachedMatchups && hasCachedLeagueData) {
+        // Show cached data immediately if available
+        if (hasCachedData) {
           loading.value = false
+          loadingStandings.value = false
+          loadingVideos.value = !leagueStore.latestVideo
         } else {
           loading.value = true
+          loadingStandings.value = true
+          loadingVideos.value = true
         }
-
-        // Set section loading states based on what data exists
-        loadingStandings.value = !hasCachedLeagueData
-        loadingVideos.value = !leagueStore.latestVideo
 
         error.value = null
 
-        // STEP 1: Load critical data for matchups section (fastest path to show content)
-        // This runs in parallel and uses cache if available
-        const [leagueData] = await Promise.all([
-          leagueStore.fetchLeagueData(false),
-          leagueStore.fetchPlayers(false)
-        ])
-
-        // Hide standings spinner once league data is loaded
-        loadingStandings.value = false
+        // Initialize store - this handles all data loading optimally
+        // If we have cached data, it shows immediately and refreshes in background
+        // If no cache, it loads everything in parallel
+        await leagueStore.initialize(false)
 
         // Get current week from league data or URL
         const weekParam = router.currentRoute.value.query.week
@@ -669,55 +662,37 @@ export default {
           selectedWeek.value = currentWeek
         }
 
-        // Render charts immediately if we have the data
+        // Process injuries and transaction data (on-demand, will only run once due to caching)
+        await Promise.all([
+          leagueStore.processInjuriesData(currentWeek),
+          leagueStore.processTransactionStats(currentWeek)
+        ])
+
+        // Hide loading states
+        loading.value = false
+        loadingStandings.value = false
+        loadingVideos.value = false
+
+        // Render charts
         await nextTick()
+        renderStandingsChart()
+        renderPointsChart()
 
-        if (hasCachedMatchups && hasCachedLeagueData) {
-          renderStandingsChart()
-          renderPointsChart()
-        }
-
-        // Check if we have chart data for rendering
+        // Check if we have chart data
         const hasTransactions = transactionStats.value && Object.keys(transactionStats.value.byWeek || {}).length > 0
-        const hasInjuries = injuriesData.value && Object.keys(injuriesData.value).length > 0
-
         if (hasTransactions) {
           renderTransactionsChart()
           renderModelTransactionsChart()
         }
 
-        // Injury charts will be rendered by the watcher when data loads and sections are visible
+        // Render injury charts if we have injury data
+        const hasInjuries = injuriesData.value && Object.keys(injuriesData.value).length > 0
+        if (hasInjuries) {
+          renderInjuriesChart()
+          renderModelInjuriesChart()
+        }
 
-        // STEP 2: Load matchups for the selected week (show as soon as available)
-        await leagueStore.fetchMatchupForWeek(selectedWeek.value, false)
-
-        // Hide loading spinner once matchups are available - user can now see content!
-        loading.value = false
-
-        // STEP 3: Load remaining data in background (non-blocking)
-        // User already sees matchups, these just enhance the page as they load
-        // Pass false for ensureDataLoaded since we already have league data cached
-        Promise.all([
-          leagueStore.fetchAllMatchups(false, false),  // Don't re-fetch league data
-          leagueStore.fetchEnrichedPlayers(false),
-          leagueStore.processInjuriesData(currentWeek, false, false),  // Don't re-fetch league/player data
-          leagueStore.processTransactionStats(currentWeek, false, false)  // Don't re-fetch league data
-        ]).then(() => {
-          // Charts will render automatically via watchers when data arrives
-          console.log('[Background] Chart data processing complete')
-        }).catch(err => {
-          console.error('Error loading chart data:', err)
-        })
-
-        // Load YouTube data separately (non-critical)
-        leagueStore.fetchYoutube(false).then(() => {
-          loadingVideos.value = false
-          lastUpdated.value = new Date()
-        }).catch(err => {
-          console.error('Error loading videos:', err)
-          loadingVideos.value = false
-        })
-
+        lastUpdated.value = new Date()
       } catch (err) {
         error.value = 'Failed to load league data. Please try again later.'
         console.error(err)
@@ -733,31 +708,37 @@ export default {
       try {
         console.log('[Refresh] Starting background refresh...')
 
-        // Force refresh league data first, then other data that depends on it
-        // This prevents duplicate API calls to /rosters and /users
-        await leagueStore.fetchLeagueData(true)
+        // Refresh only current week in background
+        await leagueStore.refreshCurrentWeek()
 
-        const currentWeek = leagueStore.league?.settings?.leg || selectedWeek.value
-
-        // Refresh all data in parallel - UI updates automatically via watchers
-        // No need to manually re-render charts - they watch the store data
-        // Pass false for ensureDataLoaded since we already refreshed league data above
+        // Process injuries and transaction data (on-demand, cached)
+        const currentWeek = leagueStore.league?.settings?.leg || 5
         await Promise.all([
-          leagueStore.fetchAllMatchups(true, false),  // Don't re-fetch league data
-          leagueStore.fetchTransactionsForWeek(selectedWeek.value, true, false),  // Don't re-fetch league data
-          leagueStore.processInjuriesData(currentWeek, true, false),  // Don't re-fetch league/player data
-          leagueStore.processTransactionStats(currentWeek, true, false),  // Don't re-fetch league data
-          leagueStore.fetchEnrichedPlayers(true)
+          leagueStore.processInjuriesData(currentWeek),
+          leagueStore.processTransactionStats(currentWeek)
         ])
 
         lastUpdated.value = new Date()
         console.log('[Refresh] Background refresh completed at', lastUpdated.value.toLocaleTimeString())
 
-        // Charts will auto-update via watchers, but we need to manually trigger
-        // them for data that doesn't have watchers (standings/points charts)
+        // Re-render charts with fresh data
         await nextTick()
         renderStandingsChart()
         renderPointsChart()
+
+        // Check if we have chart data
+        const hasTransactions = transactionStats.value && Object.keys(transactionStats.value.byWeek || {}).length > 0
+        if (hasTransactions) {
+          renderTransactionsChart()
+          renderModelTransactionsChart()
+        }
+
+        // Render injury charts if we have injury data
+        const hasInjuries = injuriesData.value && Object.keys(injuriesData.value).length > 0
+        if (hasInjuries) {
+          renderInjuriesChart()
+          renderModelInjuriesChart()
+        }
       } catch (err) {
         console.error('[Refresh] Error during background refresh:', err)
         // Don't show error to user - they still have the cached data displayed
@@ -1192,11 +1173,8 @@ export default {
     }, { deep: true })
 
     const loadVideos = async () => {
-      try {
-        await leagueStore.fetchYoutube()
-      } catch (err) {
-        console.error('Error loading YouTube videos:', err)
-      }
+      // YouTube data is now loaded automatically in store.initialize()
+      // No additional action needed here
     }
 
     // Calculate record through a specific week
@@ -1592,9 +1570,20 @@ export default {
 
       await nextTick()
 
+      // Check if container has dimensions before initializing
+      const containerWidth = transactionsChartRef.value.clientWidth
+      const containerHeight = transactionsChartRef.value.clientHeight
+      if (containerWidth === 0 || containerHeight === 0) {
+        console.warn('[Charts] Transaction chart container has no dimensions, skipping render')
+        return
+      }
+
       if (!transactionsChart) {
         transactionsChart = echarts.init(transactionsChartRef.value)
       }
+
+      // Ensure chart is properly sized
+      transactionsChart.resize()
 
       const targetWeek = selectedWeek.value || leagueData.value.league?.settings?.leg || 5
 
@@ -1684,9 +1673,20 @@ export default {
 
       await nextTick()
 
+      // Check if container has dimensions before initializing
+      const containerWidth = modelTransactionsChartRef.value.clientWidth
+      const containerHeight = modelTransactionsChartRef.value.clientHeight
+      if (containerWidth === 0 || containerHeight === 0) {
+        console.warn('[Charts] Model transaction chart container has no dimensions, skipping render')
+        return
+      }
+
       if (!modelTransactionsChart) {
         modelTransactionsChart = echarts.init(modelTransactionsChartRef.value)
       }
+
+      // Ensure chart is properly sized
+      modelTransactionsChart.resize()
 
       const targetWeek = selectedWeek.value || leagueData.value.league?.settings?.leg || 5
 
@@ -2223,6 +2223,10 @@ export default {
       latestShorts,
       lastUpdated,
       isAutoRefreshActive,
+      loadingStandings,
+      loadingVideos,
+      transactionStats,
+      injuriesData,
       getTeamInfo,
       goToMatchupDetail,
       handleWeekChange,
