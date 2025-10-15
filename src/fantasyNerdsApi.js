@@ -1,7 +1,6 @@
-// Use proxy in development, direct API in production
-const BASE_URL = import.meta.env.DEV
-  ? '/api/fantasynerds/v1/nfl'
-  : 'https://api.fantasynerds.com/v1/nfl'
+// Use Cloudflare Worker proxy to avoid CORS issues
+// Fantasy Nerds API does not support CORS, so we need a server-side proxy
+const BASE_URL = import.meta.env.VITE_FANTASY_NERDS_PROXY_URL || 'https://tokenbowl-api-proxy.tokenbowl.workers.dev'
 
 /**
  * Fetch NFL injury data for a specific week from Fantasy Nerds API
@@ -21,8 +20,9 @@ export async function getInjuries(week) {
 
   try {
     // Add cache-busting timestamp to ensure fresh data
+    // API key is added by the Cloudflare Worker proxy
     const response = await fetch(
-      `${BASE_URL}/injuries?apikey=${apiKey}&week=${week}&_t=${Date.now()}`
+      `${BASE_URL}/nfl/injuries?week=${week}&_t=${Date.now()}`
     )
 
     if (!response.ok) {
@@ -137,8 +137,9 @@ export async function getWeeklyProjections(week) {
 
   try {
     // Fetch weekly projections with cache busting
+    // API key is added by the Cloudflare Worker proxy
     const response = await fetch(
-      `${BASE_URL}/weekly-projections?apikey=${apiKey}&week=${week}&_t=${Date.now()}`
+      `${BASE_URL}/nfl/weekly-projections?week=${week}&_t=${Date.now()}`
     )
 
     if (!response.ok) {
@@ -237,8 +238,9 @@ export async function getNFLSchedule() {
 
   try {
     // Fetch NFL schedule with cache busting
+    // API key is added by the Cloudflare Worker proxy
     const response = await fetch(
-      `${BASE_URL}/schedule?apikey=${apiKey}&_t=${Date.now()}`
+      `${BASE_URL}/nfl/schedule?_t=${Date.now()}`
     )
 
     if (!response.ok) {

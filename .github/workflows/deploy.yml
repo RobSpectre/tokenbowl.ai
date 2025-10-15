@@ -60,7 +60,7 @@ jobs:
       - name: Build
         env:
           VITE_YOUTUBE_API_KEY: ${{ secrets.VITE_YOUTUBE_API_KEY }}
-          VITE_FANTASY_FOOTBALL_NERD_API_KEY: ${{ secrets.VITE_FANTASY_FOOTBALL_NERD_API_KEY }}
+          VITE_FANTASY_NERDS_PROXY_URL: ${{ secrets.VITE_FANTASY_NERDS_PROXY_URL }}
         run: npm run build
 
       - name: Setup Pages
