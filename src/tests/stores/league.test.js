@@ -490,4 +490,176 @@ describe('League Store - Player Data Management', () => {
       expect(store.youtubeTimestamp).toBeNull()
     })
   })
+
+  describe('Fantasy Nerds API Integration', () => {
+    it('should have fetchWeeklyProjectionsForWeek method defined', () => {
+      const store = useLeagueStore()
+
+      // Verify the method exists and is a function
+      expect(store.fetchWeeklyProjectionsForWeek).toBeDefined()
+      expect(typeof store.fetchWeeklyProjectionsForWeek).toBe('function')
+    })
+
+    it('should fetch weekly projections successfully', async () => {
+      const store = useLeagueStore()
+
+      // This tests the method exists and doesn't throw an error
+      const result = await store.fetchWeeklyProjectionsForWeek(7)
+
+      // Should return an object (either mock data or empty object)
+      expect(result).toBeDefined()
+      expect(typeof result).toBe('object')
+      expect(store.weeklyProjectionsByWeek[7]).toBeDefined()
+      expect(store.weeklyProjectionsTimestampsByWeek[7]).toBeDefined()
+    })
+
+    it('should return cached weekly projections when fresh', async () => {
+      const store = useLeagueStore()
+
+      const cachedProjections = { 'test player': { projectedPoints: 10 } }
+      store.weeklyProjectionsByWeek[7] = cachedProjections
+      store.weeklyProjectionsTimestampsByWeek[7] = Date.now()
+
+      const result = await store.fetchWeeklyProjectionsForWeek(7)
+
+      expect(result).toEqual(cachedProjections)
+      expect(global.fetch).not.toHaveBeenCalled()
+    })
+
+    it('should handle weekly projections fetch errors gracefully', async () => {
+      const store = useLeagueStore()
+
+      // Mock fetch to throw an error
+      global.fetch.mockRejectedValueOnce(new Error('Network error'))
+
+      const result = await store.fetchWeeklyProjectionsForWeek(7)
+
+      expect(result).toEqual({})
+      expect(store.weeklyProjectionsByWeek[7]).toEqual({})
+    })
+
+    it('should have fetchNFLSchedule method defined', () => {
+      const store = useLeagueStore()
+
+      expect(store.fetchNFLSchedule).toBeDefined()
+      expect(typeof store.fetchNFLSchedule).toBe('function')
+    })
+
+    it('should fetch NFL schedule successfully', async () => {
+      const store = useLeagueStore()
+
+      // Without API key, the function returns mock schedule data
+      const result = await store.fetchNFLSchedule()
+
+      // Should return mock data (not empty)
+      expect(result).toBeDefined()
+      expect(result).toHaveProperty('current_week')
+      expect(result).toHaveProperty('schedule')
+      expect(Array.isArray(result.schedule)).toBe(true)
+      expect(store.nflSchedule).toEqual(result)
+      expect(store.nflScheduleTimestamp).toBeDefined()
+    })
+
+    it('should return cached NFL schedule when fresh', async () => {
+      const store = useLeagueStore()
+
+      const cachedSchedule = { current_week: 6, schedule: [] }
+      store.nflSchedule = cachedSchedule
+      store.nflScheduleTimestamp = Date.now()
+
+      const result = await store.fetchNFLSchedule()
+
+      expect(result).toEqual(cachedSchedule)
+      expect(global.fetch).not.toHaveBeenCalled()
+    })
+
+    it('should handle NFL schedule fetch errors gracefully', async () => {
+      const store = useLeagueStore()
+
+      global.fetch.mockRejectedValueOnce(new Error('Network error'))
+
+      const result = await store.fetchNFLSchedule()
+
+      expect(result).toEqual({ current_week: 1, schedule: [] })
+    })
+
+    it('should have getWeeklyProjectionsForWeek getter', () => {
+      const store = useLeagueStore()
+
+      const mockProjections = { 'player': { projectedPoints: 15 } }
+      store.weeklyProjectionsByWeek[7] = mockProjections
+
+      const result = store.getWeeklyProjectionsForWeek(7)
+
+      expect(result).toEqual(mockProjections)
+    })
+
+    it('should return empty object for non-existent week projections', () => {
+      const store = useLeagueStore()
+
+      const result = store.getWeeklyProjectionsForWeek(99)
+
+      expect(result).toEqual({})
+    })
+  })
+
+  describe('Store Method Existence - Prevent Production Errors', () => {
+    it('should have all methods called by MatchupDetail component', () => {
+      const store = useLeagueStore()
+
+      // These are the critical methods called by MatchupDetail.vue
+      // If any of these are missing, the component will fail to load
+      const requiredMethods = [
+        'fetchLeagueData',
+        'fetchPlayers',
+        'fetchMatchupForWeek',
+        'fetchTransactionsForWeek',
+        'fetchInjuriesForWeek',
+        'fetchWeeklyProjectionsForWeek', // THIS ONE caused the production failure
+        'fetchNFLSchedule',
+        'getWeekRoster',
+        'getPlayerWeeklyProjection'
+      ]
+
+      requiredMethods.forEach(methodName => {
+        expect(store[methodName]).toBeDefined()
+        expect(typeof store[methodName]).toBe('function')
+      })
+    })
+
+    it('should have all methods called by Home component', () => {
+      const store = useLeagueStore()
+
+      const requiredMethods = [
+        'fetchAllData',
+        'fetchLeagueData',
+        'fetchPlayers',
+        'fetchCurrentMatchups',
+        'fetchYoutube',
+        'getTeamBadges'
+      ]
+
+      requiredMethods.forEach(methodName => {
+        expect(store[methodName]).toBeDefined()
+        expect(typeof store[methodName]).toBe('function')
+      })
+    })
+
+    it('should have all methods called by Teams component', () => {
+      const store = useLeagueStore()
+
+      const requiredMethods = [
+        'fetchLeagueData',
+        'fetchPlayers',
+        'fetchAllMatchups',
+        'processTransactionStats',
+        'processInjuriesData'
+      ]
+
+      requiredMethods.forEach(methodName => {
+        expect(store[methodName]).toBeDefined()
+        expect(typeof store[methodName]).toBe('function')
+      })
+    })
+  })
 })
