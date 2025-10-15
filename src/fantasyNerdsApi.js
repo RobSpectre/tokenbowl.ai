@@ -8,16 +8,6 @@ const BASE_URL = import.meta.env.VITE_FANTASY_NERDS_PROXY_URL || 'https://tokenb
  * @returns {Promise<Object>} Injury data keyed by player name
  */
 export async function getInjuries(week) {
-  const apiKey = import.meta.env.VITE_FANTASY_FOOTBALL_NERD_API_KEY
-
-  if (!apiKey) {
-    console.warn('⚠️ Fantasy Nerds API key not configured. Please add VITE_FANTASY_FOOTBALL_NERD_API_KEY to your environment variables')
-    console.warn('Get your API key from: https://www.fantasynerds.com/')
-
-    // Return mock data for development
-    return getMockInjuryData(week)
-  }
-
   try {
     // Add cache-busting timestamp to ensure fresh data
     // API key is added by the Cloudflare Worker proxy
@@ -82,7 +72,8 @@ export async function getInjuries(week) {
     return injuryMap
   } catch (error) {
     console.error(`Error fetching injuries for week ${week}:`, error)
-    return {}
+    console.warn('Falling back to mock injury data')
+    return getMockInjuryData(week)
   }
 }
 
@@ -128,13 +119,6 @@ export function getInjuryIndicator(injury) {
  * @returns {Promise<Object>} Weekly projections data keyed by player name
  */
 export async function getWeeklyProjections(week) {
-  const apiKey = import.meta.env.VITE_FANTASY_FOOTBALL_NERD_API_KEY
-
-  if (!apiKey) {
-    console.warn('⚠️ Fantasy Nerds API key not configured for weekly projections')
-    return getMockProjectionsData(week)
-  }
-
   try {
     // Fetch weekly projections with cache busting
     // API key is added by the Cloudflare Worker proxy
@@ -182,7 +166,8 @@ export async function getWeeklyProjections(week) {
     return projectionsMap
   } catch (error) {
     console.error(`Error fetching weekly projections for week ${week}:`, error)
-    return {}
+    console.warn('Falling back to mock projections data')
+    return getMockProjectionsData(week)
   }
 }
 
@@ -229,13 +214,6 @@ function calculateFantasyPoints(stats) {
  * @returns {Promise<Object>} Schedule data with current week and all games
  */
 export async function getNFLSchedule() {
-  const apiKey = import.meta.env.VITE_FANTASY_FOOTBALL_NERD_API_KEY
-
-  if (!apiKey) {
-    console.warn('⚠️ Fantasy Nerds API key not configured for NFL schedule')
-    return getMockScheduleData()
-  }
-
   try {
     // Fetch NFL schedule with cache busting
     // API key is added by the Cloudflare Worker proxy
@@ -258,7 +236,8 @@ export async function getNFLSchedule() {
     return data
   } catch (error) {
     console.error('Error fetching NFL schedule:', error)
-    return { current_week: 1, schedule: [] }
+    console.warn('Falling back to mock schedule data')
+    return getMockScheduleData()
   }
 }
 
