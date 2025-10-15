@@ -64,6 +64,29 @@
       gtag('config', 'G-8DEJ5TD7KG');
     </script>
 
+    <!-- Version check and auto-reload on new deployment -->
+    <script>
+      (function(){
+        // Get current app version from meta tag
+        const currentVersion = document.querySelector('meta[name="app-version"]').content;
+        const storedVersion = localStorage.getItem('app-version');
+
+        // If versions don't match and we have a stored version, force reload once
+        if (storedVersion && storedVersion !== currentVersion && !sessionStorage.getItem('version-reloaded')) {
+          console.log('New version detected:', currentVersion, 'Old:', storedVersion);
+          sessionStorage.setItem('version-reloaded', 'true');
+          localStorage.setItem('app-version', currentVersion);
+          // Hard reload to get fresh resources
+          window.location.reload(true);
+        } else {
+          // Store current version
+          localStorage.setItem('app-version', currentVersion);
+          // Clear reload flag
+          sessionStorage.removeItem('version-reloaded');
+        }
+      })();
+    </script>
+
     <!-- GitHub Pages SPA redirect handler -->
     <script>
       (function(){

@@ -3,7 +3,20 @@ import vue from '@vitejs/plugin-vue'
 import tailwindcss from '@tailwindcss/postcss'
 
 export default defineConfig({
-  plugins: [vue()],
+  plugins: [
+    vue(),
+    {
+      name: 'html-transform',
+      transformIndexHtml(html) {
+        // Inject current timestamp into meta tag to force cache refresh
+        const timestamp = new Date().toISOString()
+        return html.replace(
+          /<meta name="app-version" content="[^"]*">/,
+          `<meta name="app-version" content="${timestamp}">`
+        )
+      }
+    }
+  ],
   // If deploying to https://username.github.io/repository-name/
   // base: '/tokenbowl.ai/',
   // If using a custom domain (tokenbowl.ai), leave as default
