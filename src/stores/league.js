@@ -937,10 +937,23 @@ export const useLeagueStore = defineStore('league', {
         return false
       }
 
+      // Normalize team codes to handle API inconsistencies
+      // Fantasy Nerds uses different codes than Sleeper for some teams
+      const normalizeTeamCode = (code) => {
+        const teamMappings = {
+          'JAX': 'JAC',  // Jacksonville: Sleeper uses JAX, Fantasy Nerds uses JAC
+          'WSH': 'WAS',  // Washington: Alternative codes
+          // Add more mappings as needed
+        }
+        return teamMappings[code] || code
+      }
+
+      const normalizedTeam = normalizeTeamCode(team)
+
       // Check if this team has a game scheduled for this week
       const hasGame = this.nflSchedule.schedule.some(game =>
         String(game.week) === String(week) &&
-        (game.home_team === team || game.away_team === team)
+        (game.home_team === normalizedTeam || game.away_team === normalizedTeam)
       )
 
       // If no game is scheduled for this week, the team is on bye
