@@ -1,8 +1,9 @@
 const CHANNEL_ID = 'UCFf-Wwy675zDhKDcKxGl_kw'
 const SHORTS_PLAYLIST_ID = 'UUSH' + CHANNEL_ID.substring(2) // Replace UC with UUSH for shorts playlist
+const LONG_FORM_PLAYLIST_ID = 'PLPseZqsYjyD5ZNg9Bjo_bn8JdJmcl-KGS' // Token Bowl long form videos playlist
 const API_KEY = import.meta.env.VITE_YOUTUBE_API_KEY // Read from environment variable
 const CACHE_DURATION = 3600000 // 1 hour in milliseconds
-const CACHE_VERSION = 4 // v4: Use YouTube Shorts playlist (UUSH) for reliable detection
+const CACHE_VERSION = 5 // v5: Use dedicated playlist for long form videos
 
 // Helper function to get cached data
 function getCachedData(key) {
@@ -138,14 +139,15 @@ export async function getLatestVideos(maxResults = 10) {
 }
 
 export async function getLatestVideoAndShorts() {
-  const videos = await getLatestVideos(20)
+  // Fetch long form videos from dedicated playlist
+  const longFormVideos = await getPlaylistVideos(LONG_FORM_PLAYLIST_ID, 10)
 
-  const regularVideos = videos.filter(v => !v.isShort)
-  const shorts = videos.filter(v => v.isShort)
+  // Fetch shorts from the shorts playlist
+  const shortsVideos = await getPlaylistVideos(SHORTS_PLAYLIST_ID, 10)
 
   return {
-    latestVideo: regularVideos[0] || null,
-    latestShorts: shorts.slice(0, 3)
+    latestVideo: longFormVideos[0] || null,
+    latestShorts: shortsVideos.slice(0, 3)
   }
 }
 

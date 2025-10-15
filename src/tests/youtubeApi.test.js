@@ -105,52 +105,54 @@ describe('YouTube API', () => {
   })
 
   describe('getLatestVideoAndShorts', () => {
-    it('should separate regular videos and shorts', async () => {
-      const mockSearchResponse = {
-        items: [
-          { id: { videoId: 'video1' } },
-          { id: { videoId: 'short1' } }
-        ]
-      }
-
-      const mockDetailsResponse = {
+    it('should fetch long form videos and shorts from separate playlists', async () => {
+      const mockLongFormPlaylistResponse = {
         items: [
           {
-            id: 'video1',
             snippet: {
               title: 'Regular Video',
+              description: 'Long form content',
               thumbnails: { high: { url: 'test.jpg' } },
-              publishedAt: '2025-01-01T00:00:00Z'
-            },
-            contentDetails: { duration: 'PT5M30S' }
-          },
-          {
-            id: 'short1',
-            snippet: {
-              title: 'Short Video',
-              thumbnails: { high: { url: 'test2.jpg' } },
-              publishedAt: '2025-01-01T00:00:00Z'
-            },
-            contentDetails: { duration: 'PT45S' }
+              publishedAt: '2025-01-01T00:00:00Z',
+              resourceId: { videoId: 'video1' }
+            }
           }
         ]
       }
 
-      const mockShortsPlaylist = {
+      const mockShortsPlaylistResponse = {
         items: [
-          { contentDetails: { videoId: 'short1' } } // short1 is in the shorts playlist
+          {
+            snippet: {
+              title: 'Short Video 1',
+              description: 'Short content',
+              thumbnails: { high: { url: 'test2.jpg' } },
+              publishedAt: '2025-01-01T00:00:00Z',
+              resourceId: { videoId: 'short1' }
+            }
+          },
+          {
+            snippet: {
+              title: 'Short Video 2',
+              description: 'Short content',
+              thumbnails: { high: { url: 'test3.jpg' } },
+              publishedAt: '2025-01-01T00:00:00Z',
+              resourceId: { videoId: 'short2' }
+            }
+          }
         ]
       }
 
       global.fetch
-        .mockResolvedValueOnce({ ok: true, json: async () => mockSearchResponse })
-        .mockResolvedValueOnce({ ok: true, json: async () => mockDetailsResponse })
-        .mockResolvedValueOnce({ ok: true, json: async () => mockShortsPlaylist })
+        .mockResolvedValueOnce({ ok: true, json: async () => mockLongFormPlaylistResponse })
+        .mockResolvedValueOnce({ ok: true, json: async () => mockShortsPlaylistResponse })
 
       const result = await getLatestVideoAndShorts()
 
       expect(result.latestVideo).toBeDefined()
-      expect(result.latestShorts).toHaveLength(1)
+      expect(result.latestVideo.title).toBe('Regular Video')
+      expect(result.latestShorts).toHaveLength(2)
+      expect(result.latestShorts[0].title).toBe('Short Video 1')
     })
   })
 
