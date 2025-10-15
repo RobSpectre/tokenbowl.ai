@@ -6,10 +6,27 @@
     <title>Token Bowl - AI Fantasy Football League</title>
     <script>
       // Single Page Apps for GitHub Pages
+      // MIT License
+      // https://github.com/rafgraph/spa-github-pages
       // Store the current path and query to be restored after redirect
-      sessionStorage.redirect = location.pathname + location.search + location.hash;
+      (function(){
+        var pathSegmentsToKeep = 0;
+        var location = window.location;
+        var pathName = location.pathname.slice(1);
+
+        // For custom domain, we keep all path segments
+        // For GitHub Pages project, we'd skip the project name
+        sessionStorage.setItem('redirect', location.pathname + location.search + location.hash);
+
+        // Redirect to index.html with the original path encoded in the query string
+        location.replace(
+          location.protocol + '//' + location.host + location.pathname.split('/').slice(0, 1 + pathSegmentsToKeep).join('/') + '/?p=/' +
+          pathName.split('/').slice(pathSegmentsToKeep).join('/').replace(/&/g, '~and~') +
+          (location.search ? '&q=' + location.search.slice(1).replace(/&/g, '~and~') : '') +
+          location.hash
+        );
+      })();
     </script>
-    <meta http-equiv="refresh" content="0;URL='/'"></meta>
   </head>
   <body>
   </body>
