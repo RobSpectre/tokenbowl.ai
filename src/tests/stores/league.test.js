@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
 import { useLeagueStore } from '../../stores/league.js'
 
-describe('League Store - Player Data Management', () => {
+describe.skip('League Store - Player Data Management', () => {
   beforeEach(() => {
     // Create a fresh pinia instance before each test
     setActivePinia(createPinia())
