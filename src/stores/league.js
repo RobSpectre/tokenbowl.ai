@@ -13,6 +13,17 @@ const YOUTUBE_CACHE_DURATION = 24 * 60 * 60 * 1000
 // Cache version - increment this when making breaking changes to data structure
 const CACHE_VERSION = 10 // v10: Enriched weekRosters with full user, team, and standings metadata
 
+// Team code normalization mapping
+// Fantasy Nerds uses different codes than Sleeper for some teams
+const normalizeTeamCode = (code) => {
+  const teamMappings = {
+    'JAX': 'JAC',  // Jacksonville: Sleeper uses JAX, Fantasy Nerds uses JAC
+    'WSH': 'WAS',  // Washington: Alternative codes
+    // Add more mappings as needed
+  }
+  return teamMappings[code] || code
+}
+
 export const useLeagueStore = defineStore('league', {
   state: () => ({
     // Cache version for invalidation
@@ -247,10 +258,13 @@ export const useLeagueStore = defineStore('league', {
         const player = state.players[playerId]
         if (!player || !player.team) return null
 
+        // Normalize team code to handle API inconsistencies
+        const normalizedTeam = normalizeTeamCode(player.team)
+
         // Find the game for this team in this week
         const game = state.nflSchedule.schedule.find(g =>
           String(g.week) === String(week) &&
-          (g.home_team === player.team || g.away_team === player.team)
+          (g.home_team === normalizedTeam || g.away_team === normalizedTeam)
         )
 
         if (!game) return null
@@ -258,7 +272,7 @@ export const useLeagueStore = defineStore('league', {
         // Calculate game status
         const gameDate = new Date(game.game_date)
         const now = new Date()
-        const isHome = game.home_team === player.team
+        const isHome = game.home_team === normalizedTeam
         const opponent = isHome ? game.away_team : game.home_team
 
         let status = 'scheduled'
