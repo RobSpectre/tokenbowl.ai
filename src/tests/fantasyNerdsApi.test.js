@@ -60,7 +60,7 @@ describe('Fantasy Nerds API', () => {
       const result = await getInjuries(1)
 
       expect(global.fetch).toHaveBeenCalledWith(
-        expect.stringContaining('/injuries?apikey=test-api-key&week=1&_t=')
+        expect.stringContaining('/nfl/injuries?week=1&_t=')
       )
 
       expect(result).toHaveProperty('patrick mahomes')
