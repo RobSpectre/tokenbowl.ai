@@ -826,8 +826,9 @@ export const useLeagueStore = defineStore('league', {
                 injury_status_combined: injuryInfo?.game_status || player.injury_status || null,
                 injury_notes: injuryInfo?.notes || player.injury_notes || null,
 
-                // Bye week status (check if player's team is on bye this week)
-                bye_week: this.getByeWeekForTeam(player.team, currentWeek),
+                // Bye week status - DO NOT SET HERE as it's week-specific
+                // This should be calculated dynamically based on the week being viewed
+                bye_week: null, // Deprecated - use getByeWeekForTeam(team, week) directly
 
                 // Game status for current week
                 game_status: this.getGameStatusForPlayer(playerId, currentWeek),
@@ -1792,12 +1793,16 @@ export const useLeagueStore = defineStore('league', {
      * Generate badges for a team based on roster status
      * Single source of truth for badge generation
      * @param {Array} starterIds - Array of player IDs in the starting lineup
+     * @param {Number} week - Week number to check bye status for (optional, defaults to current week)
      * @returns {Array} Array of badge objects with type, label, and color
      */
-    getTeamBadges(starterIds) {
+    getTeamBadges(starterIds, week = null) {
       if (!starterIds || !Array.isArray(starterIds)) return []
 
       const badges = []
+
+      // Use provided week or fall back to current week
+      const checkWeek = week || this.league?.settings?.leg || null
 
       // Track different injury severities and statuses
       let hasOut = false
@@ -1820,19 +1825,23 @@ export const useLeagueStore = defineStore('league', {
         const enrichedPlayer = this.enrichedPlayers[playerId]
         const basePlayer = this.players[playerId]
 
-        if (enrichedPlayer) {
-          // Check for BYE week
-          if (enrichedPlayer.bye_week) {
-            hasBye = true
+        if (enrichedPlayer || basePlayer) {
+          const player = enrichedPlayer || basePlayer
+
+          // Check for BYE week dynamically based on the specific week
+          if (checkWeek && player.team) {
+            if (this.getByeWeekForTeam(player.team, checkWeek)) {
+              hasBye = true
+            }
           }
 
           // Check for suspension
-          if (enrichedPlayer.is_suspended) {
+          if (enrichedPlayer?.is_suspended) {
             hasSuspended = true
           }
 
           // Check injury status using consolidated injury_status_combined field
-          const statusToCheck = enrichedPlayer.injury_status_combined?.toUpperCase()
+          const statusToCheck = enrichedPlayer?.injury_status_combined?.toUpperCase() || basePlayer?.injury_status?.toUpperCase()
 
           if (statusToCheck) {
             // Check for Doubtful BEFORE Out (since "DOUBTFUL" contains "OUT")
@@ -1853,7 +1862,7 @@ export const useLeagueStore = defineStore('league', {
           }
 
           // Also check the injury_indicator field as a fallback
-          if (!statusToCheck && enrichedPlayer.injury_indicator) {
+          if (!statusToCheck && enrichedPlayer?.injury_indicator) {
             switch(enrichedPlayer.injury_indicator) {
               case 'O':
                 hasOut = true
@@ -1868,22 +1877,6 @@ export const useLeagueStore = defineStore('league', {
               case 'PUP':
                 hasQuestionable = true
                 break
-            }
-          }
-        } else if (basePlayer) {
-          // Fallback to base player injury status if enriched data not available
-          const sleeperStatus = basePlayer.injury_status?.toUpperCase()
-          if (sleeperStatus) {
-            if (sleeperStatus.includes('IR')) {
-              hasIR = true
-            } else if (sleeperStatus.includes('OUT')) {
-              hasOut = true
-            } else if (sleeperStatus.includes('DOUBTFUL') || sleeperStatus === 'D') {
-              hasDoubtful = true
-            } else if (sleeperStatus.includes('QUESTIONABLE') || sleeperStatus === 'Q') {
-              hasQuestionable = true
-            } else if (sleeperStatus === 'SUS' || sleeperStatus.includes('SUSPENDED')) {
-              hasSuspended = true
             }
           }
         }

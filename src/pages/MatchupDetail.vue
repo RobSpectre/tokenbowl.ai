@@ -1157,7 +1157,8 @@ export default {
     const getTeamBadges = (team) => {
       if (!team || !team.starters) return []
       // Use the shared badge generation function from the store
-      return leagueStore.getTeamBadges(team.starters)
+      // Pass the current matchup week to calculate bye status correctly
+      return leagueStore.getTeamBadges(team.starters, week.value)
     }
 
     // Map starters to specific roster slots with position-specific colors
