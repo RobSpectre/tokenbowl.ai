@@ -653,7 +653,7 @@ export default {
         // Get current week from league data or URL
         const weekParam = router.currentRoute.value.query.week
         const urlWeek = weekParam ? parseInt(weekParam) : null
-        const currentWeek = leagueStore.league?.settings?.leg || 5
+        const currentWeek = leagueStore.currentLeagueWeek || 1
 
         // Set selected week
         if (urlWeek && urlWeek >= 1 && urlWeek <= 18) {
@@ -677,6 +677,12 @@ export default {
         await nextTick()
         renderStandingsChart()
         renderPointsChart()
+
+        // Ensure charts resize after DOM paint (fixes initial width issue)
+        requestAnimationFrame(() => {
+          if (standingsChart) standingsChart.resize()
+          if (pointsChart) pointsChart.resize()
+        })
 
         // Check if we have chart data
         const hasTransactions = transactionStats.value && Object.keys(transactionStats.value.byWeek || {}).length > 0
