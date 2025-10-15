@@ -163,6 +163,17 @@
                   .flex-1.min-w-0
                     .flex.items-center.gap-2
                       div(class="text-white font-semibold text-sm sm:text-base truncate") {{ getPlayerName(playerId) }}
+                      //- BYE badge
+                      div(
+                        v-if="getPlayerBye(playerId)"
+                        class="px-2 py-0.5 rounded text-xs font-bold bg-gray-600 text-white"
+                      ) BYE
+                      //- SUSP badge
+                      div(
+                        v-if="getPlayerSuspended(playerId)"
+                        class="px-2 py-0.5 rounded text-xs font-bold bg-purple-600 text-white"
+                      ) SUSP
+                      //- Injury badges
                       div(
                         v-if="getPlayerInjury(playerId)"
                         class="px-2 py-0.5 rounded text-xs font-bold"
@@ -202,6 +213,17 @@
                     .flex-1
                       .flex.items-center.gap-2
                         .text-white.font-semibold.text-sm {{ getPlayerName(playerId) }}
+                        //- BYE badge
+                        div(
+                          v-if="getPlayerBye(playerId)"
+                          class="px-1.5 py-0.5 rounded text-xs font-bold bg-gray-600 text-white"
+                        ) BYE
+                        //- SUSP badge
+                        div(
+                          v-if="getPlayerSuspended(playerId)"
+                          class="px-1.5 py-0.5 rounded text-xs font-bold bg-purple-600 text-white"
+                        ) SUSP
+                        //- Injury badges
                         div(
                           v-if="getPlayerInjury(playerId)"
                           class="px-1.5 py-0.5 rounded text-xs font-bold"
@@ -665,22 +687,8 @@ export default {
 
         error.value = null
 
-        // First ensure league data and players are loaded
-        await leagueStore.fetchLeagueData()
-
-        // fetchLeagueData includes players, but make sure they're loaded
-        await leagueStore.fetchPlayers()
-
-        // Fetch enriched player data
-        await leagueStore.fetchEnrichedPlayers()
-
-        // Now load other data in parallel
-        // Pass false to fetchAllMatchups since we already have league data
-        await Promise.all([
-          leagueStore.fetchDraft(),
-          leagueStore.fetchAllMatchups(false, false),  // Don't re-fetch league data
-          leagueStore.fetchNFLSchedule()
-        ])
+        // Initialize store (loads all data if needed)
+        await leagueStore.initialize()
 
         // Wait for computed teams to be ready
         await nextTick()
@@ -1350,6 +1358,22 @@ export default {
       return enrichedPlayer.injury_indicator || null
     }
 
+    const getPlayerBye = (playerId) => {
+      // Check if player is on bye week FOR THIS SPECIFIC WEEK
+      const player = players.value[playerId]
+      if (!player || !player.team || !currentWeek.value) return false
+
+      // Use the store's getByeWeekForTeam method with the current week
+      return leagueStore.getByeWeekForTeam(player.team, currentWeek.value)
+    }
+
+    const getPlayerSuspended = (playerId) => {
+      // Check if player is suspended
+      const enrichedPlayer = enrichedPlayers.value[playerId]
+      if (!enrichedPlayer) return false
+      return enrichedPlayer.is_suspended === true
+    }
+
     // Get game info for a player
     const getPlayerGameInfo = (playerId) => {
       if (!playerId || playerId === '0' || playerId === 0 || !currentWeek.value) return null
@@ -2014,6 +2038,8 @@ export default {
       getPlayerVORP,
       getPlayerROS,
       getPlayerInjury,
+      getPlayerBye,
+      getPlayerSuspended,
       getPlayerGameInfo,
       getGameStatusText,
       formatGameTime,
