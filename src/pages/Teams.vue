@@ -169,6 +169,11 @@
                         :class="getPlayerInjury(playerId) === 'O' || getPlayerInjury(playerId) === 'IR' ? 'bg-red-600 text-white' : getPlayerInjury(playerId) === 'D' ? 'bg-orange-500 text-white' : 'bg-yellow-500 text-black'"
                       ) {{ getPlayerInjury(playerId) }}
                     div(class="text-gray-400 text-xs hidden sm:block") {{ getPlayerTeam(playerId) }}
+                    //- Game info (time/status)
+                    div(class="text-xs mt-0.5" v-if="getPlayerGameInfo(playerId)")
+                      span(:class="getPlayerGameInfo(playerId).status === 'in_progress' ? 'text-red-400 font-bold animate-pulse' : getPlayerGameInfo(playerId).status === 'final' ? 'text-gray-500' : 'text-blue-400'")
+                        | {{ getGameStatusText(getPlayerGameInfo(playerId)) }}
+                    //- Fantasy metrics (VORP, ROS)
                     div(class="flex gap-2 text-xs mt-0.5")
                       span(class="text-gray-500" v-if="getPlayerVORP(playerId)") VORP: {{ getPlayerVORP(playerId) }}
                       span(class="text-gray-500" v-if="getPlayerROS(playerId)") ROS: {{ getPlayerROS(playerId).toFixed(1) }}
@@ -203,6 +208,11 @@
                           :class="getPlayerInjury(playerId) === 'O' || getPlayerInjury(playerId) === 'IR' ? 'bg-red-600 text-white' : getPlayerInjury(playerId) === 'D' ? 'bg-orange-500 text-white' : 'bg-yellow-500 text-black'"
                         ) {{ getPlayerInjury(playerId) }}
                       .text-gray-400.text-xs {{ getPlayerTeam(playerId) }}
+                      //- Game info (time/status)
+                      div(class="text-xs mt-0.5" v-if="getPlayerGameInfo(playerId)")
+                        span(:class="getPlayerGameInfo(playerId).status === 'in_progress' ? 'text-red-400 font-bold animate-pulse' : getPlayerGameInfo(playerId).status === 'final' ? 'text-gray-500' : 'text-blue-400'")
+                          | {{ getGameStatusText(getPlayerGameInfo(playerId)) }}
+                      //- Fantasy metrics (VORP, ROS)
                       div(class="flex gap-2 text-xs mt-0.5")
                         span(class="text-gray-500" v-if="getPlayerVORP(playerId)") VORP: {{ getPlayerVORP(playerId) }}
                         span(class="text-gray-500" v-if="getPlayerROS(playerId)") ROS: {{ getPlayerROS(playerId).toFixed(1) }}
@@ -512,7 +522,6 @@ import { useRouter, useRoute } from 'vue-router'
 import { useHead } from '@vueuse/head'
 import { useLeagueStore } from '../stores/league.js'
 import { getTeamInfo } from '../teamMappings.js'
-import { getPlayerInjuryStatus } from '../fantasyNerdsApi.js' // Still needed for injury charts
 import { trackButtonClick } from '../analytics.js'
 import * as echarts from 'echarts'
 
@@ -666,9 +675,11 @@ export default {
         await leagueStore.fetchEnrichedPlayers()
 
         // Now load other data in parallel
+        // Pass false to fetchAllMatchups since we already have league data
         await Promise.all([
           leagueStore.fetchDraft(),
-          leagueStore.fetchAllMatchups()
+          leagueStore.fetchAllMatchups(false, false),  // Don't re-fetch league data
+          leagueStore.fetchNFLSchedule()
         ])
 
         // Wait for computed teams to be ready
@@ -727,9 +738,11 @@ export default {
 
     const loadAllTransactions = async () => {
       try {
+        // Fetch all transaction weeks in parallel
+        // Don't re-fetch league data since it should already be loaded
         const transPromises = []
         for (let week = 1; week <= 18; week++) {
-          transPromises.push(leagueStore.fetchTransactionsForWeek(week))
+          transPromises.push(leagueStore.fetchTransactionsForWeek(week, false, false))
         }
         await Promise.all(transPromises)
       } catch (err) {
@@ -1130,7 +1143,9 @@ export default {
           const player = players.value[playerId]
           if (player) {
             const playerName = `${player.first_name} ${player.last_name}`
-            const injuryStatus = getPlayerInjuryStatus(weekInjuries, playerName)
+            // Look up injury directly from the store's injury map
+            const playerKey = playerName.toLowerCase()
+            const injuryStatus = weekInjuries ? weekInjuries[playerKey] : null
             if (injuryStatus) {
               injuries.push({
                 ...injuryStatus,
@@ -1236,8 +1251,23 @@ export default {
     }
 
     const getBenchPlayers = (matchup) => {
-      if (!matchup || !matchup.players) return []
-      return matchup.players.filter(playerId => !matchup.starters.includes(playerId))
+      // Use week-specific roster data from the store with pre-calculated bench
+      if (!matchup || !matchup.roster_id) return []
+
+      // Get the week-specific roster data from store
+      const weekRoster = leagueStore.getWeekRoster(currentWeek.value, matchup.roster_id)
+
+      // If we have week roster data with bench, use it
+      if (weekRoster && weekRoster.bench) {
+        return weekRoster.bench
+      }
+
+      // Fallback: calculate from matchup data if week roster not available
+      if (matchup.players && matchup.starters) {
+        return matchup.players.filter(playerId => !matchup.starters.includes(playerId))
+      }
+
+      return []
     }
 
     const getPositionColor = (position) => {
@@ -1318,6 +1348,48 @@ export default {
 
       // Return the injury indicator directly from enriched data
       return enrichedPlayer.injury_indicator || null
+    }
+
+    // Get game info for a player
+    const getPlayerGameInfo = (playerId) => {
+      if (!playerId || playerId === '0' || playerId === 0 || !currentWeek.value) return null
+      return leagueStore.getPlayerGameInfo(playerId, currentWeek.value)
+    }
+
+    // Get game status text
+    const getGameStatusText = (gameInfo) => {
+      if (!gameInfo) return null
+      switch (gameInfo.status) {
+        case 'in_progress':
+          return '🔴 LIVE'
+        case 'final':
+          return 'Final'
+        case 'scheduled':
+          return formatGameTime(gameInfo)
+        default:
+          return null
+      }
+    }
+
+    // Format game time
+    const formatGameTime = (gameInfo) => {
+      if (!gameInfo || !gameInfo.gameDate) return null
+
+      const gameDate = new Date(gameInfo.gameDate)
+      const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+      const dayName = days[gameDate.getDay()]
+
+      let hours = gameDate.getHours()
+      const minutes = gameDate.getMinutes()
+      const ampm = hours >= 12 ? 'PM' : 'AM'
+      hours = hours % 12
+      hours = hours ? hours : 12 // 0 should be 12
+      const minutesStr = minutes < 10 ? '0' + minutes : minutes
+
+      const timeStr = `${dayName} ${hours}:${minutesStr} ${ampm}`
+      const opponent = gameInfo.isHome ? `vs ${gameInfo.opponent}` : `@ ${gameInfo.opponent}`
+
+      return `${timeStr} ${opponent}`
     }
 
     // Get team badges using the shared function from the store
@@ -1942,6 +2014,9 @@ export default {
       getPlayerVORP,
       getPlayerROS,
       getPlayerInjury,
+      getPlayerGameInfo,
+      getGameStatusText,
+      formatGameTime,
       getTeamBadges,
       getTransactionDelta,
       formatTransactionDate,

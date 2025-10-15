@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 import { getLeagueData, getRelevantPlayers, getMatchups, getTransactions } from '../sleeperApi.js'
 import { getTeamInfo } from '../teamMappings.js'
 import { getLatestVideoAndShorts } from '../youtubeApi.js'
-import { getInjuries, getPlayerInjuryStatus, getInjuryIndicator } from '../fantasyNerdsApi.js'
+import { getInjuries, getPlayerInjuryStatus, getInjuryIndicator, getWeeklyProjections, getNFLSchedule } from '../fantasyNerdsApi.js'
 import { getPlayers as getPlayersFromService, enrichPlayerData } from '../utils/playerService.js'
 
 // Cache duration: 5 minutes (normal) or 30 seconds (during NFL games)
@@ -11,7 +11,7 @@ const GAME_TIME_CACHE_DURATION = 30 * 1000 // 30 seconds during game time
 // YouTube cache duration: 24 hours
 const YOUTUBE_CACHE_DURATION = 24 * 60 * 60 * 1000
 // Cache version - increment this when making breaking changes to data structure
-const CACHE_VERSION = 8 // v8: Added enrichedPlayers with consolidated data from all sources
+const CACHE_VERSION = 10 // v10: Enriched weekRosters with full user, team, and standings metadata
 
 export const useLeagueStore = defineStore('league', {
   state: () => ({
@@ -30,8 +30,16 @@ export const useLeagueStore = defineStore('league', {
     // Enriched player data with all sources consolidated
     enrichedPlayers: {},
 
+    // Week-based player stats (player performance by week)
+    playerStatsByWeek: {}, // { week: { playerId: { points, started, projected, rosterId } } }
+    playerStatsTimestamp: null,
+
     // All matchups (weeks 1-18)
     allMatchups: {},
+
+    // Week-based roster data (including bench players)
+    weekRosters: {},
+    weekRostersTimestamp: null,
 
     // Transactions by week
     transactionsByWeek: {},
@@ -40,6 +48,14 @@ export const useLeagueStore = defineStore('league', {
     // Injuries by week (from Fantasy Nerds API)
     injuriesByWeek: {},
     injuriesTimestampsByWeek: {},
+
+    // Weekly projections by week (from Fantasy Nerds API)
+    weeklyProjectionsByWeek: {},
+    weeklyProjectionsTimestampsByWeek: {},
+
+    // NFL Schedule (from Fantasy Nerds API)
+    nflSchedule: null,
+    nflScheduleTimestamp: null,
 
     // Processed injury data - injuries grouped by team for all weeks (for charts)
     processedInjuriesByTeam: {},
@@ -156,9 +172,168 @@ export const useLeagueStore = defineStore('league', {
       return (week) => state.injuriesByWeek[week] || {}
     },
 
+    // Get weekly projections for a specific week
+    getWeeklyProjectionsForWeek: (state) => {
+      return (week) => state.weeklyProjectionsByWeek[week] || {}
+    },
+
+    // Get weekly projection for a specific player in a specific week
+    getPlayerWeeklyProjection: (state) => {
+      return (playerId, week) => {
+        const weekProjections = state.weeklyProjectionsByWeek[week]
+
+        // Get player name from players store
+        const player = state.players[playerId]
+        if (!player) return null
+
+        const playerName = player.full_name || `${player.first_name || ''} ${player.last_name || ''}`.trim()
+        const playerKey = playerName.toLowerCase()
+
+        // Try to get API projection first
+        if (weekProjections && weekProjections[playerKey]) {
+          return weekProjections[playerKey]
+        }
+
+        // Fallback: Calculate projection based on season average
+        const seasonStats = state.getPlayerSeasonStats(playerId)
+        if (seasonStats && seasonStats.totalGames > 0) {
+          return {
+            playerId: playerId,
+            name: playerName,
+            team: player.team,
+            position: player.position,
+            projectedPoints: Math.round(seasonStats.averagePoints * 10) / 10,
+            stats: null,
+            source: 'season_average' // Mark as fallback
+          }
+        }
+
+        // If no season data available, try to generate a basic position-based projection
+        const positionDefaults = {
+          'QB': 18.5,
+          'RB': 12.0,
+          'WR': 11.5,
+          'TE': 9.0,
+          'K': 8.0,
+          'DEF': 7.5
+        }
+
+        const defaultPoints = positionDefaults[player.position] || 5.0
+
+        return {
+          playerId: playerId,
+          name: playerName,
+          team: player.team,
+          position: player.position,
+          projectedPoints: defaultPoints,
+          stats: null,
+          source: 'position_default' // Mark as fallback
+        }
+      }
+    },
+
+    // Check if NFL schedule is fresh
+    isNFLScheduleFresh: (state) => {
+      if (!state.nflScheduleTimestamp) return false
+      // Schedule cache is valid for 1 hour
+      return Date.now() - state.nflScheduleTimestamp < (60 * 60 * 1000)
+    },
+
+    // Get game info for a player's team in a specific week
+    getPlayerGameInfo: (state) => {
+      return (playerId, week) => {
+        if (!state.nflSchedule || !state.nflSchedule.schedule) return null
+
+        const player = state.players[playerId]
+        if (!player || !player.team) return null
+
+        // Find the game for this team in this week
+        const game = state.nflSchedule.schedule.find(g =>
+          String(g.week) === String(week) &&
+          (g.home_team === player.team || g.away_team === player.team)
+        )
+
+        if (!game) return null
+
+        // Calculate game status
+        const gameDate = new Date(game.game_date)
+        const now = new Date()
+        const isHome = game.home_team === player.team
+        const opponent = isHome ? game.away_team : game.home_team
+
+        let status = 'scheduled'
+        if (game.winner) {
+          status = 'final'
+        } else if (now > gameDate) {
+          // Game time has passed but no winner yet - might be in progress
+          const hoursSinceStart = (now - gameDate) / (1000 * 60 * 60)
+          if (hoursSinceStart < 4) { // NFL games typically last 3-3.5 hours
+            status = 'in_progress'
+          } else {
+            status = 'final'
+          }
+        }
+
+        return {
+          gameId: game.gameId,
+          gameDate: gameDate,
+          opponent: opponent,
+          isHome: isHome,
+          tvStation: game.tv_station,
+          status: status,
+          winner: game.winner,
+          score: game.winner ? `${game.away_score}-${game.home_score}` : null
+        }
+      }
+    },
+
     // Get matchups for a specific week
     getMatchupsForWeek: (state) => {
       return (week) => state.allMatchups[week] || null
+    },
+
+    // Get roster data for a specific week (fully enriched with user, team, and standings data)
+    getWeekRoster: (state) => {
+      return (week, rosterId) => {
+        if (!state.weekRosters[week]) return null
+        return state.weekRosters[week][rosterId] || null
+      }
+    },
+
+    // Get all rosters for a specific week (returns object keyed by roster_id)
+    getWeekRosters: (state) => {
+      return (week) => state.weekRosters[week] || {}
+    },
+
+    // Get all rosters for a specific week as an array (sorted by points descending)
+    getWeekRostersArray: (state) => {
+      return (week) => {
+        const rosters = state.weekRosters[week] || {}
+        return Object.values(rosters).sort((a, b) => (b.points || 0) - (a.points || 0))
+      }
+    },
+
+    // Get enriched roster with player objects (not just IDs)
+    getEnrichedWeekRoster: (state) => {
+      return (week, rosterId) => {
+        const roster = state.weekRosters[week]?.[rosterId]
+        if (!roster) return null
+
+        // Enrich with full player objects
+        return {
+          ...roster,
+          playersData: (roster.players || []).map(id => state.players[id] || { player_id: id }),
+          startersData: (roster.starters || []).map(id => state.players[id] || { player_id: id }),
+          benchData: (roster.bench || []).map(id => state.players[id] || { player_id: id }),
+          taxiData: (roster.taxi || []).map(id => state.players[id] || { player_id: id }),
+          reserveData: (roster.reserve || []).map(id => state.players[id] || { player_id: id })
+        }
+      }
+    },
+
+    // Check if week rosters are loaded for a specific week
+    isWeekRostersLoaded: (state) => {
+      return (week) => state.weekRosters[week] !== undefined
     },
 
     // Get enriched player by ID
@@ -208,6 +383,173 @@ export const useLeagueStore = defineStore('league', {
     // Get transactions by team for a specific week
     getTransactionsByTeamForWeek: (state) => {
       return (week) => state.processedTransactionStats.byTeamForWeek[week] || {}
+    },
+
+    // Get player stats for a specific week (returns object keyed by playerId)
+    getPlayerStatsByWeek: (state) => {
+      return (week) => state.playerStatsByWeek[week] || {}
+    },
+
+    // Get player stats for a specific player in a specific week
+    getPlayerStatsForWeek: (state) => {
+      return (playerId, week) => {
+        const weekStats = state.playerStatsByWeek[week]
+        return weekStats ? weekStats[playerId] : null
+      }
+    },
+
+    // Get all weeks a player has stats for
+    getPlayerWeeks: (state) => {
+      return (playerId) => {
+        const weeks = []
+        Object.entries(state.playerStatsByWeek).forEach(([week, stats]) => {
+          if (stats[playerId]) {
+            weeks.push(parseInt(week))
+          }
+        })
+        return weeks.sort((a, b) => a - b)
+      }
+    },
+
+    // Get player season stats (aggregated across all weeks)
+    getPlayerSeasonStats: (state) => {
+      return (playerId) => {
+        let totalPoints = 0
+        let gamesStarted = 0
+        let gamesBenched = 0
+        let weeks = []
+
+        Object.entries(state.playerStatsByWeek).forEach(([week, stats]) => {
+          if (stats[playerId]) {
+            const weekStats = stats[playerId]
+            totalPoints += weekStats.points || 0
+            if (weekStats.started) gamesStarted++
+            if (weekStats.benched) gamesBenched++
+            weeks.push(parseInt(week))
+          }
+        })
+
+        return {
+          totalPoints,
+          gamesStarted,
+          gamesBenched,
+          totalGames: gamesStarted + gamesBenched,
+          averagePoints: weeks.length > 0 ? totalPoints / weeks.length : 0,
+          weeks: weeks.sort((a, b) => a - b)
+        }
+      }
+    },
+
+    // Calculate record (wins/losses/ties) through a specific week
+    getRecordThroughWeek: (state) => {
+      return (rosterId, throughWeek) => {
+        let wins = 0
+        let losses = 0
+        let ties = 0
+
+        for (let week = 1; week <= throughWeek; week++) {
+          const weekMatchups = state.allMatchups[week]
+          if (!weekMatchups) continue
+
+          for (const matchup of weekMatchups) {
+            if (matchup.length !== 2) continue
+
+            const team1 = matchup[0]
+            const team2 = matchup[1]
+
+            if (team1.roster_id === rosterId) {
+              if (team1.points > team2.points) wins++
+              else if (team1.points < team2.points) losses++
+              else ties++
+              break
+            } else if (team2.roster_id === rosterId) {
+              if (team2.points > team1.points) wins++
+              else if (team2.points < team1.points) losses++
+              else ties++
+              break
+            }
+          }
+        }
+
+        return { wins, losses, ties }
+      }
+    },
+
+    // Calculate total points through a specific week
+    getPointsThroughWeek: (state) => {
+      return (rosterId, throughWeek) => {
+        let totalPoints = 0
+
+        for (let week = 1; week <= throughWeek; week++) {
+          const weekMatchups = state.allMatchups[week]
+          if (!weekMatchups) continue
+
+          for (const matchup of weekMatchups) {
+            const team = matchup.find(t => t.roster_id === rosterId)
+            if (team) {
+              totalPoints += team.points || 0
+              break
+            }
+          }
+        }
+
+        return totalPoints
+      }
+    },
+
+    // Get current standings (always shows current league state, not dependent on selected week)
+    currentStandings() {
+      if (!this.league || !this.rosters || this.rosters.length === 0) return []
+
+      const currentWeek = this.league.settings?.leg || 1
+
+      // Check if current week's games are complete
+      let standingsWeek = currentWeek - 1 // Default to previous week
+
+      const currentWeekMatchups = this.allMatchups[currentWeek]
+      if (currentWeekMatchups) {
+        // Check if all teams have points > 0 (indicating games are complete)
+        let allGamesComplete = true
+        for (const matchup of currentWeekMatchups) {
+          for (const team of matchup) {
+            // If any team has 0 or null points, games are not complete
+            if (!team.points || team.points === 0) {
+              allGamesComplete = false
+              break
+            }
+          }
+          if (!allGamesComplete) break
+        }
+
+        // If all games are complete, include current week in standings
+        if (allGamesComplete) {
+          standingsWeek = currentWeek
+        }
+      }
+
+      // Ensure we don't go below 0
+      standingsWeek = Math.max(0, standingsWeek)
+
+      const standings = this.rosters.map(roster => {
+        const record = this.getRecordThroughWeek(roster.roster_id, standingsWeek)
+        const points = this.getPointsThroughWeek(roster.roster_id, standingsWeek)
+
+        return {
+          ...roster,
+          currentRecord: record,
+          currentPoints: points
+        }
+      })
+
+      // Sort by wins (descending), then by points (descending)
+      standings.sort((a, b) => {
+        if (b.currentRecord.wins !== a.currentRecord.wins) {
+          return b.currentRecord.wins - a.currentRecord.wins
+        }
+        return b.currentPoints - a.currentPoints
+      })
+
+      return standings
     }
   },
 
@@ -288,7 +630,7 @@ export const useLeagueStore = defineStore('league', {
       return await this.leagueDataPromise
     },
 
-    async fetchCurrentMatchups(forceRefresh = false) {
+    async fetchCurrentMatchups(forceRefresh = false, ensureLeagueDataLoaded = true) {
       // Return cached data if fresh and not forcing refresh
       if (!forceRefresh && this.isMatchupsFresh && this.currentMatchups) {
         return {
@@ -308,8 +650,11 @@ export const useLeagueStore = defineStore('league', {
       // Create and store the promise so concurrent calls can await it
       this.currentMatchupsPromise = (async () => {
         try {
-          // Ensure we have league data cached first
-          await this.fetchLeagueData()
+          // Only fetch league data if not already loaded AND caller requests it
+          // This prevents duplicate API calls when called from fetchAllData()
+          if (ensureLeagueDataLoaded && (!this.league || this.rosters.length === 0)) {
+            await this.fetchLeagueData()
+          }
 
           // Get the current week from cached league data
           const currentWeek = this.league?.settings?.leg || 1
@@ -456,6 +801,16 @@ export const useLeagueStore = defineStore('league', {
                 // Base Sleeper data
                 ...player,
 
+                // Physical attributes (from Sleeper API or draft data)
+                height: player.height || draftInfo?.height || null,
+                weight: player.weight || draftInfo?.weight || null,
+                age: player.age || draftInfo?.age || null,
+                college: player.college || draftInfo?.college || null,
+                years_exp: player.years_exp !== undefined ? player.years_exp : draftInfo?.years_exp || null,
+
+                // Portrait URL
+                portrait_url: draftInfo?.portrait_url || `https://sleepercdn.com/content/nfl/players/${playerId}.jpg`,
+
                 // Draft data (VORP, ROS, projections)
                 vorp: draftInfo?.vorp || 0,
                 ros: draftInfo?.ros || 0,
@@ -488,6 +843,12 @@ export const useLeagueStore = defineStore('league', {
               // Add basic player data even if enrichment fails
               enriched[playerId] = {
                 ...player,
+                height: player.height || null,
+                weight: player.weight || null,
+                age: player.age || null,
+                college: player.college || null,
+                years_exp: player.years_exp || null,
+                portrait_url: `https://sleepercdn.com/content/nfl/players/${playerId}.jpg`,
                 vorp: 0,
                 ros: 0,
                 adp: 999,
@@ -518,10 +879,17 @@ export const useLeagueStore = defineStore('league', {
                 last_name: pick.player_name.split(' ').slice(1).join(' '),
                 position: pick.position,
                 team: pick.team,
-                age: pick.age,
-                college: pick.college,
-                years_exp: pick.years_exp,
+
+                // Physical attributes
+                height: pick.height || null,
+                weight: pick.weight || null,
+                age: pick.age || null,
+                college: pick.college || null,
+                years_exp: pick.years_exp || null,
                 status: pick.status || 'Active',
+
+                // Portrait URL
+                portrait_url: pick.portrait_url || `https://sleepercdn.com/content/nfl/players/${pick.sleeper_id}.jpg`,
 
                 // Draft data
                 vorp: pick.vorp || 0,
@@ -564,9 +932,18 @@ export const useLeagueStore = defineStore('league', {
 
     // Helper method to determine if a team is on bye for a specific week
     getByeWeekForTeam(team, week) {
-      // TODO: This would ideally come from an NFL schedule API
-      // For now, return false - you can add bye week data later
-      return false
+      if (!team || !week || !this.nflSchedule || !this.nflSchedule.schedule) {
+        return false
+      }
+
+      // Check if this team has a game scheduled for this week
+      const hasGame = this.nflSchedule.schedule.some(game =>
+        String(game.week) === String(week) &&
+        (game.home_team === team || game.away_team === team)
+      )
+
+      // If no game is scheduled for this week, the team is on bye
+      return !hasGame
     },
 
     // Helper method to get game status for a player for a specific week
@@ -591,7 +968,7 @@ export const useLeagueStore = defineStore('league', {
       return null
     },
 
-    async fetchMatchupForWeek(week, forceRefresh = false) {
+    async fetchMatchupForWeek(week, forceRefresh = false, ensureLeagueDataLoaded = true) {
       // If we have fresh all matchups data, just return the specific week
       if (!forceRefresh && this.isAllMatchupsFresh && this.allMatchups[week]) {
         return this.allMatchups[week]
@@ -599,9 +976,10 @@ export const useLeagueStore = defineStore('league', {
 
       // Otherwise fetch just this week's matchup
       try {
-        // Ensure we have rosters and users
-        // Don't pass forceRefresh to avoid duplicate API calls
-        await this.fetchLeagueData()
+        // Only fetch league data if not already loaded AND caller requests it
+        if (ensureLeagueDataLoaded && (!this.league || this.rosters.length === 0)) {
+          await this.fetchLeagueData()
+        }
 
         const matchups = await getMatchups(week)
 
@@ -613,11 +991,72 @@ export const useLeagueStore = defineStore('league', {
 
         // Group matchups and enrich player data
         const matchupGroups = {}
+        const weekRosterData = {}
+        const weekPlayerStats = {}
+
         for (const matchup of matchups) {
           // Enrich player data for matchup.players_points
           let enrichedPlayers = null
           if (matchup.players_points) {
             enrichedPlayers = await enrichPlayerData(matchup.players_points, this.players)
+          }
+
+          // Calculate bench players (all players minus starters)
+          const benchPlayers = matchup.players ?
+            matchup.players.filter(playerId => !matchup.starters?.includes(playerId)) : []
+
+          // Build player stats for this week
+          if (matchup.players) {
+            matchup.players.forEach(playerId => {
+              const points = matchup.players_points?.[playerId] || 0
+              const isStarter = matchup.starters?.includes(playerId) || false
+
+              weekPlayerStats[playerId] = {
+                playerId,
+                rosterId: matchup.roster_id,
+                points,
+                started: isStarter,
+                benched: !isStarter,
+                week
+              }
+            })
+          }
+
+          // Store week-specific roster data with full enrichment
+          if (matchup.roster_id) {
+            const baseRoster = rosterMap[matchup.roster_id]
+            const user = baseRoster?.user
+            const teamInfo = user?.display_name ? getTeamInfo(user.display_name) : null
+
+            weekRosterData[matchup.roster_id] = {
+              // Identity
+              roster_id: matchup.roster_id,
+              owner_id: baseRoster?.owner_id || null,
+
+              // User information
+              user: user || null,
+
+              // Team branding
+              teamInfo: teamInfo,
+
+              // League standings data
+              settings: baseRoster?.settings || {},
+
+              // Week-specific roster composition (all player IDs reference players store)
+              players: matchup.players || [],     // All rostered players this week
+              starters: matchup.starters || [],   // Starting lineup
+              bench: benchPlayers,                // Bench players
+              taxi: baseRoster?.taxi || [],       // Taxi squad
+              reserve: baseRoster?.reserve || [], // Reserve/IR
+
+              // Week-specific performance
+              players_points: matchup.players_points || {},
+              points: matchup.points || 0,
+
+              // Metadata
+              week: week,
+              matchup_id: matchup.matchup_id || null
+            }
           }
 
           if (!matchupGroups[matchup.matchup_id]) {
@@ -626,11 +1065,18 @@ export const useLeagueStore = defineStore('league', {
           matchupGroups[matchup.matchup_id].push({
             ...matchup,
             roster: rosterMap[matchup.roster_id],
+            bench: benchPlayers, // Add bench players to matchup
             enrichedPlayers // Add enriched player data
           })
         }
 
+        // Store week rosters and player stats
+        this.weekRosters[week] = weekRosterData
+        this.playerStatsByWeek[week] = weekPlayerStats
         this.allMatchups[week] = Object.values(matchupGroups)
+
+        // Update player stats timestamp
+        this.playerStatsTimestamp = Date.now()
 
         // Only update timestamp if all matchups are loaded
         if (Object.keys(this.allMatchups).length >= 18) {
@@ -644,7 +1090,7 @@ export const useLeagueStore = defineStore('league', {
       }
     },
 
-    async fetchAllMatchups(forceRefresh = false) {
+    async fetchAllMatchups(forceRefresh = false, ensureLeagueDataLoaded = true) {
       // Return cached data if fresh and not forcing refresh
       if (!forceRefresh && this.isAllMatchupsFresh && Object.keys(this.allMatchups).length > 0) {
         return this.allMatchups
@@ -657,10 +1103,11 @@ export const useLeagueStore = defineStore('league', {
       this.allMatchupsError = null
 
       try {
-        // Use cached league data (rosters and users) instead of making new API calls
-        // Don't pass forceRefresh to fetchLeagueData to avoid duplicate API calls
-        // when this method is called as part of fetchAllData
-        await this.fetchLeagueData()
+        // Only fetch league data if not already loaded AND caller requests it
+        // This prevents duplicate API calls when called from fetchAllData()
+        if (ensureLeagueDataLoaded && (!this.league || this.rosters.length === 0)) {
+          await this.fetchLeagueData()
+        }
 
         // Create maps from cached data
         const userMap = {}
@@ -683,11 +1130,72 @@ export const useLeagueStore = defineStore('league', {
             getMatchups(week).then(async matchups => {
               // Group matchups and enrich player data
               const matchupGroups = {}
+              const weekRosterData = {}
+              const weekPlayerStats = {}
+
               for (const matchup of matchups) {
                 // Enrich player data for matchup.players_points
                 let enrichedPlayers = null
                 if (matchup.players_points) {
                   enrichedPlayers = await enrichPlayerData(matchup.players_points, this.players)
+                }
+
+                // Calculate bench players (all players minus starters)
+                const benchPlayers = matchup.players ?
+                  matchup.players.filter(playerId => !matchup.starters?.includes(playerId)) : []
+
+                // Build player stats for this week
+                if (matchup.players) {
+                  matchup.players.forEach(playerId => {
+                    const points = matchup.players_points?.[playerId] || 0
+                    const isStarter = matchup.starters?.includes(playerId) || false
+
+                    weekPlayerStats[playerId] = {
+                      playerId,
+                      rosterId: matchup.roster_id,
+                      points,
+                      started: isStarter,
+                      benched: !isStarter,
+                      week
+                    }
+                  })
+                }
+
+                // Store week-specific roster data with full enrichment
+                if (matchup.roster_id) {
+                  const baseRoster = rosterMap[matchup.roster_id]
+                  const user = baseRoster?.user
+                  const teamInfo = user?.display_name ? getTeamInfo(user.display_name) : null
+
+                  weekRosterData[matchup.roster_id] = {
+                    // Identity
+                    roster_id: matchup.roster_id,
+                    owner_id: baseRoster?.owner_id || null,
+
+                    // User information
+                    user: user || null,
+
+                    // Team branding
+                    teamInfo: teamInfo,
+
+                    // League standings data
+                    settings: baseRoster?.settings || {},
+
+                    // Week-specific roster composition (all player IDs reference players store)
+                    players: matchup.players || [],     // All rostered players this week
+                    starters: matchup.starters || [],   // Starting lineup
+                    bench: benchPlayers,                // Bench players
+                    taxi: baseRoster?.taxi || [],       // Taxi squad
+                    reserve: baseRoster?.reserve || [], // Reserve/IR
+
+                    // Week-specific performance
+                    players_points: matchup.players_points || {},
+                    points: matchup.points || 0,
+
+                    // Metadata
+                    week: week,
+                    matchup_id: matchup.matchup_id || null
+                  }
                 }
 
                 if (!matchupGroups[matchup.matchup_id]) {
@@ -696,10 +1204,14 @@ export const useLeagueStore = defineStore('league', {
                 matchupGroups[matchup.matchup_id].push({
                   ...matchup,
                   roster: rosterMap[matchup.roster_id],
+                  bench: benchPlayers, // Add bench players to matchup
                   enrichedPlayers // Add enriched player data
                 })
               }
 
+              // Store week rosters and player stats
+              this.weekRosters[week] = weekRosterData
+              this.playerStatsByWeek[week] = weekPlayerStats
               this.allMatchups[week] = Object.values(matchupGroups)
             }).catch(err => {
               console.error(`Error loading week ${week} matchups:`, err)
@@ -710,6 +1222,7 @@ export const useLeagueStore = defineStore('league', {
         // Wait for all weeks to load
         await Promise.all(weekPromises)
         this.allMatchupsTimestamp = Date.now()
+        this.playerStatsTimestamp = Date.now()
 
         return this.allMatchups
       } catch (error) {
@@ -815,7 +1328,7 @@ export const useLeagueStore = defineStore('league', {
       })
     },
 
-    async fetchTransactionsForWeek(week, forceRefresh = false) {
+    async fetchTransactionsForWeek(week, forceRefresh = false, ensureLeagueDataLoaded = true) {
       // Check if cached data is fresh (within cache duration - shorter during game time)
       const timestamp = this.transactionsTimestampsByWeek[week]
       const isFresh = timestamp && (Date.now() - timestamp < this.getCacheDuration())
@@ -826,9 +1339,10 @@ export const useLeagueStore = defineStore('league', {
       }
 
       try {
-        // Ensure we have league data (rosters and users) cached
-        // Don't pass forceRefresh to avoid duplicate API calls
-        await this.fetchLeagueData()
+        // Only fetch league data if not already loaded AND caller requests it
+        if (ensureLeagueDataLoaded && (!this.league || this.rosters.length === 0)) {
+          await this.fetchLeagueData()
+        }
 
         // Only fetch the transactions for this week
         const trans = await getTransactions(week)
@@ -944,20 +1458,68 @@ export const useLeagueStore = defineStore('league', {
       }
     },
 
+    async fetchWeeklyProjectionsForWeek(week, forceRefresh = false) {
+      // Check if cached data is fresh (within cache duration - shorter during game time)
+      const timestamp = this.weeklyProjectionsTimestampsByWeek[week]
+      const isFresh = timestamp && (Date.now() - timestamp < this.getCacheDuration())
+
+      // Return cached data if exists, is fresh, and not forcing refresh
+      if (!forceRefresh && isFresh && this.weeklyProjectionsByWeek[week]) {
+        return this.weeklyProjectionsByWeek[week]
+      }
+
+      try {
+        const projectionsData = await getWeeklyProjections(week)
+
+        this.weeklyProjectionsByWeek[week] = projectionsData
+        this.weeklyProjectionsTimestampsByWeek[week] = Date.now()
+        return projectionsData
+      } catch (error) {
+        console.error(`Error fetching weekly projections for week ${week}:`, error)
+        this.weeklyProjectionsByWeek[week] = {}
+        return {}
+      }
+    },
+
+    async fetchNFLSchedule(forceRefresh = false) {
+      // Return cached data if fresh and not forcing refresh
+      if (!forceRefresh && this.isNFLScheduleFresh && this.nflSchedule) {
+        return this.nflSchedule
+      }
+
+      try {
+        const scheduleData = await getNFLSchedule()
+
+        this.nflSchedule = scheduleData
+        this.nflScheduleTimestamp = Date.now()
+        return scheduleData
+      } catch (error) {
+        console.error('Error fetching NFL schedule:', error)
+        this.nflSchedule = { current_week: 1, schedule: [] }
+        return this.nflSchedule
+      }
+    },
+
     /**
      * Process injury data and group by team for all weeks
      * This consolidates the injury processing logic that was duplicated in components
      */
-    async processInjuriesData(maxWeek, forceRefresh = false) {
+    async processInjuriesData(maxWeek, forceRefresh = false, ensureDataLoaded = true) {
       // Return cached data if fresh and not forcing refresh
       if (!forceRefresh && this.isProcessedInjuriesFresh && Object.keys(this.processedInjuriesByTeam).length > 0) {
         return this.processedInjuriesByTeam
       }
 
       try {
-        // Ensure we have all required data
-        await this.fetchLeagueData()
-        await this.fetchPlayers()
+        // Only fetch required data if not already loaded AND caller requests it
+        if (ensureDataLoaded) {
+          if (!this.league || this.rosters.length === 0) {
+            await this.fetchLeagueData()
+          }
+          if (Object.keys(this.players).length === 0) {
+            await this.fetchPlayers()
+          }
+        }
 
         const transformedInjuries = {}
 
@@ -1028,15 +1590,17 @@ export const useLeagueStore = defineStore('league', {
      * Process transaction data and generate stats for charts
      * This consolidates the transaction processing logic that was duplicated in components
      */
-    async processTransactionStats(maxWeek, forceRefresh = false) {
+    async processTransactionStats(maxWeek, forceRefresh = false, ensureDataLoaded = true) {
       // Return cached data if fresh and not forcing refresh
       if (!forceRefresh && this.isProcessedTransactionsFresh && Object.keys(this.processedTransactionStats.byWeek).length > 0) {
         return this.processedTransactionStats
       }
 
       try {
-        // Ensure we have league data
-        await this.fetchLeagueData()
+        // Only fetch league data if not already loaded AND caller requests it
+        if (ensureDataLoaded && (!this.league || this.rosters.length === 0)) {
+          await this.fetchLeagueData()
+        }
 
         const byWeek = {}           // { week: count }
         const byTeam = {}           // { teamName: { total: count, byWeek: { week: count } } }
@@ -1171,19 +1735,35 @@ export const useLeagueStore = defineStore('league', {
       }
     },
 
-    // Fetch all data needed for the home page
+    // Fetch all data needed for the home page with optimized parallel loading
     async fetchAllData(forceRefresh = false) {
       try {
-        // Fetch critical data first
-        const [leagueData, matchupsData, players, allMatchups] = await Promise.all([
-          this.fetchLeagueData(forceRefresh),
-          this.fetchCurrentMatchups(forceRefresh),
-          this.fetchPlayers(forceRefresh),
-          this.fetchAllMatchups(forceRefresh)
-        ])
+        console.log('🚀 fetchAllData: Starting optimized parallel data loading...')
+        const startTime = Date.now()
 
-        // Fetch enriched players separately so it doesn't block critical data
-        // If it fails, the app will still work with base player data
+        // PHASE 1: Fetch base independent data in parallel
+        // These have no dependencies on each other
+        console.log('📊 Phase 1: Fetching base data (league + players) in parallel...')
+        const phase1Start = Date.now()
+        const [leagueData, players] = await Promise.all([
+          this.fetchLeagueData(forceRefresh),
+          this.fetchPlayers(forceRefresh)
+        ])
+        console.log(`✅ Phase 1 complete in ${Date.now() - phase1Start}ms`)
+
+        // PHASE 2: Fetch all dependent data in parallel
+        // Now that league data is cached, all these can run simultaneously
+        // Pass ensureLeagueDataLoaded=false to prevent redundant fetchLeagueData() calls
+        console.log('📊 Phase 2: Fetching dependent data (matchups) in parallel...')
+        const phase2Start = Date.now()
+        const [matchupsData, allMatchups] = await Promise.all([
+          this.fetchCurrentMatchups(forceRefresh, false), // Don't re-fetch league data
+          this.fetchAllMatchups(forceRefresh, false)      // Don't re-fetch league data
+        ])
+        console.log(`✅ Phase 2 complete in ${Date.now() - phase2Start}ms`)
+
+        // PHASE 3: Fetch enriched players (non-critical, can fail gracefully)
+        console.log('📊 Phase 3: Fetching enriched players (non-blocking)...')
         let enrichedPlayers = {}
         try {
           enrichedPlayers = await this.fetchEnrichedPlayers(forceRefresh)
@@ -1191,6 +1771,9 @@ export const useLeagueStore = defineStore('league', {
           console.error('Error fetching enriched players (non-critical):', err)
           // Don't throw - allow app to continue with base player data
         }
+
+        const totalTime = Date.now() - startTime
+        console.log(`🎉 fetchAllData: Complete in ${totalTime}ms (Phase 1: ${Date.now() - phase1Start}ms, Phase 2: ${Date.now() - phase2Start}ms)`)
 
         return {
           leagueData,
@@ -1218,6 +1801,7 @@ export const useLeagueStore = defineStore('league', {
 
       // Track different injury severities and statuses
       let hasOut = false
+      let hasIR = false
       let hasDoubtful = false
       let hasQuestionable = false
       let hasSuspended = false
@@ -1255,8 +1839,11 @@ export const useLeagueStore = defineStore('league', {
             if (statusToCheck.includes('DOUBTFUL') || (statusToCheck.includes('D ') || statusToCheck === 'D') && !statusToCheck.includes('SUSPENDED')) {
               hasDoubtful = true
             }
-            // Check for Out/IR
-            else if (statusToCheck.includes('OUT') || statusToCheck.includes('IR') || statusToCheck.includes('INJURED RESERVE')) {
+            // Check for IR first, then Out (to separate them)
+            else if (statusToCheck.includes('INJURED RESERVE') || statusToCheck.includes('IR')) {
+              hasIR = true
+            }
+            else if (statusToCheck.includes('OUT')) {
               hasOut = true
             }
             // Check for Questionable/PUP
@@ -1269,8 +1856,10 @@ export const useLeagueStore = defineStore('league', {
           if (!statusToCheck && enrichedPlayer.injury_indicator) {
             switch(enrichedPlayer.injury_indicator) {
               case 'O':
-              case 'IR':
                 hasOut = true
+                break
+              case 'IR':
+                hasIR = true
                 break
               case 'D':
                 hasDoubtful = true
@@ -1285,7 +1874,9 @@ export const useLeagueStore = defineStore('league', {
           // Fallback to base player injury status if enriched data not available
           const sleeperStatus = basePlayer.injury_status?.toUpperCase()
           if (sleeperStatus) {
-            if (sleeperStatus.includes('OUT') || sleeperStatus.includes('IR')) {
+            if (sleeperStatus.includes('IR')) {
+              hasIR = true
+            } else if (sleeperStatus.includes('OUT')) {
               hasOut = true
             } else if (sleeperStatus.includes('DOUBTFUL') || sleeperStatus === 'D') {
               hasDoubtful = true
@@ -1309,7 +1900,10 @@ export const useLeagueStore = defineStore('league', {
         badges.push({ type: 'suspended', label: 'SUSP', color: 'bg-purple-600' })
       }
       if (hasOut) {
-        badges.push({ type: 'out', label: 'O/IR', color: 'bg-red-600' })
+        badges.push({ type: 'out', label: 'O', color: 'bg-red-600' })
+      }
+      if (hasIR) {
+        badges.push({ type: 'ir', label: 'IR', color: 'bg-red-600' })
       }
       if (hasDoubtful) {
         badges.push({ type: 'doubtful', label: 'D', color: 'bg-orange-500' })
@@ -1331,10 +1925,18 @@ export const useLeagueStore = defineStore('league', {
       this.players = {}
       this.enrichedPlayers = {}
       this.allMatchups = {}
+      this.weekRosters = {}
+      this.weekRostersTimestamp = null
+      this.playerStatsByWeek = {}
+      this.playerStatsTimestamp = null
       this.transactionsByWeek = {}
       this.transactionsTimestampsByWeek = {}
       this.injuriesByWeek = {}
       this.injuriesTimestampsByWeek = {}
+      this.weeklyProjectionsByWeek = {}
+      this.weeklyProjectionsTimestampsByWeek = {}
+      this.nflSchedule = null
+      this.nflScheduleTimestamp = null
       this.processedInjuriesByTeam = {}
       this.processedTransactionStats = { byWeek: {}, byTeam: {}, byTeamForWeek: {} }
       this.draftPicks = []
@@ -1372,10 +1974,18 @@ export const useLeagueStore = defineStore('league', {
       'players',
       'enrichedPlayers',
       'allMatchups',
+      'weekRosters',
+      'weekRostersTimestamp',
+      'playerStatsByWeek',
+      'playerStatsTimestamp',
       'transactionsByWeek',
       'transactionsTimestampsByWeek',
       'injuriesByWeek',
       'injuriesTimestampsByWeek',
+      'weeklyProjectionsByWeek',
+      'weeklyProjectionsTimestampsByWeek',
+      'nflSchedule',
+      'nflScheduleTimestamp',
       'processedInjuriesByTeam',
       'processedInjuriesTimestamp',
       'processedTransactionStats',

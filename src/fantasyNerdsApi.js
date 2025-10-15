@@ -123,6 +123,287 @@ export function getInjuryIndicator(injury) {
 }
 
 /**
+ * Fetch NFL weekly projections for a specific week from Fantasy Nerds API
+ * @param {number} week - NFL week number (1-18)
+ * @returns {Promise<Object>} Weekly projections data keyed by player name
+ */
+export async function getWeeklyProjections(week) {
+  const apiKey = import.meta.env.VITE_FANTASY_FOOTBALL_NERD_API_KEY
+
+  if (!apiKey) {
+    console.warn('⚠️ Fantasy Nerds API key not configured for weekly projections')
+    return getMockProjectionsData(week)
+  }
+
+  try {
+    // Fetch weekly projections with cache busting
+    const response = await fetch(
+      `${BASE_URL}/weekly-projections?apikey=${apiKey}&week=${week}&_t=${Date.now()}`
+    )
+
+    if (!response.ok) {
+      throw new Error(`Fantasy Nerds API error: ${response.status}`)
+    }
+
+    const data = await response.json()
+
+    // Check if the API returned an error
+    if (data.error) {
+      console.error(`Fantasy Nerds API error: ${data.error}`)
+      return {}
+    }
+
+    // Transform projections into a map keyed by player name for easy lookup
+    const projectionsMap = {}
+
+    // Handle the response format: { season, week, players: { QB: [...], RB: [...], etc } }
+    if (data.players && typeof data.players === 'object') {
+      Object.values(data.players).forEach(positionPlayers => {
+        if (Array.isArray(positionPlayers)) {
+          positionPlayers.forEach(player => {
+            // Key by player name (lowercase for case-insensitive matching)
+            const playerKey = player.name.toLowerCase()
+            projectionsMap[playerKey] = {
+              playerId: player.playerId,
+              name: player.name,
+              team: player.team,
+              position: player.position,
+              // Calculate projected fantasy points based on standard PPR scoring
+              projectedPoints: calculateFantasyPoints(player),
+              // Store all raw stats for detailed breakdown
+              stats: player
+            }
+          })
+        }
+      })
+    }
+
+    return projectionsMap
+  } catch (error) {
+    console.error(`Error fetching weekly projections for week ${week}:`, error)
+    return {}
+  }
+}
+
+/**
+ * Calculate fantasy points from stat projections (PPR scoring)
+ * @param {Object} stats - Player projection stats
+ * @returns {number} Projected fantasy points
+ */
+function calculateFantasyPoints(stats) {
+  let points = 0
+
+  // Passing stats
+  if (stats.passing_yards) points += parseFloat(stats.passing_yards) * 0.04
+  if (stats.passing_touchdowns) points += parseFloat(stats.passing_touchdowns) * 4
+  if (stats.passing_interceptions) points -= parseFloat(stats.passing_interceptions) * 2
+
+  // Rushing stats
+  if (stats.rushing_yards) points += parseFloat(stats.rushing_yards) * 0.1
+  if (stats.rushing_touchdowns) points += parseFloat(stats.rushing_touchdowns) * 6
+
+  // Receiving stats
+  if (stats.receptions) points += parseFloat(stats.receptions) * 1 // PPR
+  if (stats.receiving_yards) points += parseFloat(stats.receiving_yards) * 0.1
+  if (stats.receiving_touchdowns) points += parseFloat(stats.receiving_touchdowns) * 6
+
+  // Fumbles
+  if (stats.fumbles_lost) points -= parseFloat(stats.fumbles_lost) * 2
+
+  // Kicker stats
+  if (stats.field_goals_made) points += parseFloat(stats.field_goals_made) * 3
+  if (stats.extra_points_made) points += parseFloat(stats.extra_points_made) * 1
+
+  // Defense stats (simplified)
+  if (stats.defensive_touchdowns) points += parseFloat(stats.defensive_touchdowns) * 6
+  if (stats.sacks) points += parseFloat(stats.sacks) * 1
+  if (stats.interceptions) points += parseFloat(stats.interceptions) * 2
+  if (stats.fumble_recoveries) points += parseFloat(stats.fumble_recoveries) * 2
+
+  return Math.round(points * 10) / 10 // Round to 1 decimal
+}
+
+/**
+ * Fetch NFL schedule data from Fantasy Nerds API
+ * @returns {Promise<Object>} Schedule data with current week and all games
+ */
+export async function getNFLSchedule() {
+  const apiKey = import.meta.env.VITE_FANTASY_FOOTBALL_NERD_API_KEY
+
+  if (!apiKey) {
+    console.warn('⚠️ Fantasy Nerds API key not configured for NFL schedule')
+    return getMockScheduleData()
+  }
+
+  try {
+    // Fetch NFL schedule with cache busting
+    const response = await fetch(
+      `${BASE_URL}/schedule?apikey=${apiKey}&_t=${Date.now()}`
+    )
+
+    if (!response.ok) {
+      throw new Error(`Fantasy Nerds API error: ${response.status}`)
+    }
+
+    const data = await response.json()
+
+    // Check if the API returned an error
+    if (data.error) {
+      console.error(`Fantasy Nerds API error: ${data.error}`)
+      return { current_week: 1, schedule: [] }
+    }
+
+    return data
+  } catch (error) {
+    console.error('Error fetching NFL schedule:', error)
+    return { current_week: 1, schedule: [] }
+  }
+}
+
+/**
+ * Get mock schedule data for development when API key is not configured
+ * @returns {Object} Mock schedule data
+ */
+function getMockScheduleData() {
+  const now = new Date()
+  const currentDay = now.getDay() // 0 = Sunday, 1 = Monday, etc.
+  const currentHour = now.getHours()
+
+  return {
+    current_week: 6,
+    schedule: [
+      {
+        gameId: '1',
+        season: '2025',
+        week: '6',
+        game_date: '2025-10-10 20:15:00',
+        away_team: 'KC',
+        home_team: 'BUF',
+        tv_station: 'NBC',
+        winner: 'KC',
+        away_score: '24',
+        home_score: '21'
+      },
+      {
+        gameId: '2',
+        season: '2025',
+        week: '6',
+        game_date: '2025-10-13 13:00:00',
+        away_team: 'SF',
+        home_team: 'DAL',
+        tv_station: 'FOX',
+        winner: null,
+        away_score: null,
+        home_score: null
+      }
+    ]
+  }
+}
+
+/**
+ * Get mock projection data for development when API key is not configured
+ * @param {number} week - NFL week number
+ * @returns {Object} Mock projection data
+ */
+function getMockProjectionsData(week) {
+  // Generate varied projections based on week for more realistic mock data
+  const weekVariation = (week % 3) * 0.1 + 0.9 // 0.9 to 1.1 multiplier
+
+  const mockProjections = {
+    'patrick mahomes': {
+      playerId: '945',
+      name: 'Patrick Mahomes',
+      team: 'KC',
+      position: 'QB',
+      projectedPoints: Math.round(24.5 * weekVariation * 10) / 10,
+      stats: {
+        passing_yards: '310',
+        passing_touchdowns: '2.5',
+        passing_interceptions: '0.5',
+        rushing_yards: '15'
+      }
+    },
+    'christian mccaffrey': {
+      playerId: '954',
+      name: 'Christian McCaffrey',
+      team: 'SF',
+      position: 'RB',
+      projectedPoints: Math.round(22.3 * weekVariation * 10) / 10,
+      stats: {
+        rushing_yards: '85',
+        rushing_touchdowns: '0.8',
+        receptions: '6',
+        receiving_yards: '45',
+        receiving_touchdowns: '0.2'
+      }
+    },
+    'tyreek hill': {
+      playerId: '4028',
+      name: 'Tyreek Hill',
+      team: 'MIA',
+      position: 'WR',
+      projectedPoints: Math.round(18.5 * weekVariation * 10) / 10,
+      stats: {
+        receptions: '7',
+        receiving_yards: '95',
+        receiving_touchdowns: '0.6'
+      }
+    },
+    'travis kelce': {
+      playerId: '4217',
+      name: 'Travis Kelce',
+      team: 'KC',
+      position: 'TE',
+      projectedPoints: Math.round(14.2 * weekVariation * 10) / 10,
+      stats: {
+        receptions: '6',
+        receiving_yards: '70',
+        receiving_touchdowns: '0.5'
+      }
+    },
+    'justin tucker': {
+      playerId: '4531',
+      name: 'Justin Tucker',
+      team: 'BAL',
+      position: 'K',
+      projectedPoints: Math.round(9.5 * weekVariation * 10) / 10,
+      stats: {
+        field_goals_made: '2',
+        extra_points_made: '3.5'
+      }
+    },
+    'sf': {
+      playerId: 'SF',
+      name: 'San Francisco 49ers',
+      team: 'SF',
+      position: 'DEF',
+      projectedPoints: Math.round(8.5 * weekVariation * 10) / 10,
+      stats: {
+        sacks: '2.5',
+        interceptions: '0.8',
+        fumble_recoveries: '0.5',
+        defensive_touchdowns: '0.1'
+      }
+    },
+    'kc': {
+      playerId: 'KC',
+      name: 'Kansas City Chiefs',
+      team: 'KC',
+      position: 'DEF',
+      projectedPoints: Math.round(8.0 * weekVariation * 10) / 10,
+      stats: {
+        sacks: '2.3',
+        interceptions: '0.7',
+        fumble_recoveries: '0.4',
+        defensive_touchdowns: '0.1'
+      }
+    }
+  }
+
+  return mockProjections
+}
+
+/**
  * Get mock injury data for development when API key is not configured
  * @param {number} week - NFL week number
  * @returns {Object} Mock injury data

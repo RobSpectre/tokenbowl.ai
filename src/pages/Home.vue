@@ -686,9 +686,7 @@ export default {
           renderModelTransactionsChart()
         }
 
-        // Always render injury charts (they'll show "No injuries" if no data)
-        renderInjuriesChart()
-        renderModelInjuriesChart()
+        // Injury charts will be rendered by the watcher when data loads and sections are visible
 
         // STEP 2: Load matchups for the selected week (show as soon as available)
         await leagueStore.fetchMatchupForWeek(selectedWeek.value, false)
@@ -698,11 +696,12 @@ export default {
 
         // STEP 3: Load remaining data in background (non-blocking)
         // User already sees matchups, these just enhance the page as they load
+        // Pass false for ensureDataLoaded since we already have league data cached
         Promise.all([
-          leagueStore.fetchAllMatchups(false),
+          leagueStore.fetchAllMatchups(false, false),  // Don't re-fetch league data
           leagueStore.fetchEnrichedPlayers(false),
-          leagueStore.processInjuriesData(currentWeek, false),
-          leagueStore.processTransactionStats(currentWeek, false)
+          leagueStore.processInjuriesData(currentWeek, false, false),  // Don't re-fetch league/player data
+          leagueStore.processTransactionStats(currentWeek, false, false)  // Don't re-fetch league data
         ]).then(() => {
           // Charts will render automatically via watchers when data arrives
           console.log('[Background] Chart data processing complete')
@@ -742,11 +741,12 @@ export default {
 
         // Refresh all data in parallel - UI updates automatically via watchers
         // No need to manually re-render charts - they watch the store data
+        // Pass false for ensureDataLoaded since we already refreshed league data above
         await Promise.all([
-          leagueStore.fetchAllMatchups(true),
-          leagueStore.fetchTransactionsForWeek(selectedWeek.value, true),
-          leagueStore.processInjuriesData(currentWeek, true),
-          leagueStore.processTransactionStats(currentWeek, true),
+          leagueStore.fetchAllMatchups(true, false),  // Don't re-fetch league data
+          leagueStore.fetchTransactionsForWeek(selectedWeek.value, true, false),  // Don't re-fetch league data
+          leagueStore.processInjuriesData(currentWeek, true, false),  // Don't re-fetch league/player data
+          leagueStore.processTransactionStats(currentWeek, true, false),  // Don't re-fetch league data
           leagueStore.fetchEnrichedPlayers(true)
         ])
 
@@ -1100,9 +1100,18 @@ export default {
           renderTransactionsChart()
           renderModelTransactionsChart()
         }
+        // Only render injury charts if containers have dimensions
         if (injuriesChartRef.value && modelInjuriesChartRef.value) {
-          renderInjuriesChart()
-          renderModelInjuriesChart()
+          const injuriesWidth = injuriesChartRef.value.clientWidth
+          const modelInjuriesWidth = modelInjuriesChartRef.value.clientWidth
+          console.log(`[Week Change] Injury chart dimensions: ${injuriesWidth}x${modelInjuriesWidth}`)
+          if (injuriesWidth > 0 && modelInjuriesWidth > 0) {
+            console.log('[Week Change] Rendering injury charts')
+            renderInjuriesChart()
+            renderModelInjuriesChart()
+          } else {
+            console.log('[Week Change] Skipping injury charts - no dimensions yet')
+          }
         }
       }
     })
@@ -1134,21 +1143,33 @@ export default {
       }
     }, { deep: true })
 
-    // Watch for injury data changes to re-render injury charts
-    watch(injuriesData, async (newData, oldData) => {
-      if (!newData || Object.keys(newData).length === 0) return
+    // Watch for injury data changes AND section visibility to re-render injury charts
+    watch([injuriesData, leagueData, allMatchups], async ([newInjuriesData, newLeagueData, newAllMatchups]) => {
+      // Only render if we have injury data AND the sections are visible
+      const hasInjuryData = newInjuriesData && Object.keys(newInjuriesData).length > 0
+      const sectionsVisible = newLeagueData && newAllMatchups && Object.keys(newAllMatchups).length > 0
+
+      if (!hasInjuryData || !sectionsVisible) return
 
       // Wait for Vue to update the DOM (v-show to take effect)
       await nextTick()
 
-      // Wait one more tick to ensure DOM is fully ready
+      // Wait one more tick to ensure DOM is fully ready and visible
       await nextTick()
 
-      // Check if the chart refs exist before rendering
+      // Check if the chart refs exist AND have dimensions before rendering
       if (injuriesChartRef.value && modelInjuriesChartRef.value) {
-        console.log('[Charts] Rendering injury charts - data loaded')
-        renderInjuriesChart()
-        renderModelInjuriesChart()
+        // Verify containers have dimensions (not hidden)
+        const injuriesWidth = injuriesChartRef.value.clientWidth
+        const modelInjuriesWidth = modelInjuriesChartRef.value.clientWidth
+
+        if (injuriesWidth > 0 && modelInjuriesWidth > 0) {
+          console.log('[Charts] Rendering injury charts - data loaded and containers visible')
+          renderInjuriesChart()
+          renderModelInjuriesChart()
+        } else {
+          console.warn('[Charts] Injury chart containers not visible yet, will retry when visible')
+        }
       }
     }, { deep: true })
 
@@ -1225,6 +1246,7 @@ export default {
 
       // Track different injury severities and statuses
       let hasOut = false
+      let hasIR = false
       let hasDoubtful = false
       let hasQuestionable = false
       let hasSuspended = false
@@ -1257,8 +1279,11 @@ export default {
             if (statusToCheck.includes('DOUBTFUL') || (statusToCheck.includes('D ') || statusToCheck === 'D') && !statusToCheck.includes('SUSPENDED')) {
               hasDoubtful = true
             }
-            // Check for Out/IR
-            else if (statusToCheck.includes('OUT') || statusToCheck.includes('IR') || statusToCheck.includes('INJURED RESERVE')) {
+            // Check for IR first, then Out (to separate them)
+            else if (statusToCheck.includes('INJURED RESERVE') || statusToCheck.includes('IR')) {
+              hasIR = true
+            }
+            else if (statusToCheck.includes('OUT')) {
               hasOut = true
             }
             // Check for Questionable/PUP
@@ -1271,8 +1296,10 @@ export default {
           if (!statusToCheck && enrichedPlayer.injury_indicator) {
             switch(enrichedPlayer.injury_indicator) {
               case 'O':
-              case 'IR':
                 hasOut = true
+                break
+              case 'IR':
+                hasIR = true
                 break
               case 'D':
                 hasDoubtful = true
@@ -1287,18 +1314,28 @@ export default {
           // Fallback to base player injury status if enriched data not available
           const sleeperStatus = player.injury_status?.toUpperCase()
           if (sleeperStatus) {
-            if (sleeperStatus.includes('OUT') || sleeperStatus.includes('IR')) {
+            if (sleeperStatus.includes('IR')) {
+              hasIR = true
+            } else if (sleeperStatus.includes('OUT')) {
               hasOut = true
             } else if (sleeperStatus.includes('DOUBTFUL') || sleeperStatus === 'D') {
               hasDoubtful = true
             } else if (sleeperStatus.includes('QUESTIONABLE') || sleeperStatus === 'Q') {
               hasQuestionable = true
+            } else if (sleeperStatus === 'SUS' || sleeperStatus.includes('SUSPENDED')) {
+              hasSuspended = true
             }
           }
         }
       })
 
-      // Add badges in severity order
+      // Check for empty slots in starters
+      const hasEmpty = matchup.starters?.some(playerId => playerId === '0' || playerId === 0)
+
+      // Add badges in priority order (most severe first)
+      if (hasEmpty) {
+        badges.push({ type: 'empty', label: 'EMPTY', color: 'bg-red-600' })
+      }
       if (hasBye) {
         badges.push({ type: 'bye', label: 'BYE', color: 'bg-gray-600' })
       }
@@ -1306,19 +1343,16 @@ export default {
         badges.push({ type: 'suspended', label: 'SUSP', color: 'bg-purple-600' })
       }
       if (hasOut) {
-        badges.push({ type: 'out', label: 'O/IR', color: 'bg-red-600' })
+        badges.push({ type: 'out', label: 'O', color: 'bg-red-600' })
+      }
+      if (hasIR) {
+        badges.push({ type: 'ir', label: 'IR', color: 'bg-red-600' })
       }
       if (hasDoubtful) {
         badges.push({ type: 'doubtful', label: 'D', color: 'bg-orange-500' })
       }
       if (hasQuestionable) {
         badges.push({ type: 'questionable', label: 'Q', color: 'bg-yellow-500' })
-      }
-
-      // Check for empty slots in starters
-      const hasEmpty = matchup.starters?.some(playerId => playerId === '0' || playerId === 0)
-      if (hasEmpty) {
-        badges.push({ type: 'empty', label: 'EMPTY', color: 'bg-red-600' })
       }
 
       return badges
@@ -1919,6 +1953,14 @@ export default {
 
       await nextTick()
 
+      // Check if container has dimensions before initializing
+      const containerWidth = injuriesChartRef.value.clientWidth
+      const containerHeight = injuriesChartRef.value.clientHeight
+      if (containerWidth === 0 || containerHeight === 0) {
+        console.warn('[Charts] Injury chart container has no dimensions, skipping render')
+        return
+      }
+
       if (!injuriesChart) {
         injuriesChart = echarts.init(injuriesChartRef.value)
       }
@@ -2019,6 +2061,14 @@ export default {
       if (!modelInjuriesChartRef.value || !leagueData.value || !injuriesData.value) return
 
       await nextTick()
+
+      // Check if container has dimensions before initializing
+      const containerWidth = modelInjuriesChartRef.value.clientWidth
+      const containerHeight = modelInjuriesChartRef.value.clientHeight
+      if (containerWidth === 0 || containerHeight === 0) {
+        console.warn('[Charts] Model injury chart container has no dimensions, skipping render')
+        return
+      }
 
       if (!modelInjuriesChart) {
         modelInjuriesChart = echarts.init(modelInjuriesChartRef.value)
