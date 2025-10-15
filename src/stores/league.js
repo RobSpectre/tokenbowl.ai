@@ -6,7 +6,7 @@ import { getInjuries, getPlayerInjuryStatus, getInjuryIndicator, getWeeklyProjec
 import { getPlayers as getPlayersFromService, enrichPlayerData } from '../utils/playerService.js'
 
 // Cache version - increment when making breaking changes to data structure
-const CACHE_VERSION = 16 // v16: Fixed week 5 fallback, removed YouTube localStorage caching
+const CACHE_VERSION = 15 // v15: Force cache refresh for all users
 
 // Team code normalization mapping
 const normalizeTeamCode = (code) => {
