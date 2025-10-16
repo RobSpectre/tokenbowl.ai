@@ -12,13 +12,14 @@
       p.text-white.text-xl.font-bold {{ error }}
 
   //- Main Content
-  main(v-else-if="draftPicks && draftPicks.length > 0")
+  main(v-else)
     //- Header
     section.mb-8
       .bg-gradient-to-r.from-blue-600.to-blue-800.rounded-t-lg.px-6.py-4.border-b-4.border-yellow-400
         h1.text-white.text-3xl.font-black.uppercase.tracking-wide.flex.items-center.gap-3
           span.text-yellow-400 📜
           | Draft Results - 2025 Season
+        p.text-white.text-xs.opacity-50 v2025-10-16
 
     //- Featured Video
     section.mb-8
@@ -66,7 +67,7 @@
         div(ref="divergenceChartRef" style="width: 100%; height: 450px")
 
     //- Draft Board
-    section
+    section(v-if="draftPicks && draftPicks.length > 0")
       .bg-slate-900.rounded-lg.overflow-hidden
         .overflow-x-auto
           table.w-full.min-w-max
@@ -138,7 +139,7 @@
                   div(class="text-gray-300 text-xs sm:text-sm") {{ pick.years_exp || '-' }}
 
     //- Team Breakouts
-    section.mt-12(v-if="draftedTeams.length > 0")
+    section.mt-12(v-if="draftedTeams && draftedTeams.length > 0")
       div(class="bg-gradient-to-r from-purple-600 to-purple-800 rounded-t-lg px-4 sm:px-6 py-4 border-b-4 border-yellow-400 mb-8")
         h2(class="text-white text-2xl sm:text-3xl font-black uppercase tracking-wide flex items-center gap-3")
           span.text-yellow-400 🏈
@@ -179,7 +180,7 @@
 </template>
 
 <script>
-import { ref, onMounted, onUnmounted, computed, nextTick, watch } from 'vue'
+import { ref, onMounted, onUnmounted, computed, nextTick } from 'vue'
 import { useHead } from '@vueuse/head'
 import { useLeagueStore } from '../stores/league.js'
 import { getTeamInfoByAiModel } from '../teamMappings.js'
@@ -638,24 +639,19 @@ export default {
       }
     }
 
-    // Watch for draftPicks to be populated, then render charts
-    watch(() => draftPicks.value, async (newPicks) => {
-      if (newPicks && newPicks.length > 0 && adpData.value.length > 0 && divergenceData.value.length > 0) {
-        // Wait for Vue to render the chart containers
-        await nextTick()
-
-        // Use setTimeout to ensure we're in the next event loop after Vue's render
-        setTimeout(() => {
-          renderADPChart()
-          renderDivergenceChart()
-        }, 100)
-      }
-    }, { immediate: true })
-
     onMounted(async () => {
       await loadDraftData()
       await loadADPData()
       await loadDivergenceData()
+
+      // Wait for DOM to be ready, then render charts
+      await nextTick()
+      await nextTick()
+
+      setTimeout(() => {
+        renderADPChart()
+        renderDivergenceChart()
+      }, 500)
 
       // Add resize listener
       window.addEventListener('resize', handleResize)
