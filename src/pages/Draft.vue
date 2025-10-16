@@ -352,22 +352,34 @@ export default {
 
     const loadADPData = async () => {
       try {
+        console.log('[Draft] Loading ADP data...')
         const response = await fetch('/data/picks_by_adp.json')
         const data = await response.json()
 
         const filtered = data.filter(d => d.adp !== null)
         adpData.value = filtered
+        console.log('[Draft] ADP data loaded:', filtered.length, 'picks')
       } catch (err) {
-        console.error('Error loading ADP data:', err)
+        console.error('[Draft] Error loading ADP data:', err)
       }
     }
 
     const renderADPChart = async () => {
-      if (!adpChartRef.value || adpData.value.length === 0) return
+      console.log('[Draft] renderADPChart called', {
+        hasRef: !!adpChartRef.value,
+        dataLength: adpData.value.length,
+        echartsAvailable: typeof echarts !== 'undefined'
+      })
+
+      if (!adpChartRef.value || adpData.value.length === 0) {
+        console.log('[Draft] Skipping ADP chart render - missing ref or data')
+        return
+      }
 
       await nextTick()
 
       if (!adpChart) {
+        console.log('[Draft] Initializing ADP chart with echarts.init')
         adpChart = echarts.init(adpChartRef.value)
       }
 
@@ -501,21 +513,33 @@ export default {
 
     const loadDivergenceData = async () => {
       try {
+        console.log('[Draft] Loading divergence data...')
         const response = await fetch('/data/divergence_from_adp.json')
         const data = await response.json()
 
         divergenceData.value = data
+        console.log('[Draft] Divergence data loaded:', data.length, 'teams')
       } catch (err) {
-        console.error('Error loading divergence data:', err)
+        console.error('[Draft] Error loading divergence data:', err)
       }
     }
 
     const renderDivergenceChart = async () => {
-      if (!divergenceChartRef.value || divergenceData.value.length === 0) return
+      console.log('[Draft] renderDivergenceChart called', {
+        hasRef: !!divergenceChartRef.value,
+        dataLength: divergenceData.value.length,
+        echartsAvailable: typeof echarts !== 'undefined'
+      })
+
+      if (!divergenceChartRef.value || divergenceData.value.length === 0) {
+        console.log('[Draft] Skipping divergence chart render - missing ref or data')
+        return
+      }
 
       await nextTick()
 
       if (!divergenceChart) {
+        console.log('[Draft] Initializing divergence chart with echarts.init')
         divergenceChart = echarts.init(divergenceChartRef.value)
       }
 
@@ -639,16 +663,22 @@ export default {
     }
 
     onMounted(async () => {
+      console.log('[Draft] onMounted started')
       await loadDraftData()
+      console.log('[Draft] Draft data loaded')
       await loadADPData()
+      console.log('[Draft] ADP data loaded, count:', adpData.value.length)
       await loadDivergenceData()
+      console.log('[Draft] Divergence data loaded, count:', divergenceData.value.length)
       // Render charts after both data and DOM are ready
       await nextTick()
+      console.log('[Draft] About to render charts, echarts available?', typeof echarts !== 'undefined')
       renderADPChart()
       renderDivergenceChart()
 
       // Add resize listener
       window.addEventListener('resize', handleResize)
+      console.log('[Draft] onMounted completed')
     })
 
     // Clean up on unmount
