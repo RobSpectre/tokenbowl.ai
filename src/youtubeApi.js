@@ -1,47 +1,10 @@
 const CHANNEL_ID = 'UCFf-Wwy675zDhKDcKxGl_kw'
 const SHORTS_PLAYLIST_ID = 'UUSH' + CHANNEL_ID.substring(2) // Replace UC with UUSH for shorts playlist
 const LONG_FORM_PLAYLIST_ID = 'PLPseZqsYjyD5ZNg9Bjo_bn8JdJmcl-KGS' // Token Bowl long form videos playlist
-const API_KEY = import.meta.env.VITE_YOUTUBE_API_KEY // Read from environment variable
-const CACHE_DURATION = 3600000 // 1 hour in milliseconds
-const CACHE_VERSION = 7 // v7: Force cache refresh for all users
-
-// Helper function to get cached data
-function getCachedData(key) {
-  try {
-    const cached = localStorage.getItem(key)
-    if (cached) {
-      const { data, timestamp, version } = JSON.parse(cached)
-      // Check version and timestamp
-      if (version === CACHE_VERSION && Date.now() - timestamp < CACHE_DURATION) {
-        console.log(`Using cached YouTube data for: ${key}`)
-        return data
-      } else if (version !== CACHE_VERSION) {
-        console.log(`Cache version mismatch for ${key} (stored: ${version}, current: ${CACHE_VERSION}). Clearing cache...`)
-        localStorage.removeItem(key)
-      }
-    }
-  } catch (error) {
-    console.error('Error reading cache:', error)
-  }
-  return null
-}
-
-// Helper function to set cached data
-function setCachedData(key, data) {
-  try {
-    localStorage.setItem(key, JSON.stringify({
-      data,
-      timestamp: Date.now(),
-      version: CACHE_VERSION
-    }))
-  } catch (error) {
-    console.error('Error setting cache:', error)
-  }
-}
+const API_KEY = import.meta.env.VITE_YOUTUBE_API_KEY
 
 /**
  * Get all Shorts video IDs from the channel's Shorts playlist
- * @returns {Promise<Set<string>>} - Set of video IDs that are shorts
  */
 async function getShortsVideoIds() {
   try {
@@ -68,14 +31,6 @@ async function getShortsVideoIds() {
 }
 
 export async function getLatestVideos(maxResults = 10) {
-  const cacheKey = `youtube_latest_videos_${maxResults}`
-
-  // Check cache first
-  const cachedData = getCachedData(cacheKey)
-  if (cachedData) {
-    return cachedData
-  }
-
   try {
     if (!API_KEY) {
       console.warn('YouTube API key not set. Set VITE_YOUTUBE_API_KEY environment variable.')
@@ -124,12 +79,9 @@ export async function getLatestVideos(maxResults = 10) {
       thumbnail: item.snippet.thumbnails.high.url,
       publishedAt: item.snippet.publishedAt,
       duration: parseDuration(item.contentDetails.duration),
-      isShort: shortsIds.has(item.id), // Check if video ID is in shorts playlist
+      isShort: shortsIds.has(item.id),
       url: `https://www.youtube.com/watch?v=${item.id}`
     }))
-
-    // Cache the results
-    setCachedData(cacheKey, videos)
 
     return videos
   } catch (error) {
@@ -157,14 +109,6 @@ export async function getLatestVideoAndShorts() {
 }
 
 export async function getPlaylistVideos(playlistId, maxResults = 50) {
-  const cacheKey = `youtube_playlist_${playlistId}_${maxResults}`
-
-  // Check cache first
-  const cachedData = getCachedData(cacheKey)
-  if (cachedData) {
-    return cachedData
-  }
-
   try {
     if (!API_KEY) {
       console.warn('YouTube API key not set. Set VITE_YOUTUBE_API_KEY environment variable.')
@@ -181,7 +125,7 @@ export async function getPlaylistVideos(playlistId, maxResults = 50) {
 
     const data = await response.json()
 
-    // Filter out private/unlisted videos (they have "Private video" or "Deleted video" as title)
+    // Filter out private/unlisted videos
     const videos = data.items
       .filter(item => {
         const title = item.snippet.title
@@ -195,9 +139,6 @@ export async function getPlaylistVideos(playlistId, maxResults = 50) {
         publishedAt: item.snippet.publishedAt,
         url: `https://www.youtube.com/watch?v=${item.snippet.resourceId.videoId}`
       }))
-
-    // Cache the results
-    setCachedData(cacheKey, videos)
 
     return videos
   } catch (error) {

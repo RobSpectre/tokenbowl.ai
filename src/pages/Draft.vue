@@ -241,15 +241,13 @@ export default {
 
     const loadDraftData = async () => {
       try {
-        loading.value = true
+        loading.value = false
         error.value = null
-
-        // Initialize store (loads all data if needed)
-        await leagueStore.initialize()
+        // App.vue has already initialized the store - data is ready
+        // Draft data is already in leagueStore.draftPicks
       } catch (err) {
         error.value = 'Failed to load draft data. Please try again later.'
-        console.error(err)
-      } finally {
+        console.error('[Draft] Error loading data:', err)
         loading.value = false
       }
     }

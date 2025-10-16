@@ -5,6 +5,9 @@ import { getLatestVideoAndShorts } from '../youtubeApi.js'
 import { getInjuries, getPlayerInjuryStatus, getInjuryIndicator, getWeeklyProjections, getNFLSchedule } from '../fantasyNerdsApi.js'
 import { getPlayers as getPlayersFromService, enrichPlayerData } from '../utils/playerService.js'
 
+// Cache version - increment when making breaking changes to data structure
+const CACHE_VERSION = 15 // v15: Force cache refresh for all users
+
 // Team code normalization mapping
 const normalizeTeamCode = (code) => {
   const teamMappings = {
@@ -16,8 +19,8 @@ const normalizeTeamCode = (code) => {
 
 export const useLeagueStore = defineStore('league', {
   state: () => ({
-    // Loading state - single source of truth
-    isReady: false,
+    // Cache version for invalidation
+    cacheVersion: CACHE_VERSION,
 
     // Core league data
     league: null,
@@ -55,23 +58,19 @@ export const useLeagueStore = defineStore('league', {
       byTeamForWeek: {}
     },
 
+    // Simple caching - just track when we last loaded the full season
+    lastFullLoad: null,
+    completedWeeks: [], // Weeks that are finalized and will never change
+
     // Loading states
     isInitializing: false,
+    isRefreshing: false,
 
     // Error tracking
     errors: {}
   }),
 
   getters: {
-    // Single source of truth for whether data is ready
-    isDataReady() {
-      return this.isReady &&
-             this.league !== null &&
-             this.rosters.length > 0 &&
-             this.currentWeek !== null &&
-             Object.keys(this.allMatchups).length > 0
-    },
-
     // Get current week from league settings
     currentLeagueWeek() {
       return this.league?.settings?.leg || 1
@@ -422,14 +421,9 @@ export const useLeagueStore = defineStore('league', {
           if (enrichedPlayer || basePlayer) {
             const player = enrichedPlayer || basePlayer
 
-            // Check bye week - inline the logic instead of calling action
-            if (checkWeek && player.team && state.nflSchedule?.schedule) {
-              const normalizedTeam = normalizeTeamCode(player.team)
-              const hasGame = state.nflSchedule.schedule.some(game =>
-                String(game.week) === String(checkWeek) &&
-                (game.home_team === normalizedTeam || game.away_team === normalizedTeam)
-              )
-              if (!hasGame) {
+            // Check bye week
+            if (checkWeek && player.team) {
+              if (state.getByeWeekForTeam(player.team, checkWeek)) {
                 hasBye = true
               }
             }
@@ -471,20 +465,43 @@ export const useLeagueStore = defineStore('league', {
 
   actions: {
     /**
-     * Main initialization method - CALL ONLY FROM APP.VUE
-     * Pinia persist plugin handles all caching automatically
+     * Main initialization method - call this from components
+     * Shows cached data immediately, then loads/refreshes in background
      */
-    async initialize() {
-      // Check if we have cached data - if so, just mark as ready and return
-      if (this.league && this.rosters.length > 0 && Object.keys(this.allMatchups).length > 0) {
-        console.log('✅ Store already initialized from cache')
-        this.isReady = true
+    async initialize(forceRefresh = false) {
+      // Check cache version first - if it doesn't match, clear everything
+      if (this.cacheVersion !== CACHE_VERSION) {
+        console.log(`🗑️ Cache version mismatch (stored: ${this.cacheVersion}, current: ${CACHE_VERSION}). Clearing cache...`)
+        this.clearCache()
+        this.cacheVersion = CACHE_VERSION
+        forceRefresh = true
+      }
+
+      // If we have cached data and not forcing refresh, return it immediately
+      if (!forceRefresh && this.league && this.rosters.length > 0 && !this.isInitializing) {
+        console.log('📦 Using cached data - showing immediately')
+
+        // Load NFL schedule if not loaded (needed for bye badges)
+        if (!this.nflSchedule) {
+          console.log('🌐 NFL schedule missing from cache, loading...')
+          this.loadNFLSchedule()
+        }
+
+        // Check if we need to refresh (older than 5 minutes)
+        const REFRESH_INTERVAL = 5 * 60 * 1000 // 5 minutes
+        const needsRefresh = !this.lastFullLoad || (Date.now() - this.lastFullLoad > REFRESH_INTERVAL)
+
+        if (needsRefresh && !this.isRefreshing) {
+          console.log('🔄 Background refresh triggered')
+          this.refreshCurrentWeek() // Non-blocking background refresh
+        }
+
         return
       }
 
-      // Don't initialize twice
+      // First time load or force refresh
       if (this.isInitializing) {
-        console.log('⏳ Already initializing...')
+        console.log('⏳ Already initializing, waiting...')
         return
       }
 
@@ -508,14 +525,32 @@ export const useLeagueStore = defineStore('league', {
         this.currentWeek = this.league?.settings?.leg || 1
 
         // PHASE 2: Load all weeks in parallel
-        console.log('📊 Phase 2: Loading all 18 weeks...')
+        console.log('📊 Phase 2: Loading all 18 weeks in parallel...')
+        console.log(`Current week: ${this.currentWeek}, Completed weeks: ${this.completedWeeks.join(', ')}`)
         const weekPromises = []
         for (let week = 1; week <= 18; week++) {
+          // Skip completed weeks that we already have
+          if (this.completedWeeks.includes(week) && this.allMatchups[week] && !forceRefresh) {
+            console.log(`📦 Skipping week ${week} - already completed and cached`)
+            continue
+          }
+
+          console.log(`➕ Queuing week ${week} for loading`)
           weekPromises.push(this.loadWeekData(week))
         }
 
+        console.log(`⏳ Waiting for ${weekPromises.length} weeks to load...`)
         await Promise.all(weekPromises)
-        console.log(`✅ All weeks loaded, total: ${Object.keys(this.allMatchups).length}`)
+        console.log(`✅ All ${weekPromises.length} weeks loaded`)
+
+        // Mark past weeks as completed
+        for (let week = 1; week < this.currentWeek; week++) {
+          if (!this.completedWeeks.includes(week)) {
+            this.completedWeeks.push(week)
+          }
+        }
+        console.log(`✅ Marked weeks 1-${this.currentWeek - 1} as completed`)
+        console.log(`📊 Total matchups loaded: ${Object.keys(this.allMatchups).length} weeks`)
 
         // PHASE 3: Load supplementary data
         // NFL Schedule needs to be loaded before badges can show bye weeks
@@ -529,13 +564,11 @@ export const useLeagueStore = defineStore('league', {
           console.error('Error loading supplementary data:', err)
         })
 
-        // Mark as ready - this is the ONLY place isReady is set to true
-        this.isReady = true
-        console.log('✅ Initialization complete - store is ready')
+        this.lastFullLoad = Date.now()
+        console.log('✅ Initialization complete')
       } catch (error) {
         console.error('❌ Error initializing league data:', error)
         this.errors.initialization = error.message
-        this.isReady = false
         throw error
       } finally {
         this.isInitializing = false
@@ -634,6 +667,36 @@ export const useLeagueStore = defineStore('league', {
       } catch (error) {
         console.error(`❌ Error loading week ${week}:`, error)
         this.errors[`week_${week}`] = error.message
+      }
+    },
+
+    /**
+     * Refresh only the current week (background refresh)
+     */
+    async refreshCurrentWeek() {
+      if (this.isRefreshing) return
+
+      this.isRefreshing = true
+
+      try {
+        console.log('🔄 Refreshing current week...')
+
+        // Refresh league data to get latest current week
+        const leagueData = await getLeagueData()
+        this.league = leagueData.league
+        this.rosters = leagueData.rosters
+        this.users = leagueData.users
+        this.currentWeek = this.league?.settings?.leg || 1
+
+        // Refresh current week data
+        await this.loadWeekData(this.currentWeek)
+
+        this.lastFullLoad = Date.now()
+        console.log('✅ Current week refreshed')
+      } catch (error) {
+        console.error('❌ Error refreshing current week:', error)
+      } finally {
+        this.isRefreshing = false
       }
     },
 
@@ -1018,10 +1081,59 @@ export const useLeagueStore = defineStore('league', {
       }
     },
 
+    /**
+     * Clear all cached data
+     */
+    clearCache() {
+      this.league = null
+      this.rosters = []
+      this.users = []
+      this.currentWeek = null
+      this.players = {}
+      this.enrichedPlayers = {}
+      this.allMatchups = {}
+      this.playerStatsByWeek = {}
+      this.weekRosters = {}
+      this.transactionsByWeek = {}
+      this.injuriesByWeek = {}
+      this.weeklyProjectionsByWeek = {}
+      this.nflSchedule = null
+      this.draftPicks = []
+      this.latestVideo = null
+      this.latestShorts = []
+      this.processedInjuriesByTeam = {}
+      this.processedTransactionStats = { byWeek: {}, byTeam: {}, byTeamForWeek: {} }
+      this.lastFullLoad = null
+      this.completedWeeks = []
+      this.errors = {}
+    }
   },
 
-  // Enable persistence with localStorage - Pinia persists entire store
+  // Enable persistence with localStorage
   persist: {
-    key: 'tokenbowl-league-oct2025'
+    key: 'tokenbowl-league-oct2025',
+    paths: [
+      'cacheVersion',
+      'league',
+      'rosters',
+      'users',
+      'currentWeek',
+      'players',
+      'enrichedPlayers',
+      'allMatchups',
+      'playerStatsByWeek',
+      'weekRosters',
+      'transactionsByWeek',
+      'injuriesByWeek',
+      'weeklyProjectionsByWeek',
+      'nflSchedule',
+      'draftPicks',
+      'latestVideo',
+      'latestShorts',
+      'processedInjuriesByTeam',
+      'processedTransactionStats',
+      'lastFullLoad',
+      'completedWeeks'
+    ]
   }
 })

@@ -188,17 +188,10 @@ export default {
 
     const loadScoringSettings = async () => {
       try {
-        loading.value = true
-        error.value = null
-
-        // Initialize store (loads all data if needed)
-        await leagueStore.initialize()
+        // App.vue has already initialized the store - data is ready
         leagueSettings.value = leagueStore.league
       } catch (err) {
-        error.value = 'Failed to load scoring settings. Please try again later.'
-        console.error(err)
-      } finally {
-        loading.value = false
+        console.error('[Scoring] Error loading settings:', err)
       }
     }
 

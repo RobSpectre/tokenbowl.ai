@@ -1,18 +1,7 @@
 <template lang="pug">
 .bg-slate-950
-  //- Loading State (show when actively loading and no content for current week)
-  .flex.items-center.justify-center(v-if="loading && !error" style="min-height: 80vh")
-    .text-center
-      .inline-block.animate-spin.rounded-full.h-20.w-20.border-4.border-blue-500.border-t-transparent.mb-4
-      p.text-white.text-xl.font-bold.uppercase.tracking-wider Loading matchups...
-
-  //- Error State
-  .container.mx-auto.px-4.py-12(v-else-if="error")
-    .bg-red-600.border-l-4.border-red-800.rounded.p-6.text-center
-      p.text-white.text-xl.font-bold {{ error }}
-
-  //- Main Content
-  main.container.mx-auto.px-4.py-6.max-w-7xl(v-else-if="!loading")
+  //- Main Content - App.vue ensures data is ready before rendering this component
+  main.container.mx-auto.px-4.py-6.max-w-7xl
     //- Week Selector (Fixed)
     div(class="fixed top-20 left-0 right-0 z-30 bg-slate-950 pb-4 pt-4 shadow-lg")
       .container.mx-auto.px-4.max-w-7xl
@@ -538,8 +527,6 @@ export default {
   setup() {
     const router = useRouter()
     const leagueStore = useLeagueStore()
-    const loading = ref(true)
-    const error = ref(null)
     const selectedWeek = ref(null)
     const standingsChartRef = ref(null)
     const pointsChartRef = ref(null)
@@ -629,31 +616,13 @@ export default {
 
     const loadData = async () => {
       try {
-        // Check if we have cached data
-        const hasCachedData = leagueStore.league && leagueStore.rosters.length > 0
-
-        // Show cached data immediately if available
-        if (hasCachedData) {
-          loading.value = false
-          loadingStandings.value = false
-          loadingVideos.value = !leagueStore.latestVideo
-        } else {
-          loading.value = true
-          loadingStandings.value = true
-          loadingVideos.value = true
-        }
-
-        error.value = null
-
-        // Initialize store - this handles all data loading optimally
-        // If we have cached data, it shows immediately and refreshes in background
-        // If no cache, it loads everything in parallel
-        await leagueStore.initialize(false)
+        // App.vue has already initialized the store - data is ready
+        // Just set up the view state
 
         // Get current week from league data or URL
         const weekParam = router.currentRoute.value.query.week
         const urlWeek = weekParam ? parseInt(weekParam) : null
-        const currentWeek = leagueStore.league?.settings?.leg || 5
+        const currentWeek = leagueStore.currentWeek || 7
 
         // Set selected week
         if (urlWeek && urlWeek >= 1 && urlWeek <= 18) {
@@ -662,14 +631,15 @@ export default {
           selectedWeek.value = currentWeek
         }
 
+        console.log('[Home] Selected week set to:', selectedWeek.value, 'currentWeek:', leagueStore.currentWeek)
+
         // Process injuries and transaction data (on-demand, will only run once due to caching)
         await Promise.all([
           leagueStore.processInjuriesData(currentWeek),
           leagueStore.processTransactionStats(currentWeek)
         ])
 
-        // Hide loading states
-        loading.value = false
+        // Data is ready, hide section loading states
         loadingStandings.value = false
         loadingVideos.value = false
 
@@ -694,34 +664,23 @@ export default {
 
         lastUpdated.value = new Date()
       } catch (err) {
-        error.value = 'Failed to load league data. Please try again later.'
-        console.error(err)
-        loading.value = false
+        console.error('[Home] Error in loadData:', err)
         loadingStandings.value = false
         loadingVideos.value = false
       }
     }
 
-    // Refresh all data silently in the background (no loading spinners)
-    // This is used for auto-refresh and manual refresh button
+    // Re-render charts (used for auto-refresh and manual refresh button)
+    // Note: For now, we just re-render from cached Pinia data
+    // TODO: Add lightweight "reload current week only" to store for live game updates
     const refreshMatchups = async () => {
       try {
-        console.log('[Refresh] Starting background refresh...')
-
-        // Refresh only current week in background
-        await leagueStore.refreshCurrentWeek()
-
-        // Process injuries and transaction data (on-demand, cached)
-        const currentWeek = leagueStore.league?.settings?.leg || 5
-        await Promise.all([
-          leagueStore.processInjuriesData(currentWeek),
-          leagueStore.processTransactionStats(currentWeek)
-        ])
+        console.log('[Refresh] Re-rendering charts from Pinia cache...')
 
         lastUpdated.value = new Date()
-        console.log('[Refresh] Background refresh completed at', lastUpdated.value.toLocaleTimeString())
+        console.log('[Refresh] Refresh completed at', lastUpdated.value.toLocaleTimeString())
 
-        // Re-render charts with fresh data
+        // Re-render charts with cached data
         await nextTick()
         renderStandingsChart()
         renderPointsChart()
@@ -740,8 +699,7 @@ export default {
           renderModelInjuriesChart()
         }
       } catch (err) {
-        console.error('[Refresh] Error during background refresh:', err)
-        // Don't show error to user - they still have the cached data displayed
+        console.error('[Refresh] Error during refresh:', err)
       }
     }
 
@@ -1585,7 +1543,7 @@ export default {
       // Ensure chart is properly sized
       transactionsChart.resize()
 
-      const targetWeek = selectedWeek.value || leagueData.value.league?.settings?.leg || 5
+      const targetWeek = selectedWeek.value || leagueStore.currentWeek
 
       // Get transaction counts from processed data in Pinia store
       const stats = transactionStats.value
@@ -1688,7 +1646,7 @@ export default {
       // Ensure chart is properly sized
       modelTransactionsChart.resize()
 
-      const targetWeek = selectedWeek.value || leagueData.value.league?.settings?.leg || 5
+      const targetWeek = selectedWeek.value || leagueStore.currentWeek
 
       // Get transaction stats from processed data in Pinia store
       const stats = transactionStats.value
@@ -1854,7 +1812,7 @@ export default {
         injuriesChart = echarts.init(injuriesChartRef.value)
       }
 
-      const targetWeek = selectedWeek.value || leagueData.value.league?.settings?.leg || 5
+      const targetWeek = selectedWeek.value || leagueStore.currentWeek
 
       // Count injuries for all weeks up to selected week
       const injuryCounts = []
@@ -1963,7 +1921,7 @@ export default {
         modelInjuriesChart = echarts.init(modelInjuriesChartRef.value)
       }
 
-      const targetWeek = selectedWeek.value || leagueData.value.league?.settings?.leg || 5
+      const targetWeek = selectedWeek.value || leagueStore.currentWeek
 
       // Initialize counts for all teams
       const teamWeeklyInjuries = {}
@@ -2214,8 +2172,6 @@ export default {
       leagueStore,
       leagueData,
       allMatchups,
-      loading,
-      error,
       selectedWeek,
       currentWeek,
       transactions,

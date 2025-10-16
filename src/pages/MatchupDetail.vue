@@ -692,14 +692,9 @@ export default {
 
     const loadMatchupData = async () => {
       try {
-        loading.value = true
-        error.value = null
-
+        // App.vue has already initialized the store - data is ready
         week.value = parseInt(route.params.week)
         matchupId.value = parseInt(route.params.matchupId)
-
-        // Initialize store (loads all data if needed)
-        await leagueStore.initialize()
 
         // Get matchup data and draft data from store
         const matchupsData = leagueStore.getMatchupsForWeek(week.value)

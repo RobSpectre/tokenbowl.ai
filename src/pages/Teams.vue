@@ -598,7 +598,7 @@ export default {
     // Computed properties from store
     const players = computed(() => leagueStore.players)
     const enrichedPlayers = computed(() => leagueStore.enrichedPlayers)
-    const currentWeek = computed(() => leagueStore.league?.settings?.leg || 5)
+    const currentWeek = computed(() => leagueStore.currentWeek)
     const draftPicksData = computed(() => leagueStore.draftPicks)
     const allMatchups = computed(() => leagueStore.allMatchups)
 
@@ -676,27 +676,10 @@ export default {
 
     const loadTeamsData = async () => {
       try {
-        // Only show loading spinner if Pinia store is empty (first time load)
-        const hasData = leagueStore.rosters?.length > 0 &&
-                       leagueStore.users?.length > 0 &&
-                       Object.keys(leagueStore.players || {}).length > 0
-
-        if (!hasData) {
-          loading.value = true
-        }
-
+        loading.value = false
         error.value = null
-
-        // Initialize store (loads all data if needed)
-        await leagueStore.initialize()
-
-        // Wait for computed teams to be ready
+        // App.vue has already initialized the store - data is ready
         await nextTick()
-
-        // Check if we have the required data
-        if (!leagueStore.rosters || !leagueStore.users || !leagueStore.players) {
-          throw new Error('Required data not loaded')
-        }
 
         // Load injuries for all weeks (up to current week)
         const currentWeekNum = leagueStore.league?.settings?.leg || 1
@@ -728,8 +711,7 @@ export default {
         await fetchModelInfo()
       } catch (err) {
         error.value = 'Failed to load teams data. Please try again later.'
-        console.error(err)
-      } finally {
+        console.error('[Teams] Error in loadTeamsData:', err)
         loading.value = false
       }
     }
