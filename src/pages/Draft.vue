@@ -179,7 +179,7 @@
 </template>
 
 <script>
-import { ref, onMounted, onUnmounted, computed, nextTick } from 'vue'
+import { ref, onMounted, onUnmounted, computed, nextTick, watch } from 'vue'
 import { useHead } from '@vueuse/head'
 import { useLeagueStore } from '../stores/league.js'
 import { getTeamInfoByAiModel } from '../teamMappings.js'
@@ -662,28 +662,32 @@ export default {
       }
     }
 
+    // Watch for draftPicks to be populated, then render charts
+    watch(() => draftPicks.value, async (newPicks) => {
+      if (newPicks && newPicks.length > 0 && adpData.value.length > 0 && divergenceData.value.length > 0) {
+        console.log('[Draft] draftPicks loaded, waiting for DOM...')
+        // Wait for Vue to render the chart containers
+        await nextTick()
+
+        // Use setTimeout to ensure we're in the next event loop after Vue's render
+        setTimeout(() => {
+          console.log('[Draft] About to render charts')
+          console.log('[Draft] Chart refs:', { adp: !!adpChartRef.value, div: !!divergenceChartRef.value })
+          renderADPChart()
+          renderDivergenceChart()
+          console.log('[Draft] Chart rendering attempted')
+        }, 100)
+      }
+    }, { immediate: true })
+
     onMounted(async () => {
       console.log('[Draft] onMounted started')
       await loadDraftData()
-      console.log('[Draft] Draft data loaded')
+      console.log('[Draft] Draft data loaded, draftPicks count:', draftPicks.value?.length || 0)
       await loadADPData()
       console.log('[Draft] ADP data loaded, count:', adpData.value.length)
       await loadDivergenceData()
       console.log('[Draft] Divergence data loaded, count:', divergenceData.value.length)
-
-      // CRITICAL: Wait for Vue to render the chart containers
-      // The chart divs are conditionally rendered with v-else-if, so we need
-      // to wait for the DOM to fully update after data is loaded
-      await nextTick()
-
-      // Use setTimeout to ensure we're in the next event loop after Vue's render
-      setTimeout(() => {
-        console.log('[Draft] About to render charts, echarts available?', typeof echarts !== 'undefined')
-        console.log('[Draft] Chart refs:', { adp: !!adpChartRef.value, div: !!divergenceChartRef.value })
-        renderADPChart()
-        renderDivergenceChart()
-        console.log('[Draft] Chart rendering attempted')
-      }, 100)
 
       // Add resize listener
       window.addEventListener('resize', handleResize)
