@@ -6,7 +6,7 @@ import { getInjuries, getPlayerInjuryStatus, getInjuryIndicator, getWeeklyProjec
 import { getPlayers as getPlayersFromService, enrichPlayerData } from '../utils/playerService.js'
 
 // Cache version - increment when making breaking changes to data structure
-const CACHE_VERSION = 15 // v15: Force cache refresh for all users
+const CACHE_VERSION = 16 // v16: Fix deadlock + force refresh for Week 7 data
 
 // Team code normalization mapping
 const normalizeTeamCode = (code) => {
@@ -479,6 +479,14 @@ export const useLeagueStore = defineStore('league', {
     async initialize(forceRefresh = false) {
       console.log('[INIT] initialize() called, forceRefresh:', forceRefresh, 'cacheVersion:', this.cacheVersion, 'CACHE_VERSION:', CACHE_VERSION)
 
+      // CRITICAL: Always reset runtime flags first to prevent deadlocks from persisted state
+      // This must be the FIRST thing we do before any other checks
+      if (this.isInitializing || this.isRefreshing) {
+        console.log('⚠️ Detected persisted runtime flags - resetting to prevent deadlock')
+        this.isInitializing = false
+        this.isRefreshing = false
+      }
+
       // Check cache version first - if it doesn't match, clear everything
       if (this.cacheVersion !== CACHE_VERSION) {
         console.log(`🗑️ Cache version mismatch (stored: ${this.cacheVersion}, current: ${CACHE_VERSION}). Clearing cache...`)
@@ -488,7 +496,7 @@ export const useLeagueStore = defineStore('league', {
       }
 
       // If we have cached data and not forcing refresh, return it immediately
-      if (!forceRefresh && this.league && this.rosters.length > 0 && !this.isInitializing) {
+      if (!forceRefresh && this.league && this.rosters.length > 0) {
         console.log('📦 Using cached data - showing immediately')
 
         // Load NFL schedule if not loaded (needed for bye badges)
@@ -501,7 +509,7 @@ export const useLeagueStore = defineStore('league', {
         const REFRESH_INTERVAL = 5 * 60 * 1000 // 5 minutes
         const needsRefresh = !this.lastFullLoad || (Date.now() - this.lastFullLoad > REFRESH_INTERVAL)
 
-        if (needsRefresh && !this.isRefreshing) {
+        if (needsRefresh) {
           console.log('🔄 Background refresh triggered')
           this.refreshCurrentWeek() // Non-blocking background refresh
         }
@@ -510,11 +518,6 @@ export const useLeagueStore = defineStore('league', {
       }
 
       // First time load or force refresh
-      if (this.isInitializing) {
-        console.log('⏳ Already initializing, waiting...')
-        return
-      }
-
       this.isInitializing = true
       this.errors = {}
 
