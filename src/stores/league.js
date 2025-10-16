@@ -71,6 +71,14 @@ export const useLeagueStore = defineStore('league', {
   }),
 
   getters: {
+    // Single source of truth for whether data is ready
+    isDataReady() {
+      return this.league !== null &&
+             this.rosters.length > 0 &&
+             this.currentWeek !== null &&
+             Object.keys(this.allMatchups).length > 0
+    },
+
     // Get current week from league settings
     currentLeagueWeek() {
       return this.league?.settings?.leg || 1
@@ -469,6 +477,8 @@ export const useLeagueStore = defineStore('league', {
      * Shows cached data immediately, then loads/refreshes in background
      */
     async initialize(forceRefresh = false) {
+      console.log('[INIT] initialize() called, forceRefresh:', forceRefresh, 'cacheVersion:', this.cacheVersion, 'CACHE_VERSION:', CACHE_VERSION)
+
       // Check cache version first - if it doesn't match, clear everything
       if (this.cacheVersion !== CACHE_VERSION) {
         console.log(`🗑️ Cache version mismatch (stored: ${this.cacheVersion}, current: ${CACHE_VERSION}). Clearing cache...`)
@@ -1110,6 +1120,7 @@ export const useLeagueStore = defineStore('league', {
   },
 
   // Enable persistence with localStorage
+  // NOTE: Do NOT persist isInitializing or isRefreshing - these are runtime flags only
   persist: {
     key: 'tokenbowl-league-oct2025',
     paths: [
@@ -1134,6 +1145,12 @@ export const useLeagueStore = defineStore('league', {
       'processedTransactionStats',
       'lastFullLoad',
       'completedWeeks'
-    ]
+      // isInitializing and isRefreshing are intentionally excluded - runtime state only
+    ],
+    // CRITICAL: Reset runtime flags after restoring from cache to prevent deadlocks
+    afterRestore: (ctx) => {
+      ctx.store.isInitializing = false
+      ctx.store.isRefreshing = false
+    }
   }
 })

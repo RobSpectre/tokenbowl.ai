@@ -133,11 +133,14 @@ export default {
     const isDataReady = computed(() => leagueStore.isDataReady)
 
     const loadLeagueInfo = async () => {
+      console.log('[APP] loadLeagueInfo called')
       try {
         // Initialize the store ONCE - this is the ONLY place this should be called
+        console.log('[APP] About to call leagueStore.initialize()')
         await leagueStore.initialize()
+        console.log('[APP] leagueStore.initialize() completed')
       } catch (err) {
-        console.error('Error loading league info:', err)
+        console.error('[APP] Error loading league info:', err)
       }
     }
 
@@ -151,7 +154,9 @@ export default {
       trackButtonClick('navigation', { page })
     }
 
+    console.log('[APP] Setting up onMounted hook')
     onMounted(() => {
+      console.log('[APP] onMounted fired!')
       loadLeagueInfo()
     })
 
