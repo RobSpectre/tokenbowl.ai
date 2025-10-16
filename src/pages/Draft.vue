@@ -670,9 +670,16 @@ export default {
       console.log('[Draft] ADP data loaded, count:', adpData.value.length)
       await loadDivergenceData()
       console.log('[Draft] Divergence data loaded, count:', divergenceData.value.length)
-      // Render charts after both data and DOM are ready
+
+      // CRITICAL: Wait for Vue to render the chart containers
+      // The chart divs are conditionally rendered with v-else-if, so we need
+      // to wait multiple ticks for the DOM to update after data is loaded
       await nextTick()
+      await nextTick()
+      await nextTick()
+
       console.log('[Draft] About to render charts, echarts available?', typeof echarts !== 'undefined')
+      console.log('[Draft] Chart refs:', { adp: !!adpChartRef.value, div: !!divergenceChartRef.value })
       renderADPChart()
       renderDivergenceChart()
 
