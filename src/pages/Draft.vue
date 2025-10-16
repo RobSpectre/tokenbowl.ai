@@ -673,15 +673,17 @@ export default {
 
       // CRITICAL: Wait for Vue to render the chart containers
       // The chart divs are conditionally rendered with v-else-if, so we need
-      // to wait multiple ticks for the DOM to update after data is loaded
-      await nextTick()
-      await nextTick()
+      // to wait for the DOM to fully update after data is loaded
       await nextTick()
 
-      console.log('[Draft] About to render charts, echarts available?', typeof echarts !== 'undefined')
-      console.log('[Draft] Chart refs:', { adp: !!adpChartRef.value, div: !!divergenceChartRef.value })
-      renderADPChart()
-      renderDivergenceChart()
+      // Use setTimeout to ensure we're in the next event loop after Vue's render
+      setTimeout(() => {
+        console.log('[Draft] About to render charts, echarts available?', typeof echarts !== 'undefined')
+        console.log('[Draft] Chart refs:', { adp: !!adpChartRef.value, div: !!divergenceChartRef.value })
+        renderADPChart()
+        renderDivergenceChart()
+        console.log('[Draft] Chart rendering attempted')
+      }, 100)
 
       // Add resize listener
       window.addEventListener('resize', handleResize)
