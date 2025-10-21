@@ -167,7 +167,6 @@ export default {
       ws = new WebSocket(wsUrlWithAuth)
 
       ws.onopen = () => {
-        console.log('WebSocket connected')
         connected.value = true
         reconnectAttempts = 0
       }
@@ -210,13 +209,11 @@ export default {
       }
 
       ws.onclose = () => {
-        console.log('WebSocket disconnected')
         connected.value = false
 
         // Attempt to reconnect
         if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
           reconnectAttempts++
-          console.log(`Reconnecting... Attempt ${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS}`)
           setTimeout(connectWebSocket, RECONNECT_DELAY)
         }
       }
