@@ -442,9 +442,9 @@ describe('Sleeper API', () => {
     })
 
     it('should fetch all rounds and filter by leg (week)', async () => {
-      // Mock responses for rounds 1-20
+      // Mock responses for rounds 1-50
       // Only round 3 has transactions with leg=5, round 5 has leg=5 transactions
-      for (let round = 1; round <= 20; round++) {
+      for (let round = 1; round <= 50; round++) {
         if (round === 3) {
           global.fetch.mockResolvedValueOnce({
             json: async () => [
@@ -467,14 +467,14 @@ describe('Sleeper API', () => {
 
       const result = await getTransactions(5)
 
-      // Should have fetched all 20 rounds
-      expect(global.fetch).toHaveBeenCalledTimes(20)
+      // Should have fetched all 50 rounds
+      expect(global.fetch).toHaveBeenCalledTimes(50)
       // Should have called round 1, 2, 3, etc
       expect(global.fetch).toHaveBeenCalledWith(
         'https://api.sleeper.app/v1/league/1266471057523490816/transactions/1'
       )
       expect(global.fetch).toHaveBeenCalledWith(
-        'https://api.sleeper.app/v1/league/1266471057523490816/transactions/20'
+        'https://api.sleeper.app/v1/league/1266471057523490816/transactions/50'
       )
       // Should return only transactions with leg=5
       expect(result).toHaveLength(3)
@@ -483,7 +483,7 @@ describe('Sleeper API', () => {
 
     it('should return empty array if no transactions match the week', async () => {
       // Mock all rounds to return empty or transactions for different weeks
-      for (let round = 1; round <= 20; round++) {
+      for (let round = 1; round <= 50; round++) {
         global.fetch.mockResolvedValueOnce({
           json: async () => [
             { type: 'waiver', adds: { p1: 1 }, leg: 3 }
@@ -498,7 +498,7 @@ describe('Sleeper API', () => {
 
     it('should handle fetch errors gracefully', async () => {
       // Mock some rounds to fail, others to succeed
-      for (let round = 1; round <= 20; round++) {
+      for (let round = 1; round <= 50; round++) {
         if (round === 5) {
           global.fetch.mockRejectedValueOnce(new Error('Network error'))
         } else if (round === 3) {
