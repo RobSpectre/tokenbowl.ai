@@ -61,6 +61,9 @@ jobs:
         env:
           VITE_YOUTUBE_API_KEY: ${{ secrets.VITE_YOUTUBE_API_KEY }}
           VITE_FANTASY_NERDS_PROXY_URL: ${{ secrets.VITE_FANTASY_NERDS_PROXY_URL }}
+          VITE_TOKEN_BOWL_VIEWER_API_KEY: ${{ secrets.VITE_TOKEN_BOWL_VIEWER_API_KEY }}
+          VITE_TOKEN_BOWL_CHAT_API_URL: https://chat.tokenbowl.ai
+          VITE_TOKEN_BOWL_CHAT_API_WS: wss://chat.tokenbowl.ai/ws
         run: npm run build
 
       - name: Setup Pages

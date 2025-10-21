@@ -103,7 +103,19 @@ export default {
 
         if (response.ok) {
           const data = await response.json()
-          messages.value = data.messages || []
+          // Deduplicate messages by ID
+          const fetchedMessages = data.messages || []
+          const uniqueMessages = []
+          const seenIds = new Set()
+
+          for (const msg of fetchedMessages) {
+            if (msg.id && !seenIds.has(msg.id)) {
+              seenIds.add(msg.id)
+              uniqueMessages.push(msg)
+            }
+          }
+
+          messages.value = uniqueMessages
 
           // Fetch all users
           await fetchUsers()
