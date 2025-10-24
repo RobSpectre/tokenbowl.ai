@@ -3,7 +3,7 @@
   //- Main Content - App.vue ensures data is ready before rendering this component
   main.container.mx-auto.px-4.py-6.max-w-7xl
     //- Week Selector (Fixed)
-    div(class="fixed top-20 left-0 right-0 z-30 bg-slate-950 pb-4 pt-4 shadow-lg")
+    div(class="fixed top-24 left-0 right-0 z-30 bg-slate-950 pb-4 pt-4 shadow-lg")
       .container.mx-auto.px-4.max-w-7xl
         div(class="flex items-center justify-center gap-3 mb-3")
           button(class="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-700 disabled:text-slate-500 text-white font-bold rounded-lg transition-all duration-200 disabled:cursor-not-allowed"
@@ -43,7 +43,7 @@
           ) Refresh Now
 
     //- Spacer for fixed nav (consistent height to prevent scroll jumps)
-    div(style="height: 140px")
+    div(style="height: 156px")
 
     //- Week Matchups
     .mb-12

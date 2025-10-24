@@ -294,10 +294,10 @@ export async function getTransactions(week) {
   } else {
     // Create and store the promise so concurrent calls can await it
     transactionRoundsPromise = (async () => {
-      // Fetch up to 20 rounds (should cover the entire season)
+      // Fetch up to 50 rounds (to ensure we get all transactions for the entire season)
       // We fetch in parallel for speed
       const roundPromises = []
-      for (let round = 1; round <= 20; round++) {
+      for (let round = 1; round <= 50; round++) {
         roundPromises.push(
           fetch(`${BASE_URL}/league/${LEAGUE_ID}/transactions/${round}`)
             .then(res => res.json())

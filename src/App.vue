@@ -1,7 +1,7 @@
 <template lang="pug">
-.min-h-screen.bg-slate-950
+div(:class="isBroadcastPage ? '' : 'min-h-screen bg-slate-950'")
   //- Global Loading Screen - shown until Pinia has all data ready
-  div(v-if="!isDataReady" class="flex items-center justify-center min-h-screen")
+  div(v-if="!isDataReady && !isBroadcastPage" class="flex items-center justify-center min-h-screen")
     .text-center
       .inline-block.animate-spin.rounded-full.h-16.w-16.border-t-2.border-b-2.border-blue-500.mb-4
       h2.text-2xl.font-bold.text-white.mb-2 Loading Token Bowl...
@@ -9,8 +9,11 @@
 
   //- Main App Content - only shown when data is ready
   div(v-else)
-    //- Header
-    header.bg-gradient-to-r.from-slate-900.via-slate-800.to-slate-900.border-b-4.border-blue-600.sticky.top-0.z-40
+    //- Header (hidden on broadcast page)
+    header(
+      v-if="!isBroadcastPage"
+      class="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 border-b-4 border-blue-600 sticky top-0 z-40"
+    )
       .container.mx-auto.px-4.py-3.max-w-7xl
         .flex.items-center.justify-between
           router-link(to="/" class="flex items-center gap-2 sm:gap-3 hover:opacity-80 transition-opacity cursor-pointer")
@@ -29,6 +32,10 @@
               to="/videos"
               :class="$route.path === '/videos' ? 'bg-blue-600 text-white rounded' : 'text-gray-300 hover:text-white hover:bg-slate-700 rounded'"
             ) Videos
+            router-link.px-5.py-2.font-bold.uppercase.text-sm.tracking-wide.transition-all.duration-200(
+              to="/chat"
+              :class="$route.path === '/chat' ? 'bg-blue-600 text-white rounded' : 'text-gray-300 hover:text-white hover:bg-slate-700 rounded'"
+            ) Chat
             router-link.px-5.py-2.font-bold.uppercase.text-sm.tracking-wide.transition-all.duration-200(
               to="/teams"
               :class="$route.path === '/teams' ? 'bg-blue-600 text-white rounded' : 'text-gray-300 hover:text-white hover:bg-slate-700 rounded'"
@@ -67,6 +74,11 @@
             @click="handleNavClick('videos')"
           ) Videos
           router-link.px-4.py-3.font-bold.uppercase.text-sm.tracking-wide.transition-all.duration-200.border-b.border-slate-800(
+            to="/chat"
+            :class="$route.path === '/chat' ? 'bg-blue-600 text-white' : 'text-gray-300'"
+            @click="handleNavClick('chat')"
+          ) Chat
+          router-link.px-4.py-3.font-bold.uppercase.text-sm.tracking-wide.transition-all.duration-200.border-b.border-slate-800(
             to="/teams"
             :class="$route.path === '/teams' ? 'bg-blue-600 text-white' : 'text-gray-300'"
             @click="handleNavClick('teams')"
@@ -90,8 +102,11 @@
     //- Router View
     router-view
 
-    //- Footer
-    footer.bg-gradient-to-r.from-slate-900.via-slate-800.to-slate-900.border-t-4.border-blue-600.mt-12
+    //- Footer (hidden on broadcast page)
+    footer(
+      v-if="!isBroadcastPage"
+      class="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 border-t-4 border-blue-600 mt-12"
+    )
     .container.mx-auto.px-4.py-6.max-w-7xl
       div(class="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-6 text-gray-400 text-xs sm:text-sm")
         span
@@ -120,17 +135,22 @@
 
 <script>
 import { ref, computed, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
 import { useLeagueStore } from './stores/league.js'
 import { trackButtonClick } from './analytics.js'
 
 export default {
   name: 'App',
   setup() {
+    const route = useRoute()
     const leagueStore = useLeagueStore()
     const mobileMenuOpen = ref(false)
 
     // Global loading state - single source of truth
     const isDataReady = computed(() => leagueStore.isDataReady)
+
+    // Check if we're on the broadcast page (hide nav/footer)
+    const isBroadcastPage = computed(() => route.path === '/broadcast' || route.path === '/broadcast-extra')
 
     const loadLeagueInfo = async () => {
       console.log('[APP] loadLeagueInfo called')
@@ -162,6 +182,7 @@ export default {
 
     return {
       isDataReady,
+      isBroadcastPage,
       mobileMenuOpen,
       toggleMobileMenu,
       handleNavClick

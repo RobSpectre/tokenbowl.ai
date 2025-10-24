@@ -4,15 +4,28 @@ import Draft from './pages/Draft.vue'
 import Scoring from './pages/Scoring.vue'
 import MatchupDetail from './pages/MatchupDetail.vue'
 import Videos from './pages/Videos.vue'
+import Chat from './pages/Chat.vue'
 import Teams from './pages/Teams.vue'
 import Slopup from './pages/Slopup.vue'
 import SlopupDetail from './pages/SlopupDetail.vue'
+import Broadcast from './pages/Broadcast.vue'
+import BroadcastExtra from './pages/BroadcastExtra.vue'
 
 const routes = [
   {
     path: '/',
     name: 'Home',
     component: Home
+  },
+  {
+    path: '/broadcast',
+    name: 'Broadcast',
+    component: Broadcast
+  },
+  {
+    path: '/broadcast-extra',
+    name: 'BroadcastExtra',
+    component: BroadcastExtra
   },
   {
     path: '/matchup/:week/:matchupId',
@@ -33,6 +46,11 @@ const routes = [
     path: '/videos',
     name: 'Videos',
     component: Videos
+  },
+  {
+    path: '/chat',
+    name: 'Chat',
+    component: Chat
   },
   {
     path: '/teams',
