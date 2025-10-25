@@ -505,7 +505,51 @@
                 v-for="(transaction, index) in teamTransactions"
                 :key="index"
               )
-                .flex.items-start.gap-4
+                //- Trade Layout (Two-way exchange)
+                div(v-if="transaction.type === 'trade' && transaction.counterpartyInfo")
+                  .flex.items-center.justify-between.mb-4
+                    .flex.items-center.gap-3
+                      .text-purple-400.font-black.text-lg 🔄 Trade
+                      .text-gray-400.text-sm with
+                      .flex.items-center.gap-2
+                        img.w-8.h-8.rounded(:src="transaction.counterpartyInfo.logo" :alt="transaction.counterpartyInfo.aiModel")
+                        .text-white.font-bold {{ transaction.counterpartyInfo.aiModel }}
+                    .text-gray-500.text-sm.whitespace-nowrap {{ formatTransactionDate(transaction.created) }}
+
+                  div(class="grid grid-cols-1 md:grid-cols-2 gap-4")
+                    //- What this team received (filter by roster_id)
+                    .bg-slate-700.rounded-lg.p-4(v-if="transaction.adds && Object.keys(transaction.adds).filter(playerId => transaction.adds[playerId] === selectedTeam.roster_id).length > 0")
+                      .flex.items-center.gap-2.mb-3
+                        span.text-2xl ⬅️
+                        .text-green-400.font-semibold Received
+                      .space-y-3
+                        .flex.items-start.gap-3(v-for="playerId in Object.keys(transaction.adds).filter(playerId => transaction.adds[playerId] === selectedTeam.roster_id)" :key="playerId")
+                          img.w-14.h-14.rounded-lg.bg-slate-600.object-cover(:src="getPlayerImageUrl(playerId)" :alt="getPlayerNameFromId(playerId)" @error="$event.target.style.display='none'")
+                          div.flex-1
+                            .text-gray-200.text-sm.font-semibold {{ getPlayerNameFromId(playerId) }}
+                            div(class="text-blue-400 text-xs font-bold mt-0.5") {{ getPlayerPositionFromId(playerId) }}
+                            div(class="text-gray-400 text-xs mt-0.5" v-if="getPlayerRankECR(playerId)") ROS: {{ getPlayerRankECR(playerId) }}
+
+                    //- What this team gave away (filter by roster_id)
+                    .bg-slate-700.rounded-lg.p-4(v-if="transaction.drops && Object.keys(transaction.drops).filter(playerId => transaction.drops[playerId] === selectedTeam.roster_id).length > 0")
+                      .flex.items-center.gap-2.mb-3
+                        span.text-2xl ➡️
+                        .text-orange-400.font-semibold Sent
+                      .space-y-3
+                        .flex.items-start.gap-3(v-for="playerId in Object.keys(transaction.drops).filter(playerId => transaction.drops[playerId] === selectedTeam.roster_id)" :key="playerId")
+                          img.w-14.h-14.rounded-lg.bg-slate-600.object-cover(:src="getPlayerImageUrl(playerId)" :alt="getPlayerNameFromId(playerId)" @error="$event.target.style.display='none'")
+                          div.flex-1
+                            .text-gray-200.text-sm.font-semibold {{ getPlayerNameFromId(playerId) }}
+                            div(class="text-blue-400 text-xs font-bold mt-0.5") {{ getPlayerPositionFromId(playerId) }}
+                            div(class="text-gray-400 text-xs mt-0.5" v-if="getPlayerRankECR(playerId)") ROS: {{ getPlayerRankECR(playerId) }}
+
+                  .mt-3.text-center
+                    div(:class="getTransactionDelta(transaction) > 0 ? 'text-green-400' : getTransactionDelta(transaction) < 0 ? 'text-red-400' : 'text-gray-400'" class="text-2xl font-black inline-block")
+                      span {{ getTransactionDelta(transaction) > 0 ? '+' : '' }}{{ getTransactionDelta(transaction) }}
+                      span.text-gray-400.text-xs.font-semibold.uppercase.tracking-wider.ml-2 Δ ROS
+
+                //- Regular transaction layout (Waiver/Free Agent)
+                .flex.items-start.gap-4(v-else)
                   .flex-1
                     .text-white.font-bold {{ getTransactionType(transaction.type) }}
                     .flex.items-start.gap-6.mt-3

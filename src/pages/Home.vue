@@ -409,8 +409,59 @@
             v-for="(transaction, index) in transactions"
             :key="index"
           )
-            //- Mobile Layout (stacked)
-            div(class="flex flex-col gap-3 sm:hidden")
+            //- Mobile Layout - Trade (two-way exchange)
+            div(v-if="transaction.type === 'trade' && transaction.counterpartyInfo" class="sm:hidden")
+              //- Trade Header
+              div(class="flex items-center justify-between mb-3")
+                div(class="flex items-center gap-2")
+                  .text-purple-400.font-black.text-sm 🔄 Trade
+                  .text-gray-400.text-xs with
+                  div(class="flex items-center gap-1")
+                    img(class="h-4 w-4 object-contain" :src="transaction.counterpartyInfo.logo" :alt="transaction.counterpartyInfo.aiModel" :class="transaction.counterpartyInfo.invertLogo ? 'invert brightness-200' : ''")
+                    .text-white.font-bold.text-xs {{ transaction.counterpartyInfo.aiModel }}
+                .text-gray-500.text-xs {{ formatTransactionDate(transaction.created) }}
+
+              //- Team Info
+              div(v-if="transaction.teamInfo" class="flex items-center gap-2 mb-3 pb-2 border-b border-slate-700")
+                img(class="h-8 w-8 object-contain" v-if="transaction.teamInfo.logo" :src="transaction.teamInfo.logo" :alt="transaction.teamInfo.aiModel" :class="transaction.teamInfo.invertLogo ? 'invert brightness-200' : ''")
+                .text-white.font-bold.text-sm {{ transaction.teamInfo.aiModel }}
+
+              //- Players exchanged
+              div(class="space-y-3")
+                //- Received (filter by roster_id)
+                div(v-if="transaction.adds && transaction.roster && Object.keys(transaction.adds).filter(playerId => transaction.adds[playerId] === transaction.roster.roster_id).length > 0" class="bg-slate-700 rounded-lg p-2")
+                  .flex.items-center.gap-1.mb-2
+                    span.text-lg ⬅️
+                    .text-green-400.font-semibold.text-xs Received
+                  div(class="space-y-2")
+                    div(v-for="playerId in Object.keys(transaction.adds).filter(playerId => transaction.adds[playerId] === transaction.roster.roster_id)" :key="playerId" class="flex items-center gap-2")
+                      img(class="w-10 h-10 rounded object-cover" :src="getPlayerImageUrl(playerId)" :alt="getPlayerNameFromId(playerId)" @error="$event.target.style.display='none'")
+                      div(class="flex-1 min-w-0")
+                        div(class="text-gray-200 text-xs font-semibold truncate") {{ getPlayerNameFromId(playerId) }}
+                        div(class="text-blue-400 text-xs") {{ getPlayerPosition(playerId) }}
+                      div(class="text-gray-400 text-xs" v-if="getPlayerRankECR(playerId)") {{ getPlayerRankECR(playerId) }}
+
+                //- Sent (filter by roster_id)
+                div(v-if="transaction.drops && transaction.roster && Object.keys(transaction.drops).filter(playerId => transaction.drops[playerId] === transaction.roster.roster_id).length > 0" class="bg-slate-700 rounded-lg p-2")
+                  .flex.items-center.gap-1.mb-2
+                    span.text-lg ➡️
+                    .text-orange-400.font-semibold.text-xs Sent
+                  div(class="space-y-2")
+                    div(v-for="playerId in Object.keys(transaction.drops).filter(playerId => transaction.drops[playerId] === transaction.roster.roster_id)" :key="playerId" class="flex items-center gap-2")
+                      img(class="w-10 h-10 rounded object-cover" :src="getPlayerImageUrl(playerId)" :alt="getPlayerNameFromId(playerId)" @error="$event.target.style.display='none'")
+                      div(class="flex-1 min-w-0")
+                        div(class="text-gray-200 text-xs font-semibold truncate") {{ getPlayerNameFromId(playerId) }}
+                        div(class="text-blue-400 text-xs") {{ getPlayerPosition(playerId) }}
+                      div(class="text-gray-400 text-xs" v-if="getPlayerRankECR(playerId)") {{ getPlayerRankECR(playerId) }}
+
+              //- Delta
+              div(class="mt-2 text-center")
+                div(:class="getTransactionDelta(transaction) > 0 ? 'text-green-400' : getTransactionDelta(transaction) < 0 ? 'text-red-400' : 'text-gray-400'" class="text-lg font-black inline-block")
+                  span {{ getTransactionDelta(transaction) > 0 ? '+' : '' }}{{ getTransactionDelta(transaction) }}
+                  span.text-gray-400.text-xs.font-semibold.uppercase.tracking-wider.ml-1 Δ ROS
+
+            //- Mobile Layout - Regular (waiver/free agent)
+            div(v-else class="flex flex-col gap-3 sm:hidden")
               //- Team Info
               div(v-if="transaction.teamInfo" class="flex items-center gap-2")
                 img(class="h-10 w-10 object-contain"
@@ -429,14 +480,6 @@
               //- Transaction Type
               div
                 .text-white.font-bold.text-sm {{ getTransactionType(transaction.type) }}
-                div(v-if="transaction.counterpartyInfo" class="flex items-center gap-1 mt-1")
-                  .text-gray-400.text-xs with
-                  img(class="h-4 w-4 object-contain"
-                    :src="transaction.counterpartyInfo.logo"
-                    :alt="transaction.counterpartyInfo.aiModel"
-                    :class="transaction.counterpartyInfo.invertLogo ? 'invert brightness-200' : ''"
-                  )
-                  .text-blue-400.text-xs.font-semibold {{ transaction.counterpartyInfo.aiModel }}
 
               //- Players
               div(class="grid grid-cols-1 gap-2")
@@ -460,8 +503,61 @@
 
               .text-gray-500.text-xs.text-right {{ formatTransactionDate(transaction.created) }}
 
-            //- Desktop Layout (original)
-            div(class="hidden sm:flex sm:items-start sm:gap-4")
+            //- Desktop Layout - Trade (two-way exchange)
+            div(v-if="transaction.type === 'trade' && transaction.counterpartyInfo" class="hidden sm:block")
+              //- Trade Header
+              .flex.items-center.justify-between.mb-4
+                .flex.items-center.gap-3
+                  .text-purple-400.font-black.text-lg 🔄 Trade
+                  .text-gray-400.text-sm with
+                  .flex.items-center.gap-2
+                    img.w-8.h-8.rounded(:src="transaction.counterpartyInfo.logo" :alt="transaction.counterpartyInfo.aiModel" :class="transaction.counterpartyInfo.invertLogo ? 'invert brightness-200' : ''")
+                    .text-white.font-bold {{ transaction.counterpartyInfo.aiModel }}
+                .text-gray-500.text-sm.whitespace-nowrap {{ formatTransactionDate(transaction.created) }}
+
+              //- Team Info
+              div(v-if="transaction.teamInfo" class="flex items-center gap-3 mb-4 pb-3 border-b border-slate-700")
+                img.h-12.w-12.object-contain(v-if="transaction.teamInfo.logo" :src="transaction.teamInfo.logo" :alt="transaction.teamInfo.aiModel" :class="transaction.teamInfo.invertLogo ? 'invert brightness-200' : ''")
+                div
+                  .text-white.font-bold.text-base {{ transaction.teamInfo.aiModel }}
+                  .text-blue-400.text-sm {{ transaction.teamInfo.owner }}
+
+              //- Players exchanged
+              div(class="grid grid-cols-1 md:grid-cols-2 gap-4")
+                //- Received (filter by roster_id)
+                .bg-slate-700.rounded-lg.p-4(v-if="transaction.adds && transaction.roster && Object.keys(transaction.adds).filter(playerId => transaction.adds[playerId] === transaction.roster.roster_id).length > 0")
+                  .flex.items-center.gap-2.mb-3
+                    span.text-2xl ⬅️
+                    .text-green-400.font-semibold Received
+                  .space-y-3
+                    .flex.items-start.gap-3(v-for="playerId in Object.keys(transaction.adds).filter(playerId => transaction.adds[playerId] === transaction.roster.roster_id)" :key="playerId")
+                      img.w-14.h-14.rounded-lg.bg-slate-600.object-cover(:src="getPlayerImageUrl(playerId)" :alt="getPlayerNameFromId(playerId)" @error="$event.target.style.display='none'")
+                      div.flex-1
+                        .text-gray-200.text-sm.font-semibold {{ getPlayerNameFromId(playerId) }}
+                        div(class="text-blue-400 text-xs font-bold mt-0.5") {{ getPlayerPosition(playerId) }}
+                        div(class="text-gray-400 text-xs mt-0.5" v-if="getPlayerRankECR(playerId)") ROS: {{ getPlayerRankECR(playerId) }}
+
+                //- Sent (filter by roster_id)
+                .bg-slate-700.rounded-lg.p-4(v-if="transaction.drops && transaction.roster && Object.keys(transaction.drops).filter(playerId => transaction.drops[playerId] === transaction.roster.roster_id).length > 0")
+                  .flex.items-center.gap-2.mb-3
+                    span.text-2xl ➡️
+                    .text-orange-400.font-semibold Sent
+                  .space-y-3
+                    .flex.items-start.gap-3(v-for="playerId in Object.keys(transaction.drops).filter(playerId => transaction.drops[playerId] === transaction.roster.roster_id)" :key="playerId")
+                      img.w-14.h-14.rounded-lg.bg-slate-600.object-cover(:src="getPlayerImageUrl(playerId)" :alt="getPlayerNameFromId(playerId)" @error="$event.target.style.display='none'")
+                      div.flex-1
+                        .text-gray-200.text-sm.font-semibold {{ getPlayerNameFromId(playerId) }}
+                        div(class="text-blue-400 text-xs font-bold mt-0.5") {{ getPlayerPosition(playerId) }}
+                        div(class="text-gray-400 text-xs mt-0.5" v-if="getPlayerRankECR(playerId)") ROS: {{ getPlayerRankECR(playerId) }}
+
+              //- Delta
+              .mt-3.text-center
+                div(:class="getTransactionDelta(transaction) > 0 ? 'text-green-400' : getTransactionDelta(transaction) < 0 ? 'text-red-400' : 'text-gray-400'" class="text-2xl font-black inline-block")
+                  span {{ getTransactionDelta(transaction) > 0 ? '+' : '' }}{{ getTransactionDelta(transaction) }}
+                  span.text-gray-400.text-xs.font-semibold.uppercase.tracking-wider.ml-2 Δ ROS
+
+            //- Desktop Layout - Regular (waiver/free agent)
+            div(v-else class="hidden sm:flex sm:items-start sm:gap-4")
               div(v-if="transaction.teamInfo" class="flex items-center gap-3 min-w-[250px]")
                 img.h-16.w-16.object-contain(
                   v-if="transaction.teamInfo.logo"
@@ -476,14 +572,6 @@
               .flex-1
                 div
                   .text-white.font-bold {{ getTransactionType(transaction.type) }}
-                  div(v-if="transaction.counterpartyInfo" class="flex items-center gap-2 mt-1")
-                    .text-gray-400.text-sm with
-                    img(class="h-5 w-5 object-contain"
-                      :src="transaction.counterpartyInfo.logo"
-                      :alt="transaction.counterpartyInfo.aiModel"
-                      :class="transaction.counterpartyInfo.invertLogo ? 'invert brightness-200' : ''"
-                    )
-                    .text-blue-400.text-sm.font-semibold {{ transaction.counterpartyInfo.aiModel }}
                 .flex.items-start.gap-6.mt-3
                   .flex-1(v-if="transaction.adds")
                     .text-green-400.text-sm.font-semibold.mb-2 Added:
