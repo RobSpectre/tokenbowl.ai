@@ -417,6 +417,9 @@ export const useLeagueStore = defineStore('league', {
         let hasBye = false
         let hasEmpty = false
 
+        // Get week-specific injury data if available
+        const weekInjuryData = checkWeek ? state.injuriesByWeek[checkWeek] : null
+
         starterIds.forEach(playerId => {
           if (playerId === '0' || playerId === 0) {
             hasEmpty = true
@@ -441,8 +444,18 @@ export const useLeagueStore = defineStore('league', {
               hasSuspended = true
             }
 
-            // Check injury status
-            const statusToCheck = enrichedPlayer?.injury_status_combined?.toUpperCase() || basePlayer?.injury_status?.toUpperCase()
+            // Check injury status - use week-specific data if available
+            let statusToCheck = null
+            if (weekInjuryData && player.full_name) {
+              const playerName = player.full_name || `${player.first_name || ''} ${player.last_name || ''}`.trim()
+              const weekInjury = getPlayerInjuryStatus(weekInjuryData, playerName)
+              statusToCheck = weekInjury?.game_status?.toUpperCase()
+            }
+
+            // Fallback to enriched or base player injury status
+            if (!statusToCheck) {
+              statusToCheck = enrichedPlayer?.injury_status_combined?.toUpperCase() || basePlayer?.injury_status?.toUpperCase()
+            }
 
             if (statusToCheck) {
               if (statusToCheck.includes('DOUBTFUL') || (statusToCheck.includes('D ') || statusToCheck === 'D') && !statusToCheck.includes('SUSPENDED')) {
@@ -870,7 +883,12 @@ export const useLeagueStore = defineStore('league', {
      * Fetch transactions for a specific week (on-demand)
      */
     async fetchTransactionsForWeek(week) {
-      if (this.transactionsByWeek[week]) {
+      // Only use cached data for completed weeks
+      // For current/recent weeks, always fetch fresh data
+      const currentWeek = this.league?.settings?.leg || 18
+      const isWeekCompleted = week < currentWeek - 1
+
+      if (this.transactionsByWeek[week] && isWeekCompleted) {
         return this.transactionsByWeek[week]
       }
 
@@ -925,7 +943,12 @@ export const useLeagueStore = defineStore('league', {
      * Fetch injuries for a specific week (on-demand)
      */
     async fetchInjuriesForWeek(week) {
-      if (this.injuriesByWeek[week]) {
+      // Only use cached data for completed weeks
+      // For current/recent weeks, always fetch fresh data
+      const currentWeek = this.league?.settings?.leg || 18
+      const isWeekCompleted = week < currentWeek - 1
+
+      if (this.injuriesByWeek[week] && isWeekCompleted) {
         return this.injuriesByWeek[week]
       }
 
@@ -1034,10 +1057,6 @@ export const useLeagueStore = defineStore('league', {
      * Process transaction stats (on-demand)
      */
     async processTransactionStats(maxWeek) {
-      if (Object.keys(this.processedTransactionStats.byWeek).length > 0) {
-        return this.processedTransactionStats
-      }
-
       try {
         console.log('🌐 Processing transaction stats...')
         const byWeek = {}
