@@ -144,15 +144,13 @@ export default {
     const renderMarkdown = (content) => {
       if (!content) return ''
       try {
-        // Configure marked for this render
-        marked.setOptions({
+        // Parse markdown with options
+        const html = marked(content, {
           breaks: true,
           gfm: true,
           headerIds: false,
           mangle: false
         })
-
-        const html = marked.parse(content)
         return html
       } catch (error) {
         console.error('[ChatMessages] Failed to parse markdown:', error, 'Content:', content)
