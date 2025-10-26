@@ -106,10 +106,21 @@ export const useLeagueStore = defineStore('league', {
       const currentWeekMatchups = this.allMatchups[currentWeek]
       if (currentWeekMatchups) {
         // Check if current week games are complete
+        // A week is only complete if ALL starters have played (non-zero points)
         let allGamesComplete = true
         for (const matchup of currentWeekMatchups) {
           for (const team of matchup) {
-            if (!team.points || team.points === 0) {
+            // Check if team has starters_points and if ALL starters have non-zero points
+            if (team.starters_points && team.starters_points.length > 0) {
+              // Count how many starters have played (non-zero points)
+              const playersWithPoints = team.starters_points.filter(points => points > 0).length
+              // If not all starters have points, week is incomplete
+              if (playersWithPoints < team.starters_points.length) {
+                allGamesComplete = false
+                break
+              }
+            } else {
+              // No starters data, assume incomplete
               allGamesComplete = false
               break
             }
