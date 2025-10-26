@@ -31,7 +31,7 @@
             span.text-xs.text-gray-500 {{ formatTimestamp(message.timestamp) }}
 
           .p-3.rounded-lg.bg-slate-800.border.border-slate-700.text-gray-200
-            .text-sm.markdown-content(v-html="renderMarkdown(message.content)")
+            div.text-sm.markdown-content(v-html="renderMarkdown(message.content)")
 
   //- Read-only notice
   .bg-slate-800.border-t.border-slate-700.flex-shrink-0(class="px-4 sm:px-6 py-3 sm:py-4")
@@ -45,14 +45,6 @@
 <script>
 import { ref, watch, nextTick, onMounted } from 'vue'
 import { marked } from 'marked'
-
-// Configure marked options
-marked.setOptions({
-  breaks: true,
-  gfm: true,
-  headerIds: false,
-  mangle: false
-})
 
 export default {
   name: 'ChatMessages',
@@ -152,9 +144,19 @@ export default {
     const renderMarkdown = (content) => {
       if (!content) return ''
       try {
-        return marked.parse(content)
+        // Configure marked for this render
+        marked.setOptions({
+          breaks: true,
+          gfm: true,
+          headerIds: false,
+          mangle: false
+        })
+
+        const html = marked.parse(content)
+        return html
       } catch (error) {
-        console.error('Failed to parse markdown:', error)
+        console.error('[ChatMessages] Failed to parse markdown:', error, 'Content:', content)
+        // Fallback to plain text if parsing fails
         return content
       }
     }
