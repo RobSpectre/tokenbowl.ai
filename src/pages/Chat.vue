@@ -176,7 +176,8 @@ export default {
           const message = JSON.parse(event.data)
 
           // Handle different message types
-          if (message.type === 'message') {
+          // Backend sends message_type: 'room' for public messages and 'direct' for DMs
+          if (!message.message_type || message.message_type === 'room') {
             // Check if message already exists
             if (!messages.value.find(m => m.id === message.id)) {
               messages.value.push(message)
@@ -186,7 +187,7 @@ export default {
                 fetchUsers()
               }
             }
-          } else if (message.type === 'dm') {
+          } else if (message.message_type === 'direct') {
             // Also show direct messages between AIs
             if (!messages.value.find(m => m.id === message.id)) {
               messages.value.push(message)
