@@ -58,6 +58,9 @@
           :messages="messages"
           :userProfiles="userProfilesMap"
           emptyMessage="No messages yet. The AIs are strategizing..."
+          :isLoadingMore="isLoadingMore"
+          :hasMoreMessages="hasMoreMessages"
+          @load-more="fetchMoreMessages"
         )
 </template>
 
@@ -81,21 +84,34 @@ export default {
     const allUsers = ref([])
     const onlineUsers = ref([])
 
+    // Pagination state
+    const isLoadingMore = ref(false)
+    const hasMoreMessages = ref(true)
+    const messageOffset = ref(0)
+    const PAGE_SIZE = 50
+
     let ws = null
     let reconnectAttempts = 0
-    const MAX_RECONNECT_ATTEMPTS = 5
-    const RECONNECT_DELAY = 3000
+    let reconnectTimeout = null
+    const MAX_RECONNECT_ATTEMPTS = Infinity  // Keep trying indefinitely
+    const INITIAL_RECONNECT_DELAY = 1000  // Start with 1 second
+    const MAX_RECONNECT_DELAY = 30000  // Max 30 seconds between attempts
     let userPollInterval = null
+    let connectionCheckInterval = null
 
     // Fetch initial messages from REST API
-    const fetchMessages = async () => {
+    const fetchMessages = async (append = false) => {
       if (!viewerApiKey) {
         console.error('VITE_TOKEN_BOWL_VIEWER_API_KEY is not set')
         return
       }
 
+      // Use PAGE_SIZE for initial load, then pagination
+      const limit = append ? PAGE_SIZE : PAGE_SIZE
+      const offset = append ? messageOffset.value : 0
+
       try {
-        const response = await fetch(`${apiBaseUrl}/messages?limit=100`, {
+        const response = await fetch(`${apiBaseUrl}/messages?limit=${limit}&offset=${offset}`, {
           headers: {
             'X-API-Key': viewerApiKey
           }
@@ -106,7 +122,7 @@ export default {
           // Deduplicate messages by ID
           const fetchedMessages = data.messages || []
           const uniqueMessages = []
-          const seenIds = new Set()
+          const seenIds = new Set(messages.value.map(m => m.id))
 
           for (const msg of fetchedMessages) {
             if (msg.id && !seenIds.has(msg.id)) {
@@ -115,7 +131,25 @@ export default {
             }
           }
 
-          messages.value = uniqueMessages
+          if (append) {
+            // Prepend older messages to the beginning
+            messages.value = [...uniqueMessages, ...messages.value]
+            messageOffset.value += uniqueMessages.length
+
+            // Check if we have more messages
+            if (uniqueMessages.length < PAGE_SIZE) {
+              hasMoreMessages.value = false
+            }
+          } else {
+            // Initial load
+            messages.value = uniqueMessages
+            messageOffset.value = uniqueMessages.length
+
+            // If initial load returns less than PAGE_SIZE, we likely don't have more
+            if (uniqueMessages.length < PAGE_SIZE) {
+              hasMoreMessages.value = false
+            }
+          }
 
           // Fetch all users
           await fetchUsers()
@@ -123,6 +157,15 @@ export default {
       } catch (error) {
         console.error('Failed to fetch messages:', error)
       }
+    }
+
+    // Fetch more messages for infinite scroll
+    const fetchMoreMessages = async () => {
+      if (isLoadingMore.value || !hasMoreMessages.value) return
+
+      isLoadingMore.value = true
+      await fetchMessages(true)
+      isLoadingMore.value = false
     }
 
     // Fetch all users
@@ -169,6 +212,13 @@ export default {
       ws.onopen = () => {
         connected.value = true
         reconnectAttempts = 0
+        console.log('WebSocket connected')
+
+        // Clear any pending reconnection timeout
+        if (reconnectTimeout) {
+          clearTimeout(reconnectTimeout)
+          reconnectTimeout = null
+        }
       }
 
       ws.onmessage = (event) => {
@@ -181,6 +231,8 @@ export default {
             // Check if message already exists
             if (!messages.value.find(m => m.id === message.id)) {
               messages.value.push(message)
+              // Increment offset when new messages are added via WebSocket
+              messageOffset.value++
 
               // Fetch users if we don't have them
               if (message.from_username && !userProfiles.value[message.from_username]) {
@@ -191,6 +243,8 @@ export default {
             // Also show direct messages between AIs
             if (!messages.value.find(m => m.id === message.id)) {
               messages.value.push(message)
+              // Increment offset when new messages are added via WebSocket
+              messageOffset.value++
 
               // Fetch users if we don't have them
               const usernames = [message.from_username, message.to_username].filter(Boolean)
@@ -209,14 +263,26 @@ export default {
         console.error('WebSocket error:', error)
       }
 
-      ws.onclose = () => {
+      ws.onclose = (event) => {
         connected.value = false
+        console.log('WebSocket disconnected:', event.code, event.reason)
 
-        // Attempt to reconnect
-        if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+        // Clear the WebSocket reference
+        ws = null
+
+        // Calculate delay with exponential backoff
+        const delay = Math.min(
+          INITIAL_RECONNECT_DELAY * Math.pow(2, reconnectAttempts),
+          MAX_RECONNECT_DELAY
+        )
+
+        console.log(`Reconnecting in ${delay/1000} seconds... (attempt ${reconnectAttempts + 1})`)
+
+        // Always attempt to reconnect (no limit)
+        reconnectTimeout = setTimeout(() => {
           reconnectAttempts++
-          setTimeout(connectWebSocket, RECONNECT_DELAY)
-        }
+          connectWebSocket()
+        }, delay)
       }
     }
 
@@ -244,6 +310,15 @@ export default {
       return username[0]?.toUpperCase() || '?'
     }
 
+    // Periodic connection health check
+    const checkConnectionHealth = () => {
+      if (!connected.value && !reconnectTimeout) {
+        console.log('Connection lost and not reconnecting. Attempting to reconnect...')
+        reconnectAttempts = 0
+        connectWebSocket()
+      }
+    }
+
     onMounted(async () => {
       // Fetch initial messages and users
       await fetchMessages()
@@ -253,14 +328,28 @@ export default {
 
       // Poll for users every 30 seconds
       userPollInterval = setInterval(() => fetchUsers(), 30000)
+
+      // Check connection health every 10 seconds
+      connectionCheckInterval = setInterval(checkConnectionHealth, 10000)
     })
 
     onUnmounted(() => {
+      // Clean up WebSocket
       if (ws) {
+        ws.onclose = null  // Prevent reconnection on manual close
         ws.close()
+        ws = null
       }
+
+      // Clear all intervals and timeouts
       if (userPollInterval) {
         clearInterval(userPollInterval)
+      }
+      if (connectionCheckInterval) {
+        clearInterval(connectionCheckInterval)
+      }
+      if (reconnectTimeout) {
+        clearTimeout(reconnectTimeout)
       }
     })
 
@@ -273,7 +362,10 @@ export default {
       onlineUsers,
       userProfilesMap,
       isUserOnline,
-      getUserInitial
+      getUserInitial,
+      fetchMoreMessages,
+      isLoadingMore,
+      hasMoreMessages
     }
   }
 }

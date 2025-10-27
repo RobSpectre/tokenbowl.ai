@@ -1,7 +1,17 @@
 <template lang="pug">
 .flex.flex-col.h-full
   //- Messages Container
-  .flex-1.overflow-y-auto#messages-container(ref="messagesContainer" class="p-4 space-y-4")
+  .flex-1.overflow-y-auto#messages-container(ref="messagesContainer" @scroll="handleScroll" class="p-4 space-y-4")
+    //- Loading indicator for older messages
+    .flex.justify-center.py-4(v-if="isLoadingMore")
+      .flex.items-center.space-x-2
+        .animate-spin.rounded-full.h-4.w-4.border-b-2.border-white
+        span.text-gray-400.text-sm Loading older messages...
+
+    //- No more messages indicator
+    .text-center.text-gray-500.text-xs.py-2(v-if="!hasMoreMessages && messages.length > 0")
+      p Beginning of conversation
+
     .text-center.text-gray-500.text-sm.mb-4(v-if="messages.length === 0")
       p {{ emptyMessage }}
 
@@ -60,11 +70,21 @@ export default {
     emptyMessage: {
       type: String,
       default: 'No messages yet. The AIs are strategizing...'
+    },
+    isLoadingMore: {
+      type: Boolean,
+      default: false
+    },
+    hasMoreMessages: {
+      type: Boolean,
+      default: true
     }
   },
-  setup(props) {
+  emits: ['load-more'],
+  setup(props, { emit }) {
     const apiBaseUrl = import.meta.env.VITE_TOKEN_BOWL_CHAT_API_URL || 'http://localhost:8000'
     const messagesContainer = ref(null)
+    let isHandlingScroll = false
 
     const scrollToBottom = (force = false) => {
       if (!messagesContainer.value) return
@@ -83,14 +103,53 @@ export default {
       }
     }
 
+    // Handle scroll event for infinite loading
+    const handleScroll = () => {
+      if (isHandlingScroll || !messagesContainer.value || props.isLoadingMore || !props.hasMoreMessages) {
+        return
+      }
+
+      const { scrollTop } = messagesContainer.value
+      const threshold = 50 // Load more when within 50px of top
+
+      if (scrollTop < threshold) {
+        isHandlingScroll = true
+
+        // Save current scroll height before loading more
+        const prevScrollHeight = messagesContainer.value.scrollHeight
+
+        emit('load-more')
+
+        // Restore scroll position after messages are prepended
+        nextTick(() => {
+          setTimeout(() => {
+            if (messagesContainer.value) {
+              const newScrollHeight = messagesContainer.value.scrollHeight
+              const scrollDiff = newScrollHeight - prevScrollHeight
+              messagesContainer.value.scrollTop = scrollTop + scrollDiff
+            }
+            isHandlingScroll = false
+          }, 100)
+        })
+      }
+    }
+
     // Watch for new messages and scroll
     watch(() => props.messages.length, (newLength, oldLength) => {
       if (newLength > 0 && oldLength === 0) {
         // Initial load
         nextTick(() => scrollToBottom(true))
       } else if (newLength > oldLength) {
-        // New message
-        scrollToBottom()
+        // Check if messages were added at the end (new messages) or beginning (pagination)
+        // If the difference is 1, it's likely a new message
+        // If it's more, it's likely pagination
+        if (newLength - oldLength === 1) {
+          // New message - scroll to bottom if user is near bottom
+          scrollToBottom()
+        } else {
+          // Multiple messages added - likely pagination
+          // Maintain scroll position (handled in handleScroll)
+        }
       }
     })
 
@@ -219,7 +278,8 @@ export default {
       getUserEmoji,
       isUserBot,
       getUserInitial,
-      renderMarkdown
+      renderMarkdown,
+      handleScroll
     }
   }
 }
