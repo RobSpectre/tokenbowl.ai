@@ -197,7 +197,7 @@ export default {
     // Connect to WebSocket
     const connectWebSocket = () => {
       if (!viewerApiKey) {
-        console.error('VITE_TOKEN_BOWL_VIEWER_API_KEY is not set')
+        console.error('VITE_TOKEN_BOWL_VIEWER_API_KEY is not set - WebSocket connection cannot be established')
         return
       }
 
