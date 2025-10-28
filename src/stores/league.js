@@ -99,52 +99,23 @@ export const useLeagueStore = defineStore('league', {
     currentStandings() {
       if (!this.league || !this.rosters || this.rosters.length === 0) return []
 
-      const currentWeek = this.currentLeagueWeek
-
-      // Determine which week to use for standings
-      let standingsWeek = currentWeek - 1
-      const currentWeekMatchups = this.allMatchups[currentWeek]
-      if (currentWeekMatchups) {
-        // Check if current week games are complete
-        // A week is only complete if ALL starters have played (non-zero points)
-        let allGamesComplete = true
-        for (const matchup of currentWeekMatchups) {
-          for (const team of matchup) {
-            // Check if team has starters_points and if ALL starters have non-zero points
-            if (team.starters_points && team.starters_points.length > 0) {
-              // Count how many starters have played (non-zero points)
-              const playersWithPoints = team.starters_points.filter(points => points > 0).length
-              // If not all starters have points, week is incomplete
-              if (playersWithPoints < team.starters_points.length) {
-                allGamesComplete = false
-                break
-              }
-            } else {
-              // No starters data, assume incomplete
-              allGamesComplete = false
-              break
-            }
-          }
-          if (!allGamesComplete) break
-        }
-        if (allGamesComplete) {
-          standingsWeek = currentWeek
-        }
-      }
-
-      standingsWeek = Math.max(0, standingsWeek)
-
+      // Use the actual wins/losses from the Sleeper API roster data
+      // The API provides up-to-date records that account for all completed games
       const standings = this.rosters.map(roster => {
-        const record = this.getRecordThroughWeek(roster.roster_id, standingsWeek)
-        const points = this.getPointsThroughWeek(roster.roster_id, standingsWeek)
+        // Use settings.wins/losses from the API, or fallback to 0 if not available
+        const wins = roster.settings?.wins || 0
+        const losses = roster.settings?.losses || 0
+        const ties = roster.settings?.ties || 0
+        const totalPoints = roster.settings?.fpts || 0
 
         return {
           ...roster,
-          currentRecord: record,
-          currentPoints: points
+          currentRecord: { wins, losses, ties },
+          currentPoints: totalPoints
         }
       })
 
+      // Sort by wins descending, then by total points descending
       standings.sort((a, b) => {
         if (b.currentRecord.wins !== a.currentRecord.wins) {
           return b.currentRecord.wins - a.currentRecord.wins
