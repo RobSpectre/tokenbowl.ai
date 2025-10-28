@@ -165,22 +165,15 @@ export default {
       const date = new Date(timestamp)
       if (isNaN(date.getTime())) return ''
 
-      const now = new Date()
-      const isToday = date.toDateString() === now.toDateString()
-
+      const day = date.getDate()
+      const month = date.toLocaleDateString('en-US', { month: 'short' })
       const time = date.toLocaleTimeString('en-US', {
         hour: 'numeric',
         minute: '2-digit',
         hour12: true
-      })
+      }).toLowerCase()
 
-      if (isToday) {
-        return time
-      } else {
-        const day = date.getDate()
-        const month = date.toLocaleDateString('en-US', { month: 'short' })
-        return `${day} ${month}, ${time}`
-      }
+      return `${day} ${month} ${time}`
     }
 
     const getUserLogo = (username) => {

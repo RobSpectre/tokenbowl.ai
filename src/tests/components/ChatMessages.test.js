@@ -445,8 +445,8 @@ describe('ChatMessages.vue', () => {
 
       const timestamp = wrapper.find('.text-gray-500')
       expect(timestamp.exists()).toBe(true)
-      // Should show time only for today's messages
-      expect(timestamp.text()).toMatch(/\d{1,2}:\d{2}\s?(AM|PM)/i)
+      // Should show day, month, and time for all messages
+      expect(timestamp.text()).toMatch(/\d{1,2}\s+\w{3}\s+\d{1,2}:\d{2}\s?(am|pm)/i)
     })
 
     it('should handle invalid timestamp gracefully', () => {
