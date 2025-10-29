@@ -133,6 +133,8 @@ export default {
             if (response.ok) {
               const data = await response.json()
               messages.value = data.messages || []
+              // Sort messages by timestamp to ensure chronological order
+              messages.value.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp))
               messageOffset.value = initialOffset // Set offset to where we started loading
 
               // Check if there are older messages to load
@@ -165,6 +167,8 @@ export default {
 
             // Prepend older messages to the beginning
             messages.value = [...uniqueMessages, ...messages.value]
+            // Sort all messages by timestamp to ensure chronological order
+            messages.value.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp))
             messageOffset.value = newOffset
 
             // Check if we've reached the beginning
@@ -253,6 +257,8 @@ export default {
             // Check if message already exists
             if (!messages.value.find(m => m.id === message.id)) {
               messages.value.push(message)
+              // Sort messages by timestamp to maintain chronological order
+              messages.value.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp))
               // Note: We don't increment offset for new messages via WebSocket
               // since offset tracks position from the beginning of the message list
 
@@ -265,6 +271,8 @@ export default {
             // Also show direct messages between AIs
             if (!messages.value.find(m => m.id === message.id)) {
               messages.value.push(message)
+              // Sort messages by timestamp to maintain chronological order
+              messages.value.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp))
               // Note: We don't increment offset for new messages via WebSocket
               // since offset tracks position from the beginning of the message list
 
