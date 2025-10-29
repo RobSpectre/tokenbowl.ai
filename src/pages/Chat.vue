@@ -106,54 +106,76 @@ export default {
         return
       }
 
-      // Use PAGE_SIZE for initial load, then pagination
-      const limit = append ? PAGE_SIZE : PAGE_SIZE
-      const offset = append ? messageOffset.value : 0
-
       try {
-        const response = await fetch(`${apiBaseUrl}/messages?limit=${limit}&offset=${offset}`, {
-          headers: {
-            'X-API-Key': viewerApiKey
-          }
-        })
+        // For initial load, first get the total count to load recent messages
+        if (!append) {
+          // Get total message count first
+          const countResponse = await fetch(`${apiBaseUrl}/messages?limit=1&offset=0`, {
+            headers: {
+              'X-API-Key': viewerApiKey
+            }
+          })
 
-        if (response.ok) {
-          const data = await response.json()
-          // Deduplicate messages by ID
-          const fetchedMessages = data.messages || []
-          const uniqueMessages = []
-          const seenIds = new Set(messages.value.map(m => m.id))
+          if (countResponse.ok) {
+            const countData = await countResponse.json()
+            const total = countData.pagination?.total || 0
 
-          for (const msg of fetchedMessages) {
-            if (msg.id && !seenIds.has(msg.id)) {
-              seenIds.add(msg.id)
-              uniqueMessages.push(msg)
+            // Load the last 100 messages (or all if less than 100)
+            const initialLoadSize = Math.min(100, total)
+            const initialOffset = Math.max(0, total - initialLoadSize)
+
+            const response = await fetch(`${apiBaseUrl}/messages?limit=${initialLoadSize}&offset=${initialOffset}`, {
+              headers: {
+                'X-API-Key': viewerApiKey
+              }
+            })
+
+            if (response.ok) {
+              const data = await response.json()
+              messages.value = data.messages || []
+              messageOffset.value = initialOffset // Set offset to where we started loading
+
+              // Check if there are older messages to load
+              hasMoreMessages.value = initialOffset > 0
             }
           }
+        } else {
+          // Load older messages (for infinite scroll)
+          const newOffset = Math.max(0, messageOffset.value - PAGE_SIZE)
+          const limit = messageOffset.value - newOffset // Load messages between newOffset and current offset
 
-          if (append) {
+          if (limit <= 0) {
+            hasMoreMessages.value = false
+            return
+          }
+
+          const response = await fetch(`${apiBaseUrl}/messages?limit=${limit}&offset=${newOffset}`, {
+            headers: {
+              'X-API-Key': viewerApiKey
+            }
+          })
+
+          if (response.ok) {
+            const data = await response.json()
+            const fetchedMessages = data.messages || []
+
+            // Deduplicate messages by ID
+            const seenIds = new Set(messages.value.map(m => m.id))
+            const uniqueMessages = fetchedMessages.filter(msg => msg.id && !seenIds.has(msg.id))
+
             // Prepend older messages to the beginning
             messages.value = [...uniqueMessages, ...messages.value]
-            messageOffset.value += uniqueMessages.length
+            messageOffset.value = newOffset
 
-            // Check if we have more messages
-            if (uniqueMessages.length < PAGE_SIZE) {
-              hasMoreMessages.value = false
-            }
-          } else {
-            // Initial load
-            messages.value = uniqueMessages
-            messageOffset.value = uniqueMessages.length
-
-            // If initial load returns less than PAGE_SIZE, we likely don't have more
-            if (uniqueMessages.length < PAGE_SIZE) {
+            // Check if we've reached the beginning
+            if (newOffset === 0) {
               hasMoreMessages.value = false
             }
           }
-
-          // Fetch all users
-          await fetchUsers()
         }
+
+        // Fetch all users
+        await fetchUsers()
       } catch (error) {
         console.error('Failed to fetch messages:', error)
       }
@@ -164,7 +186,7 @@ export default {
       if (isLoadingMore.value || !hasMoreMessages.value) return
 
       isLoadingMore.value = true
-      await fetchMessages(true)
+      await fetchMessages(true) // This now uses the updated logic for loading older messages
       isLoadingMore.value = false
     }
 
@@ -231,8 +253,8 @@ export default {
             // Check if message already exists
             if (!messages.value.find(m => m.id === message.id)) {
               messages.value.push(message)
-              // Increment offset when new messages are added via WebSocket
-              messageOffset.value++
+              // Note: We don't increment offset for new messages via WebSocket
+              // since offset tracks position from the beginning of the message list
 
               // Fetch users if we don't have them
               if (message.from_username && !userProfiles.value[message.from_username]) {
@@ -243,8 +265,8 @@ export default {
             // Also show direct messages between AIs
             if (!messages.value.find(m => m.id === message.id)) {
               messages.value.push(message)
-              // Increment offset when new messages are added via WebSocket
-              messageOffset.value++
+              // Note: We don't increment offset for new messages via WebSocket
+              // since offset tracks position from the beginning of the message list
 
               // Fetch users if we don't have them
               const usernames = [message.from_username, message.to_username].filter(Boolean)
