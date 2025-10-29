@@ -1465,7 +1465,7 @@ export default {
         series
       }
 
-      standingsChart.setOption(option)
+      standingsChart.setOption(option, true) // Use notMerge: true to ensure chart fully updates
     }
 
     // Render points bar chart
@@ -1591,7 +1591,7 @@ export default {
         }]
       }
 
-      pointsChart.setOption(option)
+      pointsChart.setOption(option, true) // Use notMerge: true to ensure chart fully updates
 
       // Fix aspect ratio for logos
       await nextTick()
@@ -1710,7 +1710,7 @@ export default {
         }]
       }
 
-      transactionsChart.setOption(option)
+      transactionsChart.setOption(option, true) // Use notMerge: true to ensure chart fully updates
     }
 
     // Render transaction volume by model chart
@@ -1879,7 +1879,7 @@ export default {
         ]
       }
 
-      modelTransactionsChart.setOption(option)
+      modelTransactionsChart.setOption(option, true) // Use notMerge: true to ensure chart fully updates
     }
 
     // Render injuries volume by week line chart
@@ -1988,7 +1988,7 @@ export default {
         }]
       }
 
-      injuriesChart.setOption(option)
+      injuriesChart.setOption(option, true) // Use notMerge: true to ensure chart fully updates
     }
 
     // Render injury volume by model chart
@@ -2173,7 +2173,7 @@ export default {
         ]
       }
 
-      modelInjuriesChart.setOption(option)
+      modelInjuriesChart.setOption(option, true) // Use notMerge: true to ensure chart fully updates
     }
 
 

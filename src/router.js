@@ -71,6 +71,10 @@ const routes = [
     path: '/slopup/:slug',
     name: 'SlopupDetail',
     component: SlopupDetail
+  },
+  {
+    path: '/season',
+    redirect: '/' // Redirect /season to home page where the season graphs are
   }
 ]
 
