@@ -107,74 +107,39 @@ export default {
       }
 
       try {
-        // For initial load, first get the total count to load recent messages
-        if (!append) {
-          // Get total message count first
-          const countResponse = await fetch(`${apiBaseUrl}/messages?limit=1&offset=0`, {
-            headers: {
-              'X-API-Key': viewerApiKey
-            }
-          })
+        // Backend now returns messages DESC (newest first)
+        // offset=0 gets the latest messages
+        const offset = append ? messageOffset.value : 0
+        const limit = append ? PAGE_SIZE : 100 // Load 100 on initial, PAGE_SIZE for pagination
 
-          if (countResponse.ok) {
-            const countData = await countResponse.json()
-            const total = countData.pagination?.total || 0
-
-            // Load the last 100 messages (or all if less than 100)
-            const initialLoadSize = Math.min(100, total)
-            const initialOffset = Math.max(0, total - initialLoadSize)
-
-            const response = await fetch(`${apiBaseUrl}/messages?limit=${initialLoadSize}&offset=${initialOffset}`, {
-              headers: {
-                'X-API-Key': viewerApiKey
-              }
-            })
-
-            if (response.ok) {
-              const data = await response.json()
-              messages.value = data.messages || []
-              // Sort messages by timestamp to ensure chronological order
-              messages.value.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp))
-              messageOffset.value = initialOffset // Set offset to where we started loading
-
-              // Check if there are older messages to load
-              hasMoreMessages.value = initialOffset > 0
-            }
+        const response = await fetch(`${apiBaseUrl}/messages?limit=${limit}&offset=${offset}`, {
+          headers: {
+            'X-API-Key': viewerApiKey
           }
-        } else {
-          // Load older messages (for infinite scroll)
-          const newOffset = Math.max(0, messageOffset.value - PAGE_SIZE)
-          const limit = messageOffset.value - newOffset // Load messages between newOffset and current offset
+        })
 
-          if (limit <= 0) {
-            hasMoreMessages.value = false
-            return
-          }
+        if (response.ok) {
+          const data = await response.json()
+          const fetchedMessages = data.messages || []
 
-          const response = await fetch(`${apiBaseUrl}/messages?limit=${limit}&offset=${newOffset}`, {
-            headers: {
-              'X-API-Key': viewerApiKey
-            }
-          })
-
-          if (response.ok) {
-            const data = await response.json()
-            const fetchedMessages = data.messages || []
-
+          if (!append) {
+            // Initial load - reverse DESC to ASC for display
+            messages.value = fetchedMessages.reverse()
+            messageOffset.value = limit
+          } else {
+            // Load older messages for infinite scroll
             // Deduplicate messages by ID
             const seenIds = new Set(messages.value.map(m => m.id))
             const uniqueMessages = fetchedMessages.filter(msg => msg.id && !seenIds.has(msg.id))
 
-            // Prepend older messages to the beginning
-            messages.value = [...uniqueMessages, ...messages.value]
-            // Sort all messages by timestamp to ensure chronological order
-            messages.value.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp))
-            messageOffset.value = newOffset
+            // Prepend older messages (reversed) to the beginning
+            messages.value = [...uniqueMessages.reverse(), ...messages.value]
+            messageOffset.value += PAGE_SIZE
+          }
 
-            // Check if we've reached the beginning
-            if (newOffset === 0) {
-              hasMoreMessages.value = false
-            }
+          // Check if we've loaded all messages
+          if (fetchedMessages.length < limit) {
+            hasMoreMessages.value = false
           }
         }
 
