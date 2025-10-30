@@ -251,6 +251,14 @@ export default {
         try {
           const message = JSON.parse(event.data)
 
+          // Handle heartbeat ping/pong
+          if (message.type === 'ping') {
+            // Respond to ping with pong to keep connection alive
+            ws.send(JSON.stringify({ type: 'pong' }))
+            console.log('Received ping, sent pong')
+            return
+          }
+
           // Handle different message types
           // Backend sends message_type: 'room' for public messages and 'direct' for DMs
           if (!message.message_type || message.message_type === 'room') {
