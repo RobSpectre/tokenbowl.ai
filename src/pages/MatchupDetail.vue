@@ -1041,10 +1041,46 @@ export default {
     }
 
     const getPlayerInjury = (playerId) => {
-      // Use enriched player data from store which consolidates all sources
-      const enrichedPlayer = enrichedPlayers.value[playerId]
+      // FIRST: Check current week injury data (most accurate)
+      if (injuries.value && Object.keys(injuries.value).length > 0) {
+        const player = players.value[playerId]
+        if (player && player.full_name) {
+          const playerName = player.full_name.toLowerCase()
 
-      // Try enriched player data first
+          // Look for player in current week injuries
+          const injuryKey = Object.keys(injuries.value).find(k => k.toLowerCase() === playerName)
+
+          if (injuryKey) {
+            // Player IS in injury report - use current data
+            const injuryData = injuries.value[injuryKey]
+            const statusToCheck = injuryData.game_status?.toUpperCase()
+
+            if (statusToCheck) {
+              // Check for Doubtful BEFORE Out (since "DOUBTFUL" contains "OUT")
+              if (statusToCheck.includes('DOUBTFUL') || ((statusToCheck.includes('D ') || statusToCheck === 'D') && !statusToCheck.includes('SUSPENDED'))) {
+                return 'D'
+              }
+              // Check for IR first, then Out (to separate them)
+              if (statusToCheck.includes('INJURED RESERVE') || statusToCheck.includes('IR')) {
+                return 'IR'
+              }
+              if (statusToCheck.includes('OUT')) {
+                return 'O'
+              }
+              // Check for Questionable/PUP
+              if (statusToCheck.includes('QUESTIONABLE') || statusToCheck.includes('Q ') || statusToCheck === 'Q' || statusToCheck.includes('PUP') || statusToCheck.includes('PHYSICALLY UNABLE')) {
+                return 'Q'
+              }
+            }
+          }
+          // Player NOT in injury report = healthy, return null
+          // Don't fall back to stale enrichedPlayer data
+          return null
+        }
+      }
+
+      // FALLBACK: Only use enriched/base player data if we don't have current week injury data
+      const enrichedPlayer = enrichedPlayers.value[playerId]
       if (enrichedPlayer) {
         // Check injury_status_combined first (primary source)
         const statusToCheck = enrichedPlayer.injury_status_combined?.toUpperCase()
@@ -1073,7 +1109,7 @@ export default {
         }
       }
 
-      // Final fallback: Check base Sleeper player injury status if enriched data doesn't have it
+      // Final fallback: Check base Sleeper player injury status
       const player = players.value[playerId]
       if (player) {
         const sleeperStatus = player.injury_status?.toUpperCase()

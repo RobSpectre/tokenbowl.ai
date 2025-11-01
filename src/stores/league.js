@@ -6,7 +6,8 @@ import { getInjuries, getPlayerInjuryStatus, getInjuryIndicator, getWeeklyProjec
 import { getPlayers as getPlayersFromService, enrichPlayerData } from '../utils/playerService.js'
 
 // Cache version - increment when making breaking changes to data structure
-const CACHE_VERSION = 16 // v16: Fix deadlock + force refresh for Week 7 data
+// Bumped to v17 to remove dynamic data (injuries/projections/transactions) from localStorage
+const CACHE_VERSION = 17 // v17: Remove dynamic data from persistence to fix stale injury badges
 
 // Team code normalization mapping
 const normalizeTeamCode = (code) => {
@@ -385,7 +386,7 @@ export const useLeagueStore = defineStore('league', {
 
     // Get team badges
     getTeamBadges: (state) => {
-      return (starterIds, week = null) => {
+      return (starterIds, week = null, maxPositions = null) => {
         if (!starterIds || !Array.isArray(starterIds)) return []
 
         const badges = []
@@ -399,10 +400,17 @@ export const useLeagueStore = defineStore('league', {
         let hasBye = false
         let hasEmpty = false
 
-        // Get week-specific injury data if available
-        const weekInjuryData = checkWeek ? state.injuriesByWeek[checkWeek] : null
+        // ALWAYS use current week injury data (not historical week)
+        // Users want to see current player status, not what it was in past weeks
+        const currentWeek = state.league?.settings?.leg || null
+        const weekInjuryData = currentWeek ? state.injuriesByWeek[currentWeek] : null
 
-        starterIds.forEach(playerId => {
+        // Limit to specific positions if specified (e.g., first 9 for starters only, excluding kicker)
+        const playersToCheck = maxPositions
+          ? starterIds.slice(0, maxPositions)
+          : starterIds
+
+        playersToCheck.forEach(playerId => {
           if (playerId === '0' || playerId === 0) {
             hasEmpty = true
             return
@@ -432,10 +440,10 @@ export const useLeagueStore = defineStore('league', {
               const playerName = player.full_name || `${player.first_name || ''} ${player.last_name || ''}`.trim()
               const weekInjury = getPlayerInjuryStatus(weekInjuryData, playerName)
               statusToCheck = weekInjury?.game_status?.toUpperCase()
-            }
-
-            // Fallback to enriched or base player injury status
-            if (!statusToCheck) {
+              // If we have current week injury data and player is NOT in it, they're healthy
+              // Don't fall back to stale enrichedPlayer data
+            } else {
+              // Only use enriched/base player status if we don't have current week injury data
               statusToCheck = enrichedPlayer?.injury_status_combined?.toUpperCase() || basePlayer?.injury_status?.toUpperCase()
             }
 
@@ -566,11 +574,17 @@ export const useLeagueStore = defineStore('league', {
         await Promise.all([
           this.loadNFLSchedule(),
           this.loadDraft(),
-          this.loadYoutube(),
-          this.loadEnrichedPlayers()
+          this.loadYoutube()
         ]).catch(err => {
           console.error('Error loading supplementary data:', err)
         })
+
+        // PHASE 4: Load fresh injury data for current week BEFORE enriching players
+        console.log('📊 Phase 4: Loading fresh injury data...')
+        await this.fetchInjuriesForWeek(this.currentWeek)
+
+        // Now load enriched players with fresh injury data
+        await this.loadEnrichedPlayers()
 
         this.lastFullLoad = Date.now()
         console.log('✅ Initialization complete')
@@ -696,15 +710,60 @@ export const useLeagueStore = defineStore('league', {
         this.users = leagueData.users
         this.currentWeek = this.league?.settings?.leg || 1
 
+        // Refresh player data (includes suspension status, injury status)
+        const players = await getRelevantPlayers(false) // Force fetch
+        this.players = players
+
         // Refresh current week data
         await this.loadWeekData(this.currentWeek)
 
+        // CRITICAL: Refresh dynamic data (injuries, projections, transactions)
+        // This will also re-enrich players with fresh data
+        await this.refreshDynamicData()
+
         this.lastFullLoad = Date.now()
-        console.log('✅ Current week refreshed')
+        console.log('✅ Current week refreshed with dynamic data and updated players')
       } catch (error) {
         console.error('❌ Error refreshing current week:', error)
       } finally {
         this.isRefreshing = false
+      }
+    },
+
+    /**
+     * Refresh dynamic data that changes frequently
+     */
+    async refreshDynamicData() {
+      try {
+        console.log('🔄 Refreshing dynamic data (injuries, projections, transactions)...')
+
+        const currentWeek = this.currentWeek || 1
+        const nextWeek = Math.min(currentWeek + 1, 18)
+
+        // Refresh in parallel for better performance
+        const promises = []
+
+        // Always refresh injuries for current and next week
+        promises.push(this.fetchInjuriesForWeek(currentWeek, true))  // force refresh
+        if (nextWeek !== currentWeek) {
+          promises.push(this.fetchInjuriesForWeek(nextWeek, true))
+        }
+
+        // Refresh projections for current week
+        promises.push(this.fetchWeeklyProjectionsForWeek(currentWeek, true))
+
+        // Refresh recent transactions
+        promises.push(this.fetchTransactionsForWeek(currentWeek, true))
+
+        // Wait for all dynamic data to refresh
+        await Promise.all(promises)
+
+        // Re-enrich players with fresh injury data
+        await this.loadEnrichedPlayers(true)
+
+        console.log('✅ Dynamic data refreshed')
+      } catch (error) {
+        console.error('❌ Error refreshing dynamic data:', error)
       }
     },
 
@@ -770,13 +829,14 @@ export const useLeagueStore = defineStore('league', {
     /**
      * Load enriched players
      */
-    async loadEnrichedPlayers() {
+    async loadEnrichedPlayers(forceRefresh = false) {
       try {
-        if (Object.keys(this.enrichedPlayers).length > 0) {
+        // Skip cache check if forcing refresh
+        if (!forceRefresh && Object.keys(this.enrichedPlayers).length > 0) {
           console.log('📦 Enriched players already loaded')
           return
         }
-        console.log('🌐 Loading enriched players...')
+        console.log(`🌐 Loading enriched players... (force: ${forceRefresh})`)
 
         const currentWeek = this.currentWeek || 1
         const injuryData = await getInjuries(currentWeek)
@@ -864,13 +924,13 @@ export const useLeagueStore = defineStore('league', {
     /**
      * Fetch transactions for a specific week (on-demand)
      */
-    async fetchTransactionsForWeek(week) {
-      // Only use cached data for completed weeks
+    async fetchTransactionsForWeek(week, forceRefresh = false) {
+      // Only use cached data for completed weeks (unless forcing refresh)
       // For current/recent weeks, always fetch fresh data
       const currentWeek = this.league?.settings?.leg || 18
       const isWeekCompleted = week < currentWeek - 1
 
-      if (this.transactionsByWeek[week] && isWeekCompleted) {
+      if (!forceRefresh && this.transactionsByWeek[week] && isWeekCompleted) {
         return this.transactionsByWeek[week]
       }
 
@@ -924,18 +984,18 @@ export const useLeagueStore = defineStore('league', {
     /**
      * Fetch injuries for a specific week (on-demand)
      */
-    async fetchInjuriesForWeek(week) {
-      // Only use cached data for completed weeks
+    async fetchInjuriesForWeek(week, forceRefresh = false) {
+      // Only use cached data for completed weeks (unless forcing refresh)
       // For current/recent weeks, always fetch fresh data
       const currentWeek = this.league?.settings?.leg || 18
       const isWeekCompleted = week < currentWeek - 1
 
-      if (this.injuriesByWeek[week] && isWeekCompleted) {
+      if (!forceRefresh && this.injuriesByWeek[week] && isWeekCompleted) {
         return this.injuriesByWeek[week]
       }
 
       try {
-        console.log(`🌐 Loading injuries for week ${week}...`)
+        console.log(`🌐 Loading injuries for week ${week}... (force: ${forceRefresh})`)
         const injuryData = await getInjuries(week)
         this.injuriesByWeek[week] = injuryData
         return injuryData
@@ -949,13 +1009,13 @@ export const useLeagueStore = defineStore('league', {
     /**
      * Fetch projections for a specific week (on-demand)
      */
-    async fetchWeeklyProjectionsForWeek(week) {
-      if (this.weeklyProjectionsByWeek[week]) {
+    async fetchWeeklyProjectionsForWeek(week, forceRefresh = false) {
+      if (!forceRefresh && this.weeklyProjectionsByWeek[week]) {
         return this.weeklyProjectionsByWeek[week]
       }
 
       try {
-        console.log(`🌐 Loading projections for week ${week}...`)
+        console.log(`🌐 Loading projections for week ${week}... (force: ${forceRefresh})`)
         const projectionsData = await getWeeklyProjections(week)
         this.weeklyProjectionsByWeek[week] = projectionsData
         return projectionsData
@@ -1125,8 +1185,9 @@ export const useLeagueStore = defineStore('league', {
 
   // Enable persistence with localStorage
   // NOTE: Do NOT persist isInitializing or isRefreshing - these are runtime flags only
+  // v17: Removed dynamic data (injuries, projections, transactions) to prevent stale data
   persist: {
-    key: 'tokenbowl-league-oct2025',
+    key: 'tokenbowl-league-oct2025',  // Keep same key, use CACHE_VERSION for versioning
     paths: [
       'cacheVersion',
       'league',
@@ -1134,19 +1195,19 @@ export const useLeagueStore = defineStore('league', {
       'users',
       'currentWeek',
       'players',
-      'enrichedPlayers',
+      // 'enrichedPlayers', // REMOVED - Contains injury data that becomes stale
       'allMatchups',
       'playerStatsByWeek',
       'weekRosters',
-      'transactionsByWeek',
-      'injuriesByWeek',
-      'weeklyProjectionsByWeek',
+      // 'transactionsByWeek', // REMOVED - Changes frequently
+      // 'injuriesByWeek', // REMOVED - Dynamic injury data
+      // 'weeklyProjectionsByWeek', // REMOVED - Changes daily
       'nflSchedule',
       'draftPicks',
       'latestVideo',
       'latestShorts',
-      'processedInjuriesByTeam',
-      'processedTransactionStats',
+      // 'processedInjuriesByTeam', // REMOVED - Derived from injuries
+      // 'processedTransactionStats', // REMOVED - Derived from transactions
       'lastFullLoad',
       'completedWeeks'
       // isInitializing and isRefreshing are intentionally excluded - runtime state only

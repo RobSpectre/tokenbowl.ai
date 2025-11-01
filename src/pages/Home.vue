@@ -1268,7 +1268,8 @@ export default {
 
       // Use the centralized badge generation from the store
       // Pass the selected week to calculate bye status correctly
-      return leagueStore.getTeamBadges(matchup.starters, selectedWeek.value)
+      // Limit to first 9 positions (starters only, excluding kicker at position 9)
+      return leagueStore.getTeamBadges(matchup.starters, selectedWeek.value, 9)
     }
 
     // Calculate total points through a specific week
