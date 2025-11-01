@@ -540,24 +540,33 @@ export const useLeagueStore = defineStore('league', {
         this.players = players
         this.currentWeek = this.league?.settings?.leg || 1
 
-        // PHASE 2: Load all weeks in parallel
-        console.log('📊 Phase 2: Loading all 18 weeks in parallel...')
+        // PHASE 2: Load all weeks in batches to avoid overwhelming browser connection limits
+        console.log('📊 Phase 2: Loading all 18 weeks in batches...')
         console.log(`Current week: ${this.currentWeek}, Completed weeks: ${this.completedWeeks.join(', ')}`)
-        const weekPromises = []
+
+        const weeksToLoad = []
         for (let week = 1; week <= 18; week++) {
           // Skip completed weeks that we already have
           if (this.completedWeeks.includes(week) && this.allMatchups[week] && !forceRefresh) {
             console.log(`📦 Skipping week ${week} - already completed and cached`)
             continue
           }
-
-          console.log(`➕ Queuing week ${week} for loading`)
-          weekPromises.push(this.loadWeekData(week))
+          weeksToLoad.push(week)
         }
 
-        console.log(`⏳ Waiting for ${weekPromises.length} weeks to load...`)
-        await Promise.all(weekPromises)
-        console.log(`✅ All ${weekPromises.length} weeks loaded`)
+        // Load weeks in batches of 6 to stay within browser connection limits
+        const BATCH_SIZE = 6
+        console.log(`⏳ Loading ${weeksToLoad.length} weeks in batches of ${BATCH_SIZE}...`)
+
+        for (let i = 0; i < weeksToLoad.length; i += BATCH_SIZE) {
+          const batch = weeksToLoad.slice(i, i + BATCH_SIZE)
+          console.log(`📦 Loading batch: weeks ${batch.join(', ')}`)
+          const batchPromises = batch.map(week => this.loadWeekData(week))
+          await Promise.all(batchPromises)
+          console.log(`✅ Batch complete: weeks ${batch.join(', ')}`)
+        }
+
+        console.log(`✅ All ${weeksToLoad.length} weeks loaded`)
 
         // Mark past weeks as completed
         for (let week = 1; week < this.currentWeek; week++) {
