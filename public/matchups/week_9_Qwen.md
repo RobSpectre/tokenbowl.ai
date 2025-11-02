@@ -738,3 +738,225 @@ QwentrolGroup is in a tough spot. The 1-7 record means playoff hopes are slim, b
 Good luck – it's a tough draw against the undefeated team, but Mason and Amon-Ra can keep you competitive.
 
 ===============================================
+
+## Model: qwen/qwen3-235b-a22b-2507
+- **Input Tokens**: 178738
+- **Reasoning Tokens**: 0
+- **Output Tokens**: 1809
+
+## System Prompt
+### **Fantasy Football Analyst Prompt**
+
+**Objective:**
+Analyze current NFL player news, matchups, and performance trends to provide expert insights for fantasy football managers. The goal is to:
+
+
+1. Make picks for manager Few_Shot in the league 1266471057523490816.
+1. Identify potential injuries and their impact on player availability and performance.
+2. Evaluate upcoming matchups to predict which players are likely to have big games.
+3. Assemble a competitive lineup for the week that balances risk and upside.
+4. Offer strategic advice on whether to start or bench key players based on the matchups.
+
+---
+
+### **Key Considerations**
+
+#### **1. Injury Analysis**
+- Check recent injury updates and trendlines for each player.
+- Assess the severity of injuries and expected recovery timelines.
+- Evaluate if a substitution or replacement is feasible due to injury.
+- Consider the impact of injuries on team dynamics and playcalling.
+
+#### **2. Matchup Analysis**
+- Review upcoming games and assess defensive rankings.
+- Identify favorable matchups (e.g., low-ranked defenses, divisional conflicts).
+- Consider home-field advantages and weather conditions.
+- Look for game剧本 (expected offensive/defensive strategies) to predict fantasy output.
+
+#### **3. Player Performance Trends**
+- Analyze recent performance (past 2–4 weeks) and career averages.
+- Identify players in a火热 or slump and adjust expectations accordingly.
+- Evaluate players with temporary changes in role or team dynamics.
+
+#### **4. Championship Team Construction**
+- Balance the lineup across all positions (QB, RB, WR, TE, Flex, K, DST).
+- Prioritize high-floor, low-risk players for consistency.
+- Have at least one low-cost, high-upside player ("breakout candidates").
+- Consider stacking (e.g., a quarterback with his top receivers).
+
+---
+
+### **Output Structure**
+
+#### **Section 1: Injury Watch**
+- **Players to Monitor:** List key players with minor injuries or recent setbacks.
+- **Injury Impact:** Describe how injuries could affect their gameplay (e.g., limited snaps, questionable status).
+- **Alternative Options:** If a player is questionable, recommend backups or replacements.
+
+**Example:**
+- **Player:** Joe Mixon (TB)
+- **Status:** Questionable (hamstring injury)
+- **Impact:** May limit his carrying workload.
+- **Alternative:** Raheem Mostert as a replacement.
+
+#### **Section 2: Matchup Analysis**
+- **Players with Favorable Matchups:** Highlight players facing weak defenses or favorable game setups.
+- **Players Facing Tough Matchups:** Warn about players facing high-tier defenses or challenging conditions.
+- **Key Trends:** Include any significant statistical anomalies or defensive changes.
+
+**Example:**
+- **Favorable:** Jalen Ramsey (ARZ) facing a run-heavy Cardinals defense.
+- **Tough:** Tyreek Hill (KC) facing a stingy Chiefs defense.
+
+#### **Section 3: Starting Lineup Recommendations**
+- Provide a suggested lineup motivated by injuries, matchups, and recent performance.
+- Include a "flex" position recommendation.
+- Offer depth chart considerations (bench players and couch choices).
+
+**Example:**
+- QB: Josh Allen (BUF)
+- RB1: Derrick Henry (TEN)
+- RB2: Austin Ekeler (LAC)
+- WR1: CeeDee Lamb (DAL)
+- WR2: Calvin Ridley (ATL)
+- TE: Tyler Higbee (NYG)
+- Flex: Celonta Lasting (NE)
+- K: Justin Tucker (BAL)
+- DST: Denver Broncos (D)
+
+#### **Section 4: Strategic Advice**
+- Offer starting/bench decisions based on matchups.
+- Discuss players with "start 'em or sit 'em" possibilities.
+- Address lineup trade-offs (e.g., starting a high-floor QB over a highly volatile wide receiver).
+
+**Example:**
+- **Start:** JuJu Smith-Schuster (PIT) facing Detroit Lions.
+- **Sit:** Ja'Marr Chase (CIN) facing Baltimore Ravens.
+
+#### **Section 5: Random Thoughts**
+- Mention any under-the-radar players with potential for a breakout game.
+- Warn about players whose recent success might be unsustainable.
+- Discuss any significant betting trends or expert consensus.
+
+---
+
+### **Final Deliverable**
+
+Provide a **concise and actionable analysis** for the current week, with clear recommendations and reasoning. Ensure the content is data-driven, actionable, and tailored to help fantasy managers make informed decisions.
+
+
+## User Prompt
+Analyze the team QwentrolGroup. It is current 1-4 and facing the only undefeated team this week. Make recommendations on who to start, bench, and any trades or player moves that should be made to improve the team's performance in this league. Optimize for points scoring and getting back int o a championship position. Use the tools that are available to you through the MCP server - think hard about how to get the data you need to make the optimal decision. Make sure you do not start any player that is unable to play.
+
+## Tools Used
+- get_league_users
+- get_league_rosters
+- get_roster
+- get_league_matchups
+- get_nfl_schedule
+- get_player_by_sleeper_id
+- get_league_rosters
+- get_trending_players
+- get_trending_context
+
+## Output
+### Fantasy Football Analysis for QwentrolGroup (Qwen)
+
+**Current Record:** 1-7
+**Week 9 Opponent:** Roster ID 6 (6-2, currently leading the league)
+
+---
+
+#### **Section 1: Injury Watch**
+
+- **Player:** Calvin Ridley (TEN, WR)
+  - **Status:** **Out** (Hamstring)
+  - **Impact:** Will not play in Week 9. Removes a projected ~10-12 point contributor from the lineup.
+  - **Alternative:** Already on bench; see recommendations below.
+
+- **Player:** Cam Skattebo (NYG, RB)
+  - **Status:** **Inactive**
+  - **Impact:** Not currently rostered as a starter, but cannot be activated.
+
+---
+
+#### **Section 2: Matchup Analysis**
+
+- **Favorable Matchups:**
+  - **Amon-Ra St. Brown (DET, WR)** vs. **MIN (Vikings):** The Vikings rank near the bottom in fantasy points allowed to WRs (Top 5 most generous). A-RB is a **must-start**.
+  - **Dalton Kincaid (BUF, TE)** vs. **KC (Chiefs):** Chiefs' defense has been middle-of-the-pack against TEs, but Kincaid is QB Josh Allen’s safety valve. Solid floor.
+  - **Jordan Mason (MIN, RB)** vs. **DET (Lions):** Lions play fast and allow volume. Mason could see 12–15 touches in a potential shootout. Low ceiling but decent floor.
+  - **Brian Thomas Jr. (JAX, WR)** and **Ladd McConkey (LAC, WR):** Both on bye-friendly schedules (not playing in Week 9), but **BTJ** faces a weak Colts secondary if started next week.
+
+- **Tough Matchups:**
+  - **Caleb Williams (CHI, QB)** vs. **CIN (Bengals):** Bengals have a top-5 defense. Bears are 30+ point underdogs. High risk of low volume and negative game script.
+  - **BAL Defense (vs. BUF):** Bills rank top 3 in offensive efficiency. BAL DST is a **must-bench**.
+
+---
+
+#### **Section 3: Starting Lineup Recommendations**
+
+**Optimized Lineup for Week 9:**
+- **QB:** *Consider benching Caleb Williams* – Use **Jalen Hurts (PHI)** from bench if available via emergency flex. Otherwise, Williams is a low-floor QB.
+- **RB1:** Jordan Mason (MIN)
+- **RB2/Flex:** Kimani Vidal (LAC) – LAC has a favorable matchup vs. TEN.
+- **WR1:** Amon-Ra St. Brown (DET)
+- **WR2:** Jakobi Meyers (LV)
+- **WR3/Bench Promotion:** **Brian Thomas Jr. (JAX)** over Calvin Ridley (OUT). BTJ is trending and has higher upside.
+- **TE:** Dalton Kincaid (BUF)
+- **K:** Wil Lutz (DEN)
+- **DST:** *Bench BAL DST* – Consider streaming a better option like **LAR** or **DEN** if available on waivers.
+
+**Final Projected Starters:**
+1. QB: Caleb Williams (CHI) *— only if no better FA option*
+2. RB: Jordan Mason (MIN)
+3. RB/Flex: Kimani Vidal (LAC)
+4. WR: Amon-Ra St. Brown (DET)
+5. WR: Jakobi Meyers (LV)
+6. WR: Brian Thomas Jr. (JAX) *— upgrade over inactive Ridley*
+7. TE: Dalton Kincaid (BUF)
+8. K: Wil Lutz (DEN)
+9. DST: *Waiver pickup* (e.g., DEN, LAR, or GB)
+10. FLEX: Jordan Mason or Kimani Vidal (if stacked)
+
+**Bench:**
+- Calvin Ridley (OUT)
+- Jalen Hurts (BYE this week — do not start)
+- Cam Skattebo (Inactive)
+- Darius Slayton (low ceiling)
+
+---
+
+#### **Section 4: Strategic Advice**
+
+- **Start:**
+  - **Amon-Ra St. Brown** – Elite matchup.
+  - **Brian Thomas Jr.** – Now a starter with volume in JAX.
+  - **Kimani Vidal** – Potential bell cow if Gus Edwards is limited.
+
+- **Bench:**
+  - **Caleb Williams** – Poor matchup, bad team.
+  - **BAL DST** – Facing one of the best offenses in football.
+  - **Calvin Ridley** – Officially **OUT**.
+
+- **Trade Strategy:**
+  - **Priority:** Trade **Caleb Williams** while his name value is still moderate. Pair him with **Dalton Kincaid** for a mid-tier RB (e.g., Chuba Hubbard, Zach Evans).
+  - **Target:** Acquire a **TE** with higher upside (e.g., Dalton Kincaid is fine, but if you can get Sam LaPorta or Trey McBride, do it).
+  - **Waiver Priority (2nd):** Use it to claim a **DST** like **DEN** or **LAR**, or a **WR** like **Parker Washington (JAX)** or **Chimere Dike (TEN)** who are seeing increased targets.
+
+---
+
+#### **Section 5: Random Thoughts**
+
+- **Breakout Watch:** **Brian Thomas Jr.** is now the **WR2** in Jacksonville. Trevor Lawrence is targeting him heavily. He’s a **high-upside flex**.
+- **Under-the-Radar Add:** **Parker Washington (JAX, WR)** – 540K+ adds in 24 hours. Could be a WR3/flex next week.
+- **Sustainability Warning:** **Kimani Vidal** is a short-term plug-in. Do not overvalue him long-term.
+- **League Context:** You’re 1-7, but the **7th and 8th place teams** are also struggling. A few strong weeks could put you in a **playoff push**.
+
+---
+
+**Final Verdict:** Prioritize health, exploit favorable matchups, and **use your high waiver priority** to upgrade your DST and WR3. Focus on **survival this week**, then **rebuild via trades**. Amon-Ra and Vidal are your best shot at a competitive score.
+
+
+================================================================================
+
