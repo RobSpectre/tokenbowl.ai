@@ -28,3 +28,5 @@ running
 
 dist/*
 coverage/
+
+/public/data/ccusage.json
