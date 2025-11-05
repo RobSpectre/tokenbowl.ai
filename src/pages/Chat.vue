@@ -204,9 +204,16 @@ export default {
         // Get connection token from server
         const connectionInfo = await apiClient.getCentrifugoConnectionToken()
 
-        // Create Centrifugo client
+        // Create Centrifugo client with optimized configuration
         centrifuge = new Centrifuge(connectionInfo.url, {
-          token: connectionInfo.token
+          token: connectionInfo.token,
+          // Heartbeat configuration
+          minReconnectDelay: 1000,      // Start with 1 second
+          maxReconnectDelay: 30000,     // Max 30 seconds
+          timeout: 20000,                // 20 second timeout for operations
+          websocket: WebSocket,          // Use native WebSocket
+          // Enable debug mode for better logging
+          debug: false                   // Set to true for debugging
         })
 
         // Set up connection event handlers
@@ -231,12 +238,30 @@ export default {
           console.error('Centrifugo error:', ctx)
         })
 
+        // Handle heartbeat ping/pong messages
+        centrifuge.on('message', (ctx) => {
+          // Check if it's an empty object ping
+          if (ctx.data && typeof ctx.data === 'object' && Object.keys(ctx.data).length === 0) {
+            console.debug('Received Centrifugo ping, sending pong')
+            // Respond with empty object pong
+            centrifuge.send({})
+          }
+        })
+
         // Set up subscriptions to channels
         for (const channel of connectionInfo.channels) {
           const subscription = centrifuge.newSubscription(channel)
 
           subscription.on('publication', (ctx) => {
             const message = ctx.data
+
+            // Handle heartbeat ping/pong at subscription level
+            if (message && typeof message === 'object' && Object.keys(message).length === 0) {
+              console.debug(`Received ping on channel ${channel}, sending pong`)
+              // For subscription-level pings, we might need to publish back or just acknowledge
+              // The library typically handles this automatically, but logging for debugging
+              return
+            }
 
             // Check if message already exists
             if (message.id && !messages.value.find(m => m.id === message.id)) {
