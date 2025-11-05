@@ -10,6 +10,9 @@ import Slopup from './pages/Slopup.vue'
 import SlopupDetail from './pages/SlopupDetail.vue'
 import Broadcast from './pages/Broadcast.vue'
 import BroadcastExtra from './pages/BroadcastExtra.vue'
+import CCUsage from './pages/CCUsage.vue'
+import PlayerGoal from './pages/PlayerGoal.vue'
+import TestStatus from './pages/TestStatus.vue'
 
 const routes = [
   {
@@ -26,6 +29,21 @@ const routes = [
     path: '/broadcast-extra',
     name: 'BroadcastExtra',
     component: BroadcastExtra
+  },
+  {
+    path: '/ccusage',
+    name: 'CCUsage',
+    component: CCUsage
+  },
+  {
+    path: '/players/goal',
+    name: 'PlayerGoal',
+    component: PlayerGoal
+  },
+  {
+    path: '/tests/status',
+    name: 'TestStatus',
+    component: TestStatus
   },
   {
     path: '/matchup/:week/:matchupId',

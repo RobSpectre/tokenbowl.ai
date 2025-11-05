@@ -4,7 +4,7 @@ import { getTeamInfo } from '../teamMappings.js'
 import { getInjuries, getPlayerInjuryStatus } from '../fantasyNerdsApi.js'
 import { useLeagueStore } from './league.js'
 
-const REFRESH_INTERVAL = 5000 // 5 seconds for live scoring updates
+const REFRESH_INTERVAL = 60000 // 60 seconds (1 minute) for live scoring updates
 
 export const useBroadcastStore = defineStore('broadcast', {
   state: () => ({
@@ -83,9 +83,10 @@ export const useBroadcastStore = defineStore('broadcast', {
       return this.enrichedMatchups.find(m => m.matchup_id === this.selectedMatchupId)
     },
 
-    // Get recent scoring plays (last 50)
+    // Get recent scoring plays (sorted by highest points first)
     recentScoringPlays() {
-      return this.scoringPlays.slice(0, 50)
+      // Return all scoring plays sorted by points (already sorted in processScoringPlays)
+      return [...this.scoringPlays]
     },
 
     // Get active injury alerts
@@ -135,6 +136,14 @@ export const useBroadcastStore = defineStore('broadcast', {
       this.isRefreshing = true
 
       try {
+        // Clear old scoring plays - we only want live deltas
+        if (this.scoringPlays.length > 0) {
+          console.log('[BROADCAST] Clearing old scoring plays, keeping only live deltas')
+          // Keep plays that were added in the last 10 minutes (live deltas)
+          const tenMinutesAgo = Date.now() - (10 * 60 * 1000)
+          this.scoringPlays = this.scoringPlays.filter(play => play.timestamp > tenMinutesAgo)
+        }
+
         // Load league data
         const leagueData = await getLeagueData()
         this.league = leagueData.league
@@ -159,8 +168,8 @@ export const useBroadcastStore = defineStore('broadcast', {
         // Load injury alerts for current week
         await this.loadInjuryAlerts()
 
-        // Process scoring plays from matchups
-        this.processScoringPlays()
+        // Note: Scoring plays are handled by detectScoreChanges() when scores update
+        // Do not call processScoringPlays() as it would show all existing scores
 
         this.lastRefresh = Date.now()
         this.errors = {}
@@ -238,90 +247,92 @@ export const useBroadcastStore = defineStore('broadcast', {
               scoreIncrease,
               timestamp: now
             })
+          }
 
-            // Detect individual player score changes
-            if (team.players_points) {
-              Object.entries(team.players_points).forEach(([playerId, newPoints]) => {
-                const key = `${rosterId}-${playerId}`
-                const previousPoints = this.previousPlayerScores[key] || 0
+          // Detect individual player score changes (independent of team score changes)
+          if (team.players_points) {
+            Object.entries(team.players_points).forEach(([playerId, newPoints]) => {
+              const key = `${rosterId}-${playerId}`
+              const previousPoints = this.previousPlayerScores[key] || 0
 
-                if (newPoints > previousPoints) {
-                  const playerIncrease = newPoints - previousPoints
+              // Only create scoring play if we've seen this player before (previousPoints > 0)
+              // This prevents showing all existing scores on initial load
+              if (newPoints > previousPoints && previousPoints > 0) {
+                const playerIncrease = newPoints - previousPoints
 
-                  console.log(`[BROADCAST] Player score change: ${this.getPlayerName(playerId)} +${playerIncrease.toFixed(2)}`)
+                console.log(`[BROADCAST] Player score change: ${this.getPlayerName(playerId)} +${playerIncrease.toFixed(2)}`)
 
-                  changes.push({
-                    type: 'player',
-                    rosterId,
-                    playerId,
-                    playerName: this.getPlayerName(playerId),
-                    previousScore: previousPoints,
-                    newScore: newPoints,
-                    scoreIncrease: playerIncrease,
-                    timestamp: now
-                  })
+                changes.push({
+                  type: 'player',
+                  rosterId,
+                  playerId,
+                  playerName: this.getPlayerName(playerId),
+                  previousScore: previousPoints,
+                  newScore: newPoints,
+                  scoreIncrease: playerIncrease,
+                  timestamp: now
+                })
 
-                  // Create a scoring play entry for this player
-                  const isDefenseTeam = typeof playerId === 'string' && /^[A-Z]{2,3}$/.test(playerId)
-                  const player = this.players[playerId]
+                // Create a scoring play entry for this player
+                const isDefenseTeam = typeof playerId === 'string' && /^[A-Z]{2,3}$/.test(playerId)
+                const player = this.players[playerId]
 
-                  const getTeamNameFromAbbr = (abbr) => {
-                    const teamNames = {
-                      'ARI': 'Arizona', 'ATL': 'Atlanta', 'BAL': 'Baltimore', 'BUF': 'Buffalo',
-                      'CAR': 'Carolina', 'CHI': 'Chicago', 'CIN': 'Cincinnati', 'CLE': 'Cleveland',
-                      'DAL': 'Dallas', 'DEN': 'Denver', 'DET': 'Detroit', 'GB': 'Green Bay',
-                      'HOU': 'Houston', 'IND': 'Indianapolis', 'JAC': 'Jacksonville', 'KC': 'Kansas City',
-                      'LAC': 'LA Chargers', 'LAR': 'LA Rams', 'LV': 'Las Vegas', 'MIA': 'Miami',
-                      'MIN': 'Minnesota', 'NE': 'New England', 'NO': 'New Orleans', 'NYG': 'NY Giants',
-                      'NYJ': 'NY Jets', 'PHI': 'Philadelphia', 'PIT': 'Pittsburgh', 'SEA': 'Seattle',
-                      'SF': 'San Francisco', 'TB': 'Tampa Bay', 'TEN': 'Tennessee', 'WAS': 'Washington'
-                    }
-                    return teamNames[abbr] || `${abbr} Defense`
+                const getTeamNameFromAbbr = (abbr) => {
+                  const teamNames = {
+                    'ARI': 'Arizona', 'ATL': 'Atlanta', 'BAL': 'Baltimore', 'BUF': 'Buffalo',
+                    'CAR': 'Carolina', 'CHI': 'Chicago', 'CIN': 'Cincinnati', 'CLE': 'Cleveland',
+                    'DAL': 'Dallas', 'DEN': 'Denver', 'DET': 'Detroit', 'GB': 'Green Bay',
+                    'HOU': 'Houston', 'IND': 'Indianapolis', 'JAC': 'Jacksonville', 'KC': 'Kansas City',
+                    'LAC': 'LA Chargers', 'LAR': 'LA Rams', 'LV': 'Las Vegas', 'MIA': 'Miami',
+                    'MIN': 'Minnesota', 'NE': 'New England', 'NO': 'New Orleans', 'NYG': 'NY Giants',
+                    'NYJ': 'NY Jets', 'PHI': 'Philadelphia', 'PIT': 'Pittsburgh', 'SEA': 'Seattle',
+                    'SF': 'San Francisco', 'TB': 'Tampa Bay', 'TEN': 'Tennessee', 'WAS': 'Washington'
                   }
-
-                  let playerName, playerPosition, playerTeam, playerImageUrl
-
-                  if (isDefenseTeam) {
-                    playerName = getTeamNameFromAbbr(playerId) + ' Defense'
-                    playerPosition = 'DEF'
-                    playerTeam = playerId
-                    playerImageUrl = `https://sleepercdn.com/images/team_logos/nfl/${playerId.toLowerCase()}.png`
-                  } else if (player?.position === 'DEF') {
-                    playerName = player.full_name || getTeamNameFromAbbr(player.team || playerId) + ' Defense'
-                    playerPosition = 'DEF'
-                    playerTeam = player.team || playerId
-                    playerImageUrl = `https://sleepercdn.com/images/team_logos/nfl/${player.team.toLowerCase()}.png`
-                  } else {
-                    playerName = player
-                      ? (player.full_name || `${player.first_name || ''} ${player.last_name || ''}`.trim())
-                      : `Player ${playerId}`
-                    playerPosition = player?.position || 'N/A'
-                    playerTeam = player?.team || 'N/A'
-                    playerImageUrl = `https://sleepercdn.com/content/nfl/players/thumb/${playerId}.jpg`
-                  }
-
-                  newScoringPlays.push({
-                    playerId,
-                    playerName,
-                    playerPosition,
-                    playerTeam,
-                    playerImageUrl,
-                    points: playerIncrease, // Show the increase, not total
-                    totalPoints: newPoints,
-                    rosterId: rosterId,
-                    teamName: teamInfo?.aiModel || 'Unknown',
-                    teamColor: teamInfo?.color || '#666',
-                    teamLogo: teamInfo?.logo || null,
-                    matchupId: team.matchup_id,
-                    week: this.currentWeek,
-                    timestamp: now
-                  })
-
-                  // Update player score tracking
-                  this.previousPlayerScores[key] = newPoints
+                  return teamNames[abbr] || `${abbr} Defense`
                 }
-              })
-            }
+
+                let playerName, playerPosition, playerTeam, playerImageUrl
+
+                if (isDefenseTeam) {
+                  playerName = getTeamNameFromAbbr(playerId) + ' Defense'
+                  playerPosition = 'DEF'
+                  playerTeam = playerId
+                  playerImageUrl = `https://sleepercdn.com/images/team_logos/nfl/${playerId.toLowerCase()}.png`
+                } else if (player?.position === 'DEF') {
+                  playerName = player.full_name || getTeamNameFromAbbr(player.team || playerId) + ' Defense'
+                  playerPosition = 'DEF'
+                  playerTeam = player.team || playerId
+                  playerImageUrl = `https://sleepercdn.com/images/team_logos/nfl/${player.team.toLowerCase()}.png`
+                } else {
+                  playerName = player
+                    ? (player.full_name || `${player.first_name || ''} ${player.last_name || ''}`.trim())
+                    : `Player ${playerId}`
+                  playerPosition = player?.position || 'N/A'
+                  playerTeam = player?.team || 'N/A'
+                  playerImageUrl = `https://sleepercdn.com/content/nfl/players/thumb/${playerId}.jpg`
+                }
+
+                newScoringPlays.push({
+                  playerId,
+                  playerName,
+                  playerPosition,
+                  playerTeam,
+                  playerImageUrl,
+                  points: playerIncrease, // Show the increase, not total
+                  totalPoints: newPoints,
+                  rosterId: rosterId,
+                  teamName: teamInfo?.aiModel || 'Unknown',
+                  teamColor: teamInfo?.color || '#666',
+                  teamLogo: teamInfo?.logo || null,
+                  matchupId: team.matchup_id,
+                  week: this.currentWeek,
+                  timestamp: now
+                })
+              }
+
+              // Always update player score tracking (even on first load)
+              this.previousPlayerScores[key] = newPoints
+            })
           }
 
           // Update team score tracking
@@ -668,7 +679,7 @@ export const useBroadcastStore = defineStore('broadcast', {
         this.loadData()
       }, REFRESH_INTERVAL)
 
-      console.log('[BROADCAST] Auto-refresh started (every 5s for live scoring)')
+      console.log('[BROADCAST] Auto-refresh started (every 60s for live scoring)')
     },
 
     /**
@@ -717,8 +728,8 @@ export const useBroadcastStore = defineStore('broadcast', {
         // Load injury alerts for the specified week
         await this.loadInjuryAlerts()
 
-        // Process scoring plays from matchups
-        this.processScoringPlays()
+        // Note: Scoring plays are handled by detectScoreChanges() when scores update
+        // Do not call processScoringPlays() as it would show all existing scores
 
         this.lastRefresh = Date.now()
         console.log(`[BROADCAST] Loaded week ${week} successfully`)
