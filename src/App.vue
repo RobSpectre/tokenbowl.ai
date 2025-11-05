@@ -150,7 +150,7 @@ export default {
     const isDataReady = computed(() => leagueStore.isDataReady)
 
     // Check if we're on the broadcast page (hide nav/footer)
-    const isBroadcastPage = computed(() => route.path === '/broadcast' || route.path === '/broadcast-extra')
+    const isBroadcastPage = computed(() => route.path === '/broadcast' || route.path === '/broadcast-extra' || route.path === '/ccusage' || route.path === '/players/goal' || route.path === '/tests/status')
 
     const loadLeagueInfo = async () => {
       console.log('[APP] loadLeagueInfo called')

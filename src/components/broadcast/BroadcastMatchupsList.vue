@@ -369,19 +369,23 @@ export default {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 24px;
   overflow: hidden; /* No scrollbars - content must fit */
-  padding-bottom: 8px;
+  padding-bottom: 16px;
 }
 
 .matchup-card {
   background: rgba(30, 41, 59, 0.8);
   border: 2px solid rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
-  padding: 14px;
+  border-radius: 24px;
+  padding: 32px;
   cursor: pointer;
   transition: all 0.3s ease;
   flex-shrink: 0;
+  height: 700px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 .matchup-card:hover {
@@ -399,7 +403,8 @@ export default {
 .matchup-inner {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 32px;
+  flex: 1;
 }
 
 .team-side {
@@ -408,8 +413,8 @@ export default {
   align-items: center;
   justify-content: space-between;
   background: rgba(51, 65, 85, 0.6);
-  border-radius: 10px;
-  padding: 12px;
+  border-radius: 20px;
+  padding: 32px 24px;
   min-width: 0;
   transition: all 0.3s ease;
 }
@@ -435,16 +440,16 @@ export default {
 .team-content {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 24px;
   min-width: 0;
   flex: 1;
 }
 
 .team-logo {
-  width: 56px;
-  height: 56px;
+  width: 160px;
+  height: 160px;
   object-fit: contain;
-  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.5));
+  filter: drop-shadow(0 8px 24px rgba(0, 0, 0, 0.6));
   flex-shrink: 0;
 }
 
@@ -462,29 +467,31 @@ export default {
 }
 
 .team-name {
-  font-size: 20px;
-  font-weight: 700;
+  font-size: 56px;
+  font-weight: 800;
   color: #ffffff;
-  margin-bottom: 2px;
+  margin-bottom: 8px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  line-height: 1.1;
 }
 
 .team-owner {
-  font-size: 14px;
+  font-size: 32px;
   font-weight: 600;
   color: #60a5fa;
-  margin-bottom: 4px;
+  margin-bottom: 12px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  line-height: 1.2;
 }
 
 .team-meta {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 16px;
   flex-wrap: wrap;
 }
 
@@ -493,14 +500,14 @@ export default {
 }
 
 .team-record {
-  font-size: 14px;
+  font-size: 28px;
   font-weight: 700;
 }
 
 .team-badge {
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 12px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 24px;
   font-weight: 700;
 }
 
@@ -512,64 +519,66 @@ export default {
 }
 
 .team-score {
-  font-size: 40px;
+  font-size: 120px;
   font-weight: 900;
   color: #ffffff;
   font-variant-numeric: tabular-nums;
-  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
-  min-width: 140px;
+  text-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+  min-width: 300px;
   text-align: center;
+  line-height: 1;
 }
 
 .win-loss-indicator {
-  margin-top: 8px;
+  margin-top: 16px;
 }
 
 .win-text {
   color: #4ade80;
-  font-size: 14px;
+  font-size: 32px;
   font-weight: 700;
   text-transform: uppercase;
 }
 
 .loss-text {
   color: #f87171;
-  font-size: 14px;
+  font-size: 32px;
   font-weight: 700;
   text-transform: uppercase;
 }
 
 .vs-separator {
   flex-shrink: 0;
-  padding: 0 8px;
+  padding: 0 16px;
 }
 
 .vs-badge {
   background: rgba(71, 85, 105, 0.8);
   border-radius: 50%;
-  width: 56px;
-  height: 56px;
+  width: 120px;
+  height: 120px;
   display: flex;
   align-items: center;
   justify-content: center;
+  border: 4px solid rgba(255, 255, 255, 0.2);
 }
 
 .vs-text {
-  font-size: 18px;
+  font-size: 40px;
   font-weight: 900;
   color: #ffffff;
-  letter-spacing: 1px;
+  letter-spacing: 2px;
 }
 
 .point-differential {
-  margin-top: 16px;
-  padding-top: 16px;
-  border-top: 2px solid rgba(71, 85, 105, 0.5);
+  margin-top: 32px;
+  padding-top: 32px;
+  border-top: 4px solid rgba(71, 85, 105, 0.5);
 }
 
 .differential-container {
   position: relative;
-  height: 32px;
+  height: 64px;
   display: flex;
   align-items: center;
 }
@@ -578,7 +587,7 @@ export default {
   position: absolute;
   left: 50%;
   transform: translateX(-50%);
-  width: 2px;
+  width: 4px;
   height: 100%;
   background: rgba(148, 163, 184, 0.5);
   z-index: 0;
@@ -586,8 +595,8 @@ export default {
 
 .differential-bar {
   position: absolute;
-  height: 24px;
-  border-radius: 4px;
+  height: 48px;
+  border-radius: 8px;
   display: flex;
   align-items: center;
   z-index: 1;
@@ -597,21 +606,21 @@ export default {
   right: 50%;
   background: linear-gradient(to left, #00d4ff, #0ea5e9);
   justify-content: flex-start;
-  padding-left: 8px;
-  border-radius: 4px 0 0 4px;
+  padding-left: 16px;
+  border-radius: 8px 0 0 8px;
 }
 
 .right-bar {
   left: 50%;
   background: linear-gradient(to right, #00d4ff, #0ea5e9);
   justify-content: flex-end;
-  padding-right: 8px;
-  border-radius: 0 4px 4px 0;
+  padding-right: 16px;
+  border-radius: 0 8px 8px 0;
 }
 
 .differential-value {
   color: #ffffff;
-  font-size: 14px;
+  font-size: 28px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
@@ -621,13 +630,13 @@ export default {
   left: 50%;
   transform: translateX(-50%);
   background: #eab308;
-  border-radius: 6px;
-  padding: 4px 12px;
+  border-radius: 12px;
+  padding: 12px 24px;
 }
 
 .tie-text {
   color: #ffffff;
-  font-size: 12px;
+  font-size: 28px;
   font-weight: 700;
 }
 

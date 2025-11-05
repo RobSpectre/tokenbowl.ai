@@ -34,7 +34,15 @@
 
         <div class="play-content">
           <div class="play-header">
-            <span class="play-team">{{ play.teamName }}</span>
+            <div class="play-team-info">
+              <img
+                v-if="play.teamLogo"
+                :src="play.teamLogo"
+                :alt="play.teamName"
+                class="play-team-logo"
+              />
+              <span class="play-team">{{ play.teamName }}</span>
+            </div>
             <span class="play-points" :class="getPointsClass(play.points)">
               +{{ formatPoints(play.points) }}
             </span>
@@ -90,8 +98,7 @@ export default {
       return date.toLocaleTimeString('en-US', {
         hour: '2-digit',
         minute: '2-digit',
-        second: '2-digit',
-        hour12: false
+        hour12: true
       })
     }
 
@@ -163,17 +170,17 @@ export default {
   overflow: hidden; /* No scroll bars */
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 20px;
 }
 
 .play-item {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 20px;
   background: rgba(255, 255, 255, 0.03);
   border: 2px solid rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
-  padding: 16px;
+  border-radius: 16px;
+  padding: 20px;
   position: relative;
   transition: all 0.3s ease;
   overflow: hidden;
@@ -186,28 +193,28 @@ export default {
 }
 
 .play-time {
-  font-size: 16px;
+  font-size: 20px;
   font-weight: 600;
   color: rgba(255, 255, 255, 0.5);
   font-variant-numeric: tabular-nums;
-  min-width: 80px;
+  min-width: 100px;
 }
 
 .play-team-indicator {
   width: 8px;
-  height: 80px;
+  height: 120px;
   border-radius: 4px;
   box-shadow: 0 0 20px currentColor;
 }
 
 .play-player-image {
-  width: 80px;
-  height: 80px;
+  width: 120px;
+  height: 120px;
   flex-shrink: 0;
-  border-radius: 12px;
+  border-radius: 16px;
   overflow: hidden;
   background: rgba(255, 255, 255, 0.05);
-  border: 2px solid rgba(255, 255, 255, 0.1);
+  border: 3px solid rgba(255, 255, 255, 0.1);
 }
 
 .play-player-image img {
@@ -230,14 +237,26 @@ export default {
   align-items: center;
 }
 
+.play-team-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.play-team-logo {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+}
+
 .play-team {
-  font-size: 20px;
+  font-size: 32px;
   font-weight: 700;
-  color: #ffffff;
+  color: #00d4ff;
 }
 
 .play-points {
-  font-size: 32px;
+  font-size: 48px;
   font-weight: 900;
   font-variant-numeric: tabular-nums;
 }
@@ -247,18 +266,15 @@ export default {
 }
 
 .play-points.medium {
-  color: #ffaa00;
+  color: #ffffff;
 }
 
 .play-points.big {
-  color: #ff6600;
-  text-shadow: 0 0 20px rgba(255, 102, 0, 0.6);
+  color: #ffffff;
 }
 
 .play-points.huge {
-  color: #ff0066;
-  text-shadow: 0 0 30px rgba(255, 0, 102, 0.8);
-  animation: pointsPulse 2s ease-in-out infinite;
+  color: #ffffff;
 }
 
 @keyframes pointsPulse {
@@ -277,7 +293,7 @@ export default {
 }
 
 .play-player-name {
-  font-size: 20px;
+  font-size: 28px;
   color: #ffffff;
   font-weight: 600;
   white-space: nowrap;
@@ -289,7 +305,7 @@ export default {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 14px;
+  font-size: 20px;
 }
 
 .play-player-position {
