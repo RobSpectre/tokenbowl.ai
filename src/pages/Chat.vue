@@ -35,9 +35,9 @@
                   span.text-xl(v-else-if="user.emoji") {{ user.emoji }}
                   .rounded-full.bg-slate-700.flex.items-center.justify-center(class="w-10 h-10" v-else)
                     span.text-sm.font-medium.text-gray-300 {{ getUserInitial(user.username) }}
-                .absolute.bottom-0.right-0.rounded-full.border-2.border-slate-900(
+                .absolute.bottom-0.right-0.rounded-full.border-2.border-slate-900.transition-colors.duration-500(
                   class="w-3 h-3"
-                  :class="isUserOnline(user.username) ? 'bg-green-500' : 'bg-red-500'"
+                  :class="isUserOnline(user.username) ? 'bg-green-500' : 'bg-gray-500'"
                 )
               .flex-1
                 .flex.items-center(class="gap-1")
@@ -165,15 +165,18 @@ export default {
           userProfiles.value[user.username] = user
         })
 
-        // Fetch online users
-        try {
-          const onlineUsersList = await apiClient.getOnlineUsers()
-          onlineUsers.value = onlineUsersList.map(u => u.username)
-        } catch (error) {
-          console.warn('Failed to fetch online users:', error)
-          // Fallback: assume all users are online
-          onlineUsers.value = users.map(u => u.username)
+        // If not connected to Centrifugo yet, fetch online users from REST API as fallback
+        if (!connected.value) {
+          try {
+            const onlineUsersList = await apiClient.getOnlineUsers()
+            onlineUsers.value = onlineUsersList.map(u => u.username)
+          } catch (error) {
+            console.warn('Failed to fetch online users:', error)
+            // Fallback: assume all users are online
+            onlineUsers.value = users.map(u => u.username)
+          }
         }
+        // If connected, Centrifugo presence events will handle online/offline status
       } catch (error) {
         console.error('Failed to fetch users:', error)
       }
@@ -250,6 +253,38 @@ export default {
 
           subscription.on('subscribed', (ctx) => {
             console.log(`Subscribed to ${channel}`)
+
+            // Get initial presence state when subscribed
+            subscription.presence().then((ctx) => {
+              const presentUsers = Object.keys(ctx.presence || {}).map(clientId => {
+                const info = ctx.presence[clientId]
+                return info.user || clientId
+              })
+
+              // Update online users list
+              onlineUsers.value = [...new Set(presentUsers)]
+              console.log(`Initial presence for ${channel}:`, presentUsers.length, 'users online')
+            }).catch((err) => {
+              console.warn('Failed to get presence:', err)
+            })
+          })
+
+          subscription.on('join', (ctx) => {
+            // User joined the channel
+            const username = ctx.info.user
+            if (username && !onlineUsers.value.includes(username)) {
+              onlineUsers.value.push(username)
+              console.log(`User joined: ${username}`)
+            }
+          })
+
+          subscription.on('leave', (ctx) => {
+            // User left the channel
+            const username = ctx.info.user
+            if (username) {
+              onlineUsers.value = onlineUsers.value.filter(u => u !== username)
+              console.log(`User left: ${username}`)
+            }
           })
 
           subscription.on('error', (ctx) => {
@@ -323,8 +358,9 @@ export default {
       // Connect to Centrifugo for real-time updates
       connectCentrifugo()
 
-      // Poll for users every 30 seconds
-      userPollInterval = setInterval(() => fetchUsers(), 30000)
+      // Poll for users less frequently (every 5 minutes) to keep profile data fresh
+      // Presence events handle online/offline status in real-time
+      userPollInterval = setInterval(() => fetchUsers(), 300000)
 
       // Check connection health every 10 seconds
       connectionCheckInterval = setInterval(checkConnectionHealth, 10000)
