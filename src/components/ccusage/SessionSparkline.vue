@@ -5,7 +5,7 @@
 </template>
 
 <script>
-import { ref, onMounted, onUnmounted, watch } from 'vue'
+import { ref, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import * as echarts from 'echarts'
 
 export default {
@@ -34,11 +34,16 @@ export default {
     const dataPoints = ref([])
     const maxDataPoints = 20 // Keep last 20 data points
     const previousTotalTokens = ref(0)
+    let resizeObserver = null
 
     const initChart = () => {
-      if (!chartRef.value) return
+      if (!chartRef.value) {
+        console.log('[SPARKLINE] chartRef not available yet')
+        return
+      }
 
       chart = echarts.init(chartRef.value)
+      console.log('[SPARKLINE] Chart initialized with size:', chartRef.value.offsetWidth, 'x', chartRef.value.offsetHeight)
 
       const option = {
         grid: {
@@ -85,6 +90,14 @@ export default {
       }
 
       chart.setOption(option)
+
+      // Resize chart after initialization
+      setTimeout(() => {
+        if (chart && chartRef.value) {
+          chart.resize()
+          console.log('[SPARKLINE] Chart resized after init')
+        }
+      }, 100)
     }
 
     const updateChart = () => {
@@ -138,11 +151,21 @@ export default {
       updateChart()
     })
 
-    onMounted(() => {
+    onMounted(async () => {
+      // Wait for DOM to be ready
+      await nextTick()
+
+      console.log('[SPARKLINE] Component mounted, initializing...')
+
       // Initialize previous value to current total on first mount
       previousTotalTokens.value = props.inputTokens + props.outputTokens
 
       initChart()
+
+      if (!chart) {
+        console.error('[SPARKLINE] Failed to initialize chart')
+        return
+      }
 
       // Add initial data point with value 0
       dataPoints.value.push({
@@ -151,16 +174,28 @@ export default {
       })
 
       // Update chart with initial data
-      if (chart) {
-        chart.setOption({
-          series: [{
-            data: dataPoints.value.map(p => p.total)
-          }]
+      chart.setOption({
+        series: [{
+          data: dataPoints.value.map(p => p.total)
+        }]
+      })
+
+      // Set up resize observer
+      if (chartRef.value) {
+        resizeObserver = new ResizeObserver(() => {
+          if (chart) {
+            console.log('[SPARKLINE] Container resized, resizing chart')
+            chart.resize()
+          }
         })
+        resizeObserver.observe(chartRef.value)
       }
     })
 
     onUnmounted(() => {
+      if (resizeObserver) {
+        resizeObserver.disconnect()
+      }
       if (chart) {
         chart.dispose()
       }
@@ -180,10 +215,12 @@ export default {
   justify-content: center;
   width: 100%;
   height: 100%;
+  min-width: 200px;
 }
 
 .sparkline-chart {
   width: 100%;
   height: 60px;
+  min-width: 200px;
 }
 </style>

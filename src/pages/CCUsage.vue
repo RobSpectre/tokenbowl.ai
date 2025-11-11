@@ -1,19 +1,21 @@
 <template>
-  <div class="ccusage-container">
+  <div class="w-screen h-screen bg-[#0000FF] fixed inset-0 overflow-hidden flex items-start justify-center">
     <div
-      class="ccusage-content grid grid-cols-6"
+      class="w-[1920px] mt-24 grid grid-cols-4 items-center bg-gradient-to-r from-[#1a1a2e] to-[#2d2d44] border-b border-white/20 shadow-lg min-h-[80px] text-white"
       v-motion
-      :initial="{ opacity: 0, y: -20 }"
+      :initial="{ opacity: 0, y: -16 }"
       :enter="{ opacity: 1, y: 0, transition: { duration: 600, delay: 100 } }"
     >
       <!-- Model Badge -->
-      <div class="model-badge-col flex items-center justify-center gap-2 px-4 py-3 border-r border-white/25">
-        <img src="/images/logos/claude-color.svg" alt="Claude" class="model-icon w-8 h-8" />
-        <span class="model-name text-2xl">{{ formatModelName(currentModel) }}</span>
+      <div class="flex items-center justify-center gap-2 pl-2 pr-4 border-r border-white/20">
+        <img src="/images/logos/claude-color.svg" alt="Claude" class="w-8 h-8" />
+        <span class="text-xl font-extrabold bg-gradient-to-r from-[#00d4ff] to-[#7b2ff7] bg-clip-text text-transparent whitespace-nowrap">
+          {{ formatModelName(currentModel) }}
+        </span>
       </div>
 
       <!-- Session Stats with Sparkline -->
-      <div class="session-col flex items-center justify-center px-4 py-3 border-r border-white/25 overflow-hidden">
+      <div class="flex items-center justify-center px-4 border-r border-white/20 overflow-hidden">
         <div class="w-full max-w-full">
           <SessionSparkline
             :inputTokens="sessionStats.inputTokens"
@@ -24,36 +26,32 @@
         </div>
       </div>
 
-      <!-- Today Stats (spans 2 columns) -->
-      <div class="stat-group col-span-2 flex items-center justify-center gap-2 px-4 py-3 border-r border-white/25">
-        <span class="stat-icon text-2xl">📅</span>
-        <span class="stat-label text-xl">Today:</span>
-        <span class="stat-value text-2xl whitespace-nowrap">
-          {{ abbreviateNumber(todayStats.inputTokens) }}
-          <span class="stat-unit text-base">in</span>
+      <!-- Today Stats -->
+      <div class="flex items-center justify-center gap-2 px-4 border-r border-white/20">
+        <span class="text-3xl">📅</span>
+        <span class="text-base text-white/70 font-bold uppercase tracking-wide">Today</span>
+        <span class="text-xl font-extrabold tabular-nums whitespace-nowrap">
+          {{ abbreviateNumber(todayStats.inputTokens) }}<span class="ml-1 text-sm text-white/60 font-semibold">in</span>
         </span>
-        <span class="stat-value text-2xl whitespace-nowrap">
-          {{ abbreviateNumber(todayStats.outputTokens) }}
-          <span class="stat-unit text-base">out</span>
+        <span class="text-xl font-extrabold tabular-nums whitespace-nowrap">
+          {{ abbreviateNumber(todayStats.outputTokens) }}<span class="ml-1 text-sm text-white/60 font-semibold">out</span>
         </span>
-        <span class="stat-value cost text-3xl whitespace-nowrap">
+        <span class="text-3xl font-extrabold bg-gradient-to-r from-[#00ff88] to-[#00d4ff] bg-clip-text text-transparent whitespace-nowrap">
           $<OdometerNumber :value="todayStats.totalCost" :decimals="2" :playSound="true" />
         </span>
       </div>
 
-      <!-- Last 30 Days Stats (spans 2 columns) -->
-      <div class="stat-group col-span-2 flex flex-wrap items-center justify-center gap-2 px-4 py-3">
-        <span class="stat-icon text-2xl">📊</span>
-        <span class="stat-label text-xl whitespace-nowrap">Last 30 Days:</span>
-        <span class="stat-value text-2xl whitespace-nowrap">
-          {{ abbreviateNumber(last30DaysStats.inputTokens) }}
-          <span class="stat-unit text-base">in</span>
+      <!-- Last 30 Days Stats -->
+      <div class="flex items-center justify-center gap-2 px-4">
+        <span class="text-3xl">📊</span>
+        <span class="text-base text-white/70 font-bold uppercase tracking-wide whitespace-nowrap">30 Days</span>
+        <span class="text-xl font-extrabold tabular-nums whitespace-nowrap">
+          {{ abbreviateNumber(last30DaysStats.inputTokens) }}<span class="ml-1 text-sm text-white/60 font-semibold">in</span>
         </span>
-        <span class="stat-value text-2xl whitespace-nowrap">
-          {{ abbreviateNumber(last30DaysStats.outputTokens) }}
-          <span class="stat-unit text-base">out</span>
+        <span class="text-xl font-extrabold tabular-nums whitespace-nowrap">
+          {{ abbreviateNumber(last30DaysStats.outputTokens) }}<span class="ml-1 text-sm text-white/60 font-semibold">out</span>
         </span>
-        <span class="stat-value cost text-3xl whitespace-nowrap">
+        <span class="text-3xl font-extrabold bg-gradient-to-r from-[#00ff88] to-[#00d4ff] bg-clip-text text-transparent whitespace-nowrap">
           $<OdometerNumber :value="last30DaysStats.totalCost" :decimals="2" :playSound="true" />
         </span>
       </div>
@@ -235,95 +233,7 @@ export default {
 </script>
 
 <style scoped>
-/* 1920px Layout - Full HD optimized with chroma key background */
-.ccusage-container {
-  width: 1920px;
-  height: 1080px;
-  background: #0000FF; /* Pure blue chroma key background */
-  overflow: hidden;
-  position: fixed;
-  top: 0;
-  left: 0;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-}
-
-.ccusage-content {
-  padding: 0;
-  margin-top: 100px; /* Position below header with clearance */
-  max-width: 1920px;
-  margin-left: auto;
-  margin-right: auto;
-  background: linear-gradient(135deg, #1a1a2e 0%, #2d2d44 100%);
-  border-bottom: 2px solid rgba(255, 255, 255, 0.15);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
-  position: relative;
-  z-index: 1000;
-  min-height: 80px;
-}
-
-/* Model Badge Column */
-.model-badge-col {
-  background: rgba(255, 255, 255, 0.03);
-}
-
-.model-icon {
-  line-height: 1;
-}
-
-.model-name {
-  color: #ffffff;
-  font-weight: 800;
-  background: linear-gradient(135deg, #00d4ff, #7b2ff7);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  white-space: nowrap;
-}
-
 .stat-icon {
   line-height: 1;
-}
-
-.stat-label {
-  color: rgba(255, 255, 255, 0.75);
-  font-weight: 700;
-  white-space: nowrap;
-}
-
-.stat-value {
-  font-weight: 800;
-  color: #ffffff;
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-}
-
-.stat-value.cost {
-  background: linear-gradient(135deg, #00ff88, #00d4ff);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.stat-unit {
-  color: rgba(255, 255, 255, 0.6);
-  font-weight: 600;
-  margin-left: 4px;
-}
-
-/* Responsive adjustments for smaller screens */
-@media (max-width: 3840px) {
-  .ccusage-container {
-    width: 100vw;
-    height: 100vh;
-  }
-
-  .ccusage-content {
-    padding: 20px;
-    gap: 16px;
-  }
-
-  .stat-group {
-    gap: 8px;
-  }
 }
 </style>

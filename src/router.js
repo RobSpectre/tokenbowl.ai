@@ -10,6 +10,8 @@ import Slopup from './pages/Slopup.vue'
 import SlopupDetail from './pages/SlopupDetail.vue'
 import Broadcast from './pages/Broadcast.vue'
 import BroadcastExtra from './pages/BroadcastExtra.vue'
+import BroadcastOpenRouter from './pages/BroadcastOpenRouter.vue'
+import BroadcastChat from './pages/BroadcastChat.vue'
 import CCUsage from './pages/CCUsage.vue'
 import PlayerGoal from './pages/PlayerGoal.vue'
 import TestStatus from './pages/TestStatus.vue'
@@ -29,6 +31,16 @@ const routes = [
     path: '/broadcast-extra',
     name: 'BroadcastExtra',
     component: BroadcastExtra
+  },
+  {
+    path: '/broadcast/openrouter',
+    name: 'BroadcastOpenRouter',
+    component: BroadcastOpenRouter
+  },
+  {
+    path: '/broadcast/chat',
+    name: 'BroadcastChat',
+    component: BroadcastChat
   },
   {
     path: '/ccusage',

@@ -23,12 +23,11 @@
       </div>
     </div>
 
-    <div class="matchups-container">
+    <div class="matchups-container justify-evenly">
       <div
         v-for="(matchup, index) in enrichedMatchups"
         :key="matchup.matchup_id"
         class="matchup-card"
-        :class="{ selected: matchup.matchup_id === selectedMatchupId }"
         @click="selectMatchup(matchup.matchup_id)"
         v-motion
         :initial="{ opacity: 0, x: -30 }"
@@ -47,22 +46,13 @@
                 :class="{ 'invert-logo': matchup.teams[0].teamInfo?.invertLogo }"
               />
               <div class="team-info">
-                <div class="team-name">{{ matchup.teams[0].teamInfo?.aiModel || 'Unknown' }}</div>
-                <div class="team-owner">{{ matchup.teams[0].teamInfo?.owner || 'Unknown' }}</div>
-                <div class="team-meta">
+                <div class="team-name-row">
+                  <div class="team-name">{{ matchup.teams[0].teamInfo?.aiModel || 'Unknown' }}</div>
                   <div
                     :class="getRecordColor(matchup.teams[0])"
                     class="team-record"
                   >
-                    {{ getRecordText(matchup.teams[0]) }}
-                  </div>
-                  <div
-                    v-for="badge in getTeamBadges(matchup.teams[0])"
-                    :key="badge.type"
-                    :class="[badge.color, badge.color === 'bg-yellow-500' ? 'text-black' : 'text-white']"
-                    class="team-badge"
-                  >
-                    {{ badge.label }}
+                    ({{ getRecordText(matchup.teams[0]) }})
                   </div>
                 </div>
               </div>
@@ -94,23 +84,14 @@
             </div>
             <div class="team-content">
               <div class="team-info text-right">
-                <div class="team-name">{{ matchup.teams[1].teamInfo?.aiModel || 'Unknown' }}</div>
-                <div class="team-owner">{{ matchup.teams[1].teamInfo?.owner || 'Unknown' }}</div>
-                <div class="team-meta justify-end">
-                  <div
-                    v-for="badge in getTeamBadges(matchup.teams[1])"
-                    :key="badge.type"
-                    :class="[badge.color, badge.color === 'bg-yellow-500' ? 'text-black' : 'text-white']"
-                    class="team-badge"
-                  >
-                    {{ badge.label }}
-                  </div>
+                <div class="team-name-row justify-end">
                   <div
                     :class="getRecordColor(matchup.teams[1])"
                     class="team-record"
                   >
-                    {{ getRecordText(matchup.teams[1]) }}
+                    ({{ getRecordText(matchup.teams[1]) }})
                   </div>
+                  <div class="team-name">{{ matchup.teams[1].teamInfo?.aiModel || 'Unknown' }}</div>
                 </div>
               </div>
               <img
@@ -288,7 +269,7 @@ export default {
   height: 100%;
   display: flex;
   flex-direction: column;
-  padding: 20px;
+  padding: 12px;
   overflow: hidden;
 }
 
@@ -296,50 +277,50 @@ export default {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 16px;
+  margin-bottom: 8px;
   flex-shrink: 0;
 }
 
 .panel-header h2 {
-  font-size: 48px;
+  font-size: 36px;
   font-weight: 900;
   color: #ffffff;
   margin: 0;
-  letter-spacing: 3px;
+  letter-spacing: 2px;
   text-transform: uppercase;
   background: linear-gradient(135deg, #00d4ff, #7b2ff7);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  text-shadow: 0 0 40px rgba(0, 212, 255, 0.5);
+  text-shadow: 0 0 25px rgba(0, 212, 255, 0.5);
 }
 
 .week-controls {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
 }
 
 .week-indicator {
-  font-size: 32px;
+  font-size: 28px;
   font-weight: 900;
   color: #ffffff;
-  letter-spacing: 2px;
+  letter-spacing: 1px;
   background: linear-gradient(135deg, #7b2ff7, #f107a3);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  text-shadow: 0 0 30px rgba(123, 47, 247, 0.5);
+  text-shadow: 0 0 20px rgba(123, 47, 247, 0.5);
 }
 
 .week-arrow {
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 6px;
+  border-radius: 5px;
   color: rgba(255, 255, 255, 0.6);
-  font-size: 28px;
-  width: 40px;
-  height: 40px;
+  font-size: 24px;
+  width: 38px;
+  height: 38px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -369,23 +350,22 @@ export default {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 24px;
   overflow: hidden; /* No scrollbars - content must fit */
-  padding-bottom: 16px;
+  padding-bottom: 8px;
 }
 
 .matchup-card {
   background: rgba(30, 41, 59, 0.8);
   border: 2px solid rgba(255, 255, 255, 0.1);
-  border-radius: 24px;
-  padding: 32px;
+  border-radius: 14px;
+  padding: 16px;
   cursor: pointer;
   transition: all 0.3s ease;
-  flex-shrink: 0;
-  height: 700px;
   display: flex;
   flex-direction: column;
   justify-content: center;
+  flex: 1;
+  min-height: 0;
 }
 
 .matchup-card:hover {
@@ -394,16 +374,10 @@ export default {
   transform: scale(1.01);
 }
 
-.matchup-card.selected {
-  background: rgba(0, 212, 255, 0.15);
-  border-color: #00d4ff;
-  box-shadow: 0 0 30px rgba(0, 212, 255, 0.4);
-}
-
 .matchup-inner {
   display: flex;
   align-items: center;
-  gap: 32px;
+  gap: 16px;
   flex: 1;
 }
 
@@ -412,9 +386,9 @@ export default {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: rgba(51, 65, 85, 0.6);
-  border-radius: 20px;
-  padding: 32px 24px;
+  background: transparent;
+  border-radius: 10px;
+  padding: 14px 16px;
   min-width: 0;
   transition: all 0.3s ease;
 }
@@ -440,21 +414,21 @@ export default {
 .team-content {
   display: flex;
   align-items: center;
-  gap: 24px;
+  gap: 16px;
   min-width: 0;
   flex: 1;
 }
 
 .team-logo {
-  width: 160px;
-  height: 160px;
+  width: 80px;
+  height: 80px;
   object-fit: contain;
-  filter: drop-shadow(0 8px 24px rgba(0, 0, 0, 0.6));
+  filter: drop-shadow(0 3px 10px rgba(0, 0, 0, 0.6));
   flex-shrink: 0;
 }
 
 .team-logo.invert-logo {
-  filter: invert(1) brightness(2) drop-shadow(0 4px 12px rgba(0, 0, 0, 0.5));
+  filter: invert(1) brightness(2) drop-shadow(0 2px 6px rgba(0, 0, 0, 0.5));
 }
 
 .team-info {
@@ -466,49 +440,32 @@ export default {
   text-align: right;
 }
 
-.team-name {
-  font-size: 56px;
-  font-weight: 800;
-  color: #ffffff;
-  margin-bottom: 8px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  line-height: 1.1;
-}
-
-.team-owner {
-  font-size: 32px;
-  font-weight: 600;
-  color: #60a5fa;
-  margin-bottom: 12px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  line-height: 1.2;
-}
-
-.team-meta {
+.team-name-row {
   display: flex;
   align-items: center;
-  gap: 16px;
-  flex-wrap: wrap;
+  gap: 10px;
+  white-space: nowrap;
+  overflow: hidden;
 }
 
-.team-meta.justify-end {
+.team-name-row.justify-end {
   justify-content: flex-end;
+}
+
+.team-name {
+  font-size: 40px;
+  font-weight: 800;
+  color: #ffffff;
+  line-height: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .team-record {
   font-size: 28px;
   font-weight: 700;
-}
-
-.team-badge {
-  padding: 8px 16px;
-  border-radius: 8px;
-  font-size: 24px;
-  font-weight: 700;
+  line-height: 1;
+  flex-shrink: 0;
 }
 
 .score-section {
@@ -519,66 +476,66 @@ export default {
 }
 
 .team-score {
-  font-size: 120px;
+  font-size: 70px;
   font-weight: 900;
   color: #ffffff;
   font-variant-numeric: tabular-nums;
-  text-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
-  min-width: 300px;
+  text-shadow: 0 3px 12px rgba(0, 0, 0, 0.5);
+  min-width: 175px;
   text-align: center;
   line-height: 1;
 }
 
 .win-loss-indicator {
-  margin-top: 16px;
+  margin-top: 10px;
 }
 
 .win-text {
   color: #4ade80;
-  font-size: 32px;
+  font-size: 20px;
   font-weight: 700;
   text-transform: uppercase;
 }
 
 .loss-text {
   color: #f87171;
-  font-size: 32px;
+  font-size: 20px;
   font-weight: 700;
   text-transform: uppercase;
 }
 
 .vs-separator {
   flex-shrink: 0;
-  padding: 0 16px;
+  padding: 0 10px;
 }
 
 .vs-badge {
   background: rgba(71, 85, 105, 0.8);
   border-radius: 50%;
-  width: 120px;
-  height: 120px;
+  width: 70px;
+  height: 70px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 4px solid rgba(255, 255, 255, 0.2);
+  border: 3px solid rgba(255, 255, 255, 0.2);
 }
 
 .vs-text {
-  font-size: 40px;
+  font-size: 28px;
   font-weight: 900;
   color: #ffffff;
-  letter-spacing: 2px;
+  letter-spacing: 1px;
 }
 
 .point-differential {
-  margin-top: 32px;
-  padding-top: 32px;
-  border-top: 4px solid rgba(71, 85, 105, 0.5);
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 3px solid rgba(71, 85, 105, 0.5);
 }
 
 .differential-container {
   position: relative;
-  height: 64px;
+  height: 46px;
   display: flex;
   align-items: center;
 }
@@ -587,7 +544,7 @@ export default {
   position: absolute;
   left: 50%;
   transform: translateX(-50%);
-  width: 4px;
+  width: 3px;
   height: 100%;
   background: rgba(148, 163, 184, 0.5);
   z-index: 0;
@@ -595,7 +552,7 @@ export default {
 
 .differential-bar {
   position: absolute;
-  height: 48px;
+  height: 34px;
   border-radius: 8px;
   display: flex;
   align-items: center;
@@ -606,7 +563,7 @@ export default {
   right: 50%;
   background: linear-gradient(to left, #00d4ff, #0ea5e9);
   justify-content: flex-start;
-  padding-left: 16px;
+  padding-left: 14px;
   border-radius: 8px 0 0 8px;
 }
 
@@ -614,13 +571,13 @@ export default {
   left: 50%;
   background: linear-gradient(to right, #00d4ff, #0ea5e9);
   justify-content: flex-end;
-  padding-right: 16px;
+  padding-right: 14px;
   border-radius: 0 8px 8px 0;
 }
 
 .differential-value {
   color: #ffffff;
-  font-size: 28px;
+  font-size: 20px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
@@ -630,13 +587,13 @@ export default {
   left: 50%;
   transform: translateX(-50%);
   background: #eab308;
-  border-radius: 12px;
-  padding: 12px 24px;
+  border-radius: 8px;
+  padding: 6px 16px;
 }
 
 .tie-text {
   color: #ffffff;
-  font-size: 28px;
+  font-size: 20px;
   font-weight: 700;
 }
 
@@ -647,18 +604,18 @@ export default {
   align-items: center;
   justify-content: center;
   color: rgba(255, 255, 255, 0.4);
-  gap: 24px;
+  gap: 16px;
 }
 
 .no-data p {
-  font-size: 28px;
+  font-size: 20px;
   margin: 0;
 }
 
 .loading-spinner {
-  width: 80px;
-  height: 80px;
-  border: 6px solid rgba(255, 255, 255, 0.1);
+  width: 46px;
+  height: 46px;
+  border: 4px solid rgba(255, 255, 255, 0.1);
   border-top-color: #00d4ff;
   border-radius: 50%;
   animation: spin 1s linear infinite;

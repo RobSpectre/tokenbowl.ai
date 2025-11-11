@@ -86,7 +86,7 @@ export default {
   setup() {
     const store = useBroadcastStore()
 
-    const recentScoringPlays = computed(() => store.recentScoringPlays)
+    const recentScoringPlays = computed(() => store.recentScoringPlays.slice(0, 5))
 
     const formatPoints = (points) => {
       return points ? points.toFixed(2) : '0.00'
