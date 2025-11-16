@@ -97,6 +97,72 @@ export function estimateGameProgress(gameStartTime, currentTime = new Date()) {
 }
 
 /**
+ * Determine actual game status using NFL schedule data
+ * @param {Object} player - Player object with team information
+ * @param {number} currentPoints - Current points scored by player
+ * @param {Object} nflSchedule - NFL schedule data with game times and status
+ * @param {number} week - Current NFL week
+ * @returns {Object} Game status and percent complete
+ */
+export function getActualGameStatus(player, currentPoints, nflSchedule, week) {
+  // If we don't have schedule data, fall back to simple logic
+  if (!nflSchedule || !nflSchedule.schedule || !player?.team) {
+    return getSimpleGameStatus(currentPoints)
+  }
+
+  // Find the game for this player's team in this week
+  const playerTeam = player.team?.toUpperCase()
+  const game = nflSchedule.schedule.find(g =>
+    g.week === week &&
+    (g.away_team?.toUpperCase() === playerTeam || g.home_team?.toUpperCase() === playerTeam)
+  )
+
+  if (!game) {
+    // No game found, use simple logic
+    return getSimpleGameStatus(currentPoints)
+  }
+
+  // Parse game time
+  const gameTime = new Date(game.game_date || game.game_time)
+  const now = new Date()
+
+  // Check if game is finished (game_status field or time-based)
+  if (game.game_status === 'FINAL' || game.game_status === 'Final') {
+    return { status: 'final', percentComplete: 1.0 }
+  }
+
+  // Check if game has started
+  if (now < gameTime) {
+    return { status: 'scheduled', percentComplete: 0 }
+  }
+
+  // Game is in progress - estimate based on time
+  const percentComplete = estimateGameProgress(gameTime, now)
+
+  return {
+    status: 'in_progress',
+    percentComplete
+  }
+}
+
+/**
+ * Simple game status determination (fallback when no schedule data)
+ * Only marks game as final if player has points and it's been a while
+ * @param {number} currentPoints - Current points scored
+ * @returns {Object} Game status and percent complete
+ */
+function getSimpleGameStatus(currentPoints) {
+  if (currentPoints === 0) {
+    return { status: 'scheduled', percentComplete: 0 }
+  }
+
+  // If player has scored but we don't have schedule data,
+  // conservatively assume game is in progress (not final)
+  // This prevents the bug where we mark games as final too early
+  return { status: 'in_progress', percentComplete: 0.5 }
+}
+
+/**
  * Run a single Monte Carlo simulation
  * @param {Array<Object>} team1Players - Team 1 prepared players
  * @param {Array<Object>} team2Players - Team 2 prepared players
@@ -205,31 +271,67 @@ function normalCDF(z) {
 }
 
 /**
- * Get player projection and variance from historical data
+ * Get player projection and variance
  * @param {string} playerId - Sleeper player ID
  * @param {Object} playerStats - Historical stats for the player
  * @param {string} position - Player position
+ * @param {Object} weeklyProjections - Optional weekly projections from Fantasy Nerds API
+ * @param {string} playerName - Player name for projection lookup
  * @returns {Object} Projection and variance
  */
-export function getPlayerProjectionAndVariance(playerId, playerStats, position = 'FLEX') {
-  if (!playerStats || !playerStats.weeks || playerStats.weeks.length === 0) {
-    // Use position-based defaults if no historical data
-    return getDefaultProjectionByPosition(position)
+export function getPlayerProjectionAndVariance(playerId, playerStats, position = 'FLEX', weeklyProjections = null, playerName = null) {
+  // Try to use weekly projection first (most accurate)
+  if (weeklyProjections && playerName) {
+    const playerKey = playerName.toLowerCase()
+    const weeklyProj = weeklyProjections[playerKey]
+
+    if (weeklyProj && weeklyProj.projectedPoints > 0) {
+      // Use projection-based variance
+      // Different positions have different variance levels
+      const varianceMultipliers = {
+        'QB': 0.35,  // QBs are relatively consistent
+        'RB': 0.45,  // RBs have high variance
+        'WR': 0.45,  // WRs have high variance
+        'TE': 0.40,  // TEs moderate variance
+        'K': 0.30,   // Kickers lower variance
+        'DEF': 0.35  // Defense moderate variance
+      }
+
+      const multiplier = varianceMultipliers[position] || 0.40
+      const stdDev = weeklyProj.projectedPoints * multiplier
+      const variance = Math.pow(stdDev, 2)
+
+      return {
+        projection: weeklyProj.projectedPoints,
+        variance: Math.max(variance, 1), // Minimum variance of 1
+        source: 'weekly_projection'
+      }
+    }
   }
 
-  // Calculate mean and variance from recent weeks (last 4 weeks)
-  const recentWeeks = playerStats.weeks.slice(-4)
-  const points = recentWeeks.map(w => w.points || 0)
+  // Fallback to historical average if no weekly projection available
+  if (playerStats && playerStats.weeks && playerStats.weeks.length > 0) {
+    // Calculate mean and variance from recent weeks (last 4 weeks)
+    const recentWeeks = playerStats.weeks.slice(-4)
+    const points = recentWeeks.map(w => w.points || 0)
 
-  const mean = points.reduce((sum, p) => sum + p, 0) / points.length
+    const mean = points.reduce((sum, p) => sum + p, 0) / points.length
 
-  // Calculate variance
-  const squaredDiffs = points.map(p => Math.pow(p - mean, 2))
-  const variance = squaredDiffs.reduce((sum, sq) => sum + sq, 0) / points.length
+    // Calculate variance
+    const squaredDiffs = points.map(p => Math.pow(p - mean, 2))
+    const variance = squaredDiffs.reduce((sum, sq) => sum + sq, 0) / points.length
 
+    return {
+      projection: mean,
+      variance: Math.max(variance, 1), // Minimum variance of 1
+      source: 'historical_average'
+    }
+  }
+
+  // Last resort: use position-based defaults
   return {
-    projection: mean,
-    variance: Math.max(variance, 1) // Minimum variance of 1
+    ...getDefaultProjectionByPosition(position),
+    source: 'position_default'
   }
 }
 

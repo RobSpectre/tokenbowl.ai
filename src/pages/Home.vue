@@ -617,7 +617,7 @@ import { getTeamInfo } from '../teamMappings.js'
 import * as echarts from 'echarts'
 import { trackButtonClick } from '../analytics.js'
 import WinProbabilityBar from '../components/WinProbabilityBar.vue'
-import { calculateWinProbability, getPlayerProjectionAndVariance } from '../utils/winProbability.js'
+import { calculateWinProbability, getPlayerProjectionAndVariance, getActualGameStatus } from '../utils/winProbability.js'
 
 export default {
   name: 'Home',
@@ -783,6 +783,10 @@ export default {
         return
       }
 
+      // Get weekly projections and NFL schedule from league store
+      const weeklyProjections = leagueStore.getWeeklyProjectionsForWeek(selectedWeek.value)
+      const nflSchedule = leagueStore.nflSchedule
+
       const newProbabilities = {}
 
       weekMatchups.forEach((matchup) => {
@@ -792,9 +796,23 @@ export default {
           const [team1Data, team2Data] = matchup
           const matchupId = team1Data.matchup_id
 
-          // Convert team data to player arrays
-          const team1Players = convertTeamToPlayerData(team1Data, players.value, enrichedPlayers.value)
-          const team2Players = convertTeamToPlayerData(team2Data, players.value, enrichedPlayers.value)
+          // Convert team data to player arrays with projections and schedule data
+          const team1Players = convertTeamToPlayerData(
+            team1Data,
+            players.value,
+            enrichedPlayers.value,
+            weeklyProjections,
+            nflSchedule,
+            selectedWeek.value
+          )
+          const team2Players = convertTeamToPlayerData(
+            team2Data,
+            players.value,
+            enrichedPlayers.value,
+            weeklyProjections,
+            nflSchedule,
+            selectedWeek.value
+          )
 
           // Run Monte Carlo simulation (3000 for performance)
           const result = calculateWinProbability(team1Players, team2Players, 3000)
@@ -821,7 +839,7 @@ export default {
     }
 
     // Convert team data from Sleeper to player data for simulation
-    const convertTeamToPlayerData = (teamData, playersData, enrichedPlayersData) => {
+    const convertTeamToPlayerData = (teamData, playersData, enrichedPlayersData, weeklyProjections = null, nflSchedule = null, currentWeek = null) => {
       const starters = teamData.starters || []
       const playerPoints = teamData.players_points || {}
 
@@ -831,15 +849,20 @@ export default {
           const player = playersData?.[playerId] || enrichedPlayersData?.[playerId]
           const currentPoints = playerPoints[playerId] || 0
 
-          // Get projection and variance
+          // Get player name for projection lookup
+          const playerName = player ? `${player.first_name || ''} ${player.last_name || ''}`.trim() : null
+
+          // Get projection and variance using weekly projections if available
           const { projection, variance } = getPlayerProjectionAndVariance(
             playerId,
             player?.seasonStats,
-            player?.position || 'FLEX'
+            player?.position || 'FLEX',
+            weeklyProjections,
+            playerName
           )
 
-          // Determine game status (simplified)
-          const gameStatus = getSimplifiedGameStatus(currentPoints, projection)
+          // Determine game status using NFL schedule data
+          const gameStatus = getActualGameStatus(player, currentPoints, nflSchedule, currentWeek)
 
           return {
             playerId,
@@ -850,27 +873,6 @@ export default {
             percentComplete: gameStatus.percentComplete
           }
         })
-    }
-
-    // Get simplified game status based on current points
-    const getSimplifiedGameStatus = (currentPoints, projection) => {
-      if (currentPoints === 0) {
-        return { status: 'scheduled', percentComplete: 0 }
-      }
-
-      // If current points >= 90% of projection, likely finished
-      if (projection > 0 && currentPoints >= projection * 0.9) {
-        return { status: 'final', percentComplete: 1.0 }
-      }
-
-      // Estimate progress based on current points vs projection
-      if (projection > 0) {
-        const percentComplete = Math.min(0.9, currentPoints / projection)
-        return { status: 'in_progress', percentComplete }
-      }
-
-      // Default to in progress at 50%
-      return { status: 'in_progress', percentComplete: 0.5 }
     }
 
     // Re-render charts (used for auto-refresh and manual refresh button)

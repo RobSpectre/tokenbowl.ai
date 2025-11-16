@@ -471,7 +471,19 @@ describe('winProbability', () => {
   })
 
   describe('getPlayerProjectionAndVariance', () => {
-    it('should calculate projection from historical data', () => {
+    it('should use weekly projection when available', () => {
+      const weeklyProjections = {
+        'patrick mahomes': { projectedPoints: 22.5 }
+      }
+
+      const result = getPlayerProjectionAndVariance('1234', null, 'QB', weeklyProjections, 'Patrick Mahomes')
+
+      expect(result.projection).toBe(22.5)
+      expect(result.variance).toBeGreaterThan(0)
+      expect(result.source).toBe('weekly_projection')
+    })
+
+    it('should calculate projection from historical data when no weekly projection', () => {
       const playerStats = {
         weeks: [
           { points: 20 },
@@ -485,6 +497,7 @@ describe('winProbability', () => {
 
       expect(result.projection).toBe(19) // (20 + 18 + 22 + 16) / 4
       expect(result.variance).toBeGreaterThan(0)
+      expect(result.source).toBe('historical_average')
     })
 
     it('should use only last 4 weeks of data', () => {
@@ -504,6 +517,7 @@ describe('winProbability', () => {
 
       // Should only use last 4 weeks: 20, 18, 22, 16
       expect(result.projection).toBe(19)
+      expect(result.source).toBe('historical_average')
     })
 
     it('should return QB defaults when no stats available', () => {
@@ -511,6 +525,7 @@ describe('winProbability', () => {
 
       expect(result.projection).toBe(18)
       expect(result.variance).toBe(36)
+      expect(result.source).toBe('position_default')
     })
 
     it('should return RB defaults when no stats available', () => {
@@ -518,6 +533,7 @@ describe('winProbability', () => {
 
       expect(result.projection).toBe(12)
       expect(result.variance).toBe(25)
+      expect(result.source).toBe('position_default')
     })
 
     it('should return WR defaults when no stats available', () => {
@@ -525,6 +541,7 @@ describe('winProbability', () => {
 
       expect(result.projection).toBe(11)
       expect(result.variance).toBe(25)
+      expect(result.source).toBe('position_default')
     })
 
     it('should return TE defaults when no stats available', () => {
@@ -532,6 +549,7 @@ describe('winProbability', () => {
 
       expect(result.projection).toBe(8)
       expect(result.variance).toBe(16)
+      expect(result.source).toBe('position_default')
     })
 
     it('should return K defaults when no stats available', () => {
@@ -539,6 +557,7 @@ describe('winProbability', () => {
 
       expect(result.projection).toBe(8)
       expect(result.variance).toBe(9)
+      expect(result.source).toBe('position_default')
     })
 
     it('should return DEF defaults when no stats available', () => {
@@ -546,6 +565,7 @@ describe('winProbability', () => {
 
       expect(result.projection).toBe(7)
       expect(result.variance).toBe(16)
+      expect(result.source).toBe('position_default')
     })
 
     it('should have minimum variance of 1', () => {
