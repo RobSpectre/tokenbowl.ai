@@ -8,7 +8,8 @@
       <!-- Positions Yet to Start -->
       <div v-if="getPositionsYetToStart().length > 0" class="positions-yet-to-start">
         <div class="flex items-center justify-center gap-2 flex-wrap">
-          <span class="yet-label">Yet to play:</span>
+          <span class="yet-label">Yet to play: {{ getPlayersYetToPlayCount() }} {{ getPlayersYetToPlayCount() === 1 ? 'player' : 'players' }}</span>
+          <span class="yet-label">•</span>
           <div class="flex items-center gap-2 flex-wrap">
             <span
               v-for="position in getPositionsYetToStart()"
@@ -495,6 +496,29 @@ export default {
       return Array.from(positions)
     }
 
+    const getPlayersYetToPlayCount = () => {
+      if (!selectedMatchup.value || !selectedMatchup.value.teams || !store.currentWeek) return 0
+
+      let count = 0
+
+      // Check both teams
+      selectedMatchup.value.teams.forEach(team => {
+        if (!team.starters) return
+
+        team.starters.forEach(playerId => {
+          // Skip empty slots
+          if (playerId === '0' || playerId === 0) return
+
+          const gameInfo = leagueStore.getPlayerGameInfo(playerId, store.currentWeek)
+          if (gameInfo && gameInfo.status === 'scheduled') {
+            count++
+          }
+        })
+      })
+
+      return count
+    }
+
     return {
       enrichedMatchups,
       selectedMatchup,
@@ -516,7 +540,8 @@ export default {
       getPlayerPortrait,
       handleImageError,
       getBarWidth,
-      getPositionsYetToStart
+      getPositionsYetToStart,
+      getPlayersYetToPlayCount
     }
   }
 }

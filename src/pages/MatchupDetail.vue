@@ -40,7 +40,8 @@
         //- Positions Yet to Start
         div(v-if="gameStatus !== 'Final' && getPositionsYetToStart().length > 0" class="bg-slate-800 px-4 sm:px-6 py-3 border-t border-slate-700")
           .flex.items-center.justify-center.gap-2.flex-wrap
-            span.text-blue-400.text-sm.font-semibold.uppercase Yet to play:
+            span.text-blue-400.text-sm.font-semibold.uppercase Yet to play: {{ getPlayersYetToPlayCount() }} {{ getPlayersYetToPlayCount() === 1 ? 'player' : 'players' }}
+            span.text-blue-400.text-sm.font-semibold.uppercase •
             .flex.items-center.gap-2.flex-wrap
               span.px-2.py-1.rounded.text-xs.font-bold.bg-blue-600.text-white(
                 v-for="position in getPositionsYetToStart()"
@@ -1293,6 +1294,34 @@ export default {
       return Array.from(positions)
     }
 
+    // Get count of players yet to play for both teams
+    const getPlayersYetToPlayCount = () => {
+      if (!matchup.value || !week.value) return 0
+
+      let count = 0
+      const slots = getRosterSlots()
+
+      slots.forEach(slot => {
+        // Check team 1 player
+        if (slot.team1Player && slot.team1Player !== '0' && slot.team1Player !== 0) {
+          const gameInfo = leagueStore.getPlayerGameInfo(slot.team1Player, week.value)
+          if (gameInfo && gameInfo.status === 'scheduled') {
+            count++
+          }
+        }
+
+        // Check team 2 player
+        if (slot.team2Player && slot.team2Player !== '0' && slot.team2Player !== 0) {
+          const gameInfo = leagueStore.getPlayerGameInfo(slot.team2Player, week.value)
+          if (gameInfo && gameInfo.status === 'scheduled') {
+            count++
+          }
+        }
+      })
+
+      return count
+    }
+
 
     onMounted(async () => {
       await loadMatchupData()
@@ -1345,6 +1374,7 @@ export default {
       getSlotColor,
       getPositionDifferential,
       getPositionsYetToStart,
+      getPlayersYetToPlayCount,
       markdownContents,
       isScoreAnimating,
       isPlayerScoreAnimating
