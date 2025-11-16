@@ -37,6 +37,16 @@
             span(class="text-green-400") Live
             span(class="text-gray-300") • {{ lastUpdated?.toLocaleTimeString() || 'Updating...' }}
 
+        //- Positions Yet to Start
+        div(v-if="gameStatus !== 'Final' && getPositionsYetToStart().length > 0" class="bg-slate-800 px-4 sm:px-6 py-3 border-t border-slate-700")
+          .flex.items-center.justify-center.gap-2.flex-wrap
+            span.text-blue-400.text-sm.font-semibold.uppercase Yet to play:
+            .flex.items-center.gap-2.flex-wrap
+              span.px-2.py-1.rounded.text-xs.font-bold.bg-blue-600.text-white(
+                v-for="position in getPositionsYetToStart()"
+                :key="position"
+              ) {{ position }}
+
       //- Score Summary with Animation
       div(class="bg-slate-900 rounded-b-lg p-4 sm:p-6")
         //- Desktop Layout
@@ -1255,6 +1265,34 @@ export default {
       }
     }
 
+    // Get positions that have yet to start play for both teams
+    const getPositionsYetToStart = () => {
+      if (!matchup.value || !week.value) return []
+
+      const positions = new Set()
+      const slots = getRosterSlots()
+
+      slots.forEach(slot => {
+        // Check team 1 player
+        if (slot.team1Player && slot.team1Player !== '0' && slot.team1Player !== 0) {
+          const gameInfo = leagueStore.getPlayerGameInfo(slot.team1Player, week.value)
+          if (gameInfo && gameInfo.status === 'scheduled') {
+            positions.add(slot.name)
+          }
+        }
+
+        // Check team 2 player
+        if (slot.team2Player && slot.team2Player !== '0' && slot.team2Player !== 0) {
+          const gameInfo = leagueStore.getPlayerGameInfo(slot.team2Player, week.value)
+          if (gameInfo && gameInfo.status === 'scheduled') {
+            positions.add(slot.name)
+          }
+        }
+      })
+
+      return Array.from(positions)
+    }
+
 
     onMounted(async () => {
       await loadMatchupData()
@@ -1306,6 +1344,7 @@ export default {
       getRosterSlots,
       getSlotColor,
       getPositionDifferential,
+      getPositionsYetToStart,
       markdownContents,
       isScoreAnimating,
       isPlayerScoreAnimating

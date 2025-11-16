@@ -5,6 +5,22 @@
     </div>
 
     <div v-if="selectedMatchup" class="matchup-content">
+      <!-- Positions Yet to Start -->
+      <div v-if="getPositionsYetToStart().length > 0" class="positions-yet-to-start">
+        <div class="flex items-center justify-center gap-2 flex-wrap">
+          <span class="yet-label">Yet to play:</span>
+          <div class="flex items-center gap-2 flex-wrap">
+            <span
+              v-for="position in getPositionsYetToStart()"
+              :key="position"
+              class="position-tag"
+            >
+              {{ position }}
+            </span>
+          </div>
+        </div>
+      </div>
+
       <!-- Team Comparison -->
       <div class="teams-container">
         <!-- Team 1 -->
@@ -454,6 +470,31 @@ export default {
       return Math.max(percentage, 5)
     }
 
+    const getPositionsYetToStart = () => {
+      if (!selectedMatchup.value || !selectedMatchup.value.teams || !store.currentWeek) return []
+
+      const positions = new Set()
+
+      // Check both teams
+      selectedMatchup.value.teams.forEach(team => {
+        if (!team.starters) return
+
+        team.starters.forEach((playerId, index) => {
+          // Skip empty slots
+          if (playerId === '0' || playerId === 0) return
+
+          const gameInfo = leagueStore.getPlayerGameInfo(playerId, store.currentWeek)
+          if (gameInfo && gameInfo.status === 'scheduled') {
+            // Get position label for this starter index
+            const positionLabels = ['QB', 'RB1', 'RB2', 'WR1', 'WR2', 'TE', 'FLEX1', 'FLEX2', 'K', 'DEF']
+            positions.add(positionLabels[index] || 'FLEX')
+          }
+        })
+      })
+
+      return Array.from(positions)
+    }
+
     return {
       enrichedMatchups,
       selectedMatchup,
@@ -474,7 +515,8 @@ export default {
       isPlayerScoring,
       getPlayerPortrait,
       handleImageError,
-      getBarWidth
+      getBarWidth,
+      getPositionsYetToStart
     }
   }
 }
@@ -512,13 +554,63 @@ export default {
 .matchup-content {
   flex: 1;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.positions-yet-to-start {
+  background: rgba(30, 41, 59, 0.8);
+  border: 2px solid rgba(0, 212, 255, 0.3);
+  border-radius: 12px;
+  padding: 14px 20px;
+  flex-shrink: 0;
+}
+
+.yet-label {
+  font-size: 16px;
+  font-weight: 700;
+  color: #00d4ff;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.position-tag {
+  padding: 6px 12px;
+  background: rgb(37, 99, 235);
+  color: #ffffff;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.flex {
+  display: flex;
+}
+
+.items-center {
+  align-items: center;
+}
+
+.justify-center {
+  justify-content: center;
+}
+
+.gap-2 {
+  gap: 8px;
+}
+
+.flex-wrap {
+  flex-wrap: wrap;
 }
 
 .teams-container {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 24px;
-  height: 100%;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .team-column {
