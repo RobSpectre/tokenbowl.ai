@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Monte Carlo Win Probability Benchmark</title>
+</head>
+<body>
+  <h1>Monte Carlo Simulation Benchmark</h1>
+  <button onclick="runBenchmark()">Run Benchmark</button>
+  <div id="results"></div>
+
+  <script>
+    // Box-Muller transform for normal distribution sampling
+    function randomNormal(mean, stdDev) {
+      const u1 = Math.random()
+      const u2 = Math.random()
+      const z0 = Math.sqrt(-2.0 * Math.log(u1)) * Math.cos(2.0 * Math.PI * u2)
+      return mean + z0 * stdDev
+    }
+
+    // Simulate one matchup outcome
+    function simulateMatchup(team1Remaining, team2Remaining) {
+      const team1Final = team1Remaining.reduce((sum, player) =>
+        sum + randomNormal(player.projection, player.stdDev), 0)
+
+      const team2Final = team2Remaining.reduce((sum, player) =>
+        sum + randomNormal(player.projection, player.stdDev), 0)
+
+      return team1Final > team2Final ? 1 : 0
+    }
+
+    // Monte Carlo win probability
+    function monteCarloWinProb(team1Current, team2Current, team1Remaining, team2Remaining, numSims) {
+      let team1Wins = 0
+
+      for (let i = 0; i < numSims; i++) {
+        const team1Sim = team1Current + simulateMatchup(team1Remaining, []).team1Final
+        const team2Sim = team2Current + simulateMatchup([], team2Remaining).team2Final
+
+        // Simplified - just count wins
+        const team1Final = team1Current + team1Remaining.reduce((sum, p) =>
+          sum + randomNormal(p.projection, p.stdDev), 0)
+        const team2Final = team2Current + team2Remaining.reduce((sum, p) =>
+          sum + randomNormal(p.projection, p.stdDev), 0)
+
+        if (team1Final > team2Final) team1Wins++
+      }
+
+      return team1Wins / numSims
+    }
+
+    function runBenchmark() {
+      const resultsDiv = document.getElementById('results')
+      resultsDiv.innerHTML = '<p>Running benchmarks...</p>'
+
+      // Simulate a typical mid-game scenario
+      // Team 1: 45 points, 4 players remaining
+      // Team 2: 52 points, 5 players remaining
+      const team1Current = 45
+      const team2Current = 52
+
+      const team1Remaining = [
+        { projection: 12, stdDev: 6 },  // QB remaining
+        { projection: 8, stdDev: 4 },   // WR
+        { projection: 6, stdDev: 3 },   // RB
+        { projection: 5, stdDev: 2.5 }  // Flex
+      ]
+
+      const team2Remaining = [
+        { projection: 15, stdDev: 7 },  // QB
+        { projection: 9, stdDev: 4.5 }, // WR
+        { projection: 7, stdDev: 3.5 }, // WR
+        { projection: 5, stdDev: 3 },   // RB
+        { projection: 4, stdDev: 2 }    // K
+      ]
+
+      const simCounts = [1000, 5000, 10000, 25000, 50000]
+      const results = []
+
+      simCounts.forEach(numSims => {
+        const start = performance.now()
+        const prob = monteCarloWinProb(team1Current, team2Current, team1Remaining, team2Remaining, numSims)
+        const end = performance.now()
+        const duration = end - start
+
+        results.push({
+          simulations: numSims,
+          probability: (prob * 100).toFixed(1) + '%',
+          duration: duration.toFixed(2) + 'ms',
+          opsPerSec: ((numSims / duration) * 1000).toFixed(0)
+        })
+      })
+
+      // Display results
+      let html = '<h2>Results</h2>'
+      html += '<table border="1" cellpadding="8" style="border-collapse: collapse">'
+      html += '<tr><th>Simulations</th><th>Win Probability</th><th>Duration</th><th>Sims/sec</th></tr>'
+
+      results.forEach(r => {
+        html += `<tr>
+          <td>${r.simulations.toLocaleString()}</td>
+          <td>${r.probability}</td>
+          <td>${r.duration}</td>
+          <td>${parseInt(r.opsPerSec).toLocaleString()}</td>
+        </tr>`
+      })
+
+      html += '</table>'
+
+      // Memory usage estimate
+      html += '<h3>Analysis</h3>'
+      html += '<ul>'
+      html += '<li><strong>Memory:</strong> ~10-50 KB (no arrays stored, streaming calculation)</li>'
+      html += '<li><strong>CPU:</strong> Single-threaded, blocks UI during calculation</li>'
+      html += '<li><strong>Recommendation:</strong> Use Web Worker for 10k+ simulations</li>'
+      html += '</ul>'
+
+      resultsDiv.innerHTML = html
+    }
+  </script>
+</body>
+</html>
