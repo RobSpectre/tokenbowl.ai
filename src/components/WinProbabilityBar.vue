@@ -1,30 +1,30 @@
 <template lang="pug">
 .win-probability-container(v-if="winProb")
-  //- Win Probability Header
-  div(class="flex items-center justify-between mb-2 lg:mb-1")
-    div(class="text-xs lg:text-[10px] text-gray-400 font-semibold uppercase tracking-wider") Win Probability
-    div(class="text-xs lg:text-[10px] text-gray-500") {{ winProb.simulations.toLocaleString() }} simulations
+  //- Win Probability Header (hidden on lg)
+  div(class="flex items-center justify-between mb-2 lg:hidden")
+    div(class="text-xs text-gray-400 font-semibold uppercase tracking-wider") Win Probability
+    div(class="text-xs text-gray-500") {{ winProb.simulations.toLocaleString() }} simulations
 
   //- Probability Bar
-  div(class="relative h-12 lg:h-8 bg-slate-700 rounded-lg overflow-hidden")
+  div(class="relative h-12 lg:h-3 bg-slate-700 rounded-lg lg:rounded overflow-hidden")
     //- Team 1 Bar (left side)
     .absolute.left-0.top-0.bottom-0.transition-all.duration-500(
       :style="{ width: team1Percentage + '%' }"
       :class="team1BarColor"
     )
-      div(class="absolute inset-0 flex items-center justify-start px-3 lg:px-2")
-        div(class="text-white font-black text-lg lg:text-sm" v-if="team1Percentage > 15") {{ team1Percentage }}%
+      div(class="absolute inset-0 flex items-center justify-start px-3 lg:px-1")
+        div(class="text-white font-black text-lg lg:text-[9px] lg:leading-none" v-if="team1Percentage > 15") {{ team1Percentage }}%
 
     //- Team 2 Bar (right side)
     .absolute.right-0.top-0.bottom-0.transition-all.duration-500(
       :style="{ width: team2Percentage + '%' }"
       :class="team2BarColor"
     )
-      div(class="absolute inset-0 flex items-center justify-end px-3 lg:px-2")
-        div(class="text-white font-black text-lg lg:text-sm" v-if="team2Percentage > 15") {{ team2Percentage }}%
+      div(class="absolute inset-0 flex items-center justify-end px-3 lg:px-1")
+        div(class="text-white font-black text-lg lg:text-[9px] lg:leading-none" v-if="team2Percentage > 15") {{ team2Percentage }}%
 
     //- Center line
-    div(class="absolute left-1/2 top-0 bottom-0 w-0.5 bg-white opacity-30" style="transform: translateX(-50%)")
+    div(class="absolute left-1/2 top-0 bottom-0 w-0.5 lg:w-px bg-white opacity-30" style="transform: translateX(-50%)")
 
   //- Detailed Stats (optional, toggleable)
   .mt-2.flex.items-center.justify-center.gap-4.text-xs(v-if="showDetails")
@@ -107,8 +107,9 @@ export default {
 
 @media (min-width: 1024px) {
   .win-probability-container {
-    margin-top: 0.375rem; /* 6px */
-    padding-top: 0.375rem; /* 6px */
+    margin-top: 0;
+    padding-top: 0.25rem; /* 4px */
+    border-top: none;
   }
 }
 </style>
