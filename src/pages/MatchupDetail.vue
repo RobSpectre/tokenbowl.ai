@@ -184,6 +184,13 @@
             div(v-else class="absolute left-1/2 transform -translate-x-1/2 bg-yellow-500 rounded px-3 py-1 z-20")
               span.text-black.text-xs.font-bold TIE
 
+        //- Win Probability
+        WinProbabilityBar(
+          v-if="winProbability"
+          :winProb="winProbability"
+          :showDetails="true"
+        )
+
     //- Head-to-Head Player Matchups
     section.mb-8
       .bg-gradient-to-r.from-purple-600.to-purple-800.rounded-t-lg.px-6.py-4.border-b-4.border-yellow-400
@@ -510,9 +517,14 @@ import { getMultiplePlayerStats } from '../sleeperApi.js'
 import { useLeagueStore } from '../stores/league.js'
 import { marked } from 'marked'
 import 'github-markdown-css/github-markdown-dark.css'
+import WinProbabilityBar from '../components/WinProbabilityBar.vue'
+import { calculateWinProbability, getPlayerProjectionAndVariance } from '../utils/winProbability.js'
 
 export default {
   name: 'MatchupDetail',
+  components: {
+    WinProbabilityBar
+  },
   setup() {
     const route = useRoute()
     const leagueStore = useLeagueStore()
@@ -537,6 +549,9 @@ export default {
     const animatingPlayerScores = ref(new Set())
     const previousScores = ref({})
     const previousPlayerScores = ref({})
+
+    // Win probability
+    const winProbability = ref(null)
 
     // Use computed property to access players from store
     const players = computed(() => leagueStore.players)
@@ -748,6 +763,9 @@ export default {
         // Try to load markdown file for this matchup
         loadMarkdownFile()
 
+        // Calculate win probability
+        calculateMatchupWinProbability()
+
         lastUpdated.value = new Date()
       } catch (err) {
         error.value = 'Failed to load matchup data. Please try again later.'
@@ -755,6 +773,94 @@ export default {
       } finally {
         loading.value = false
       }
+    }
+
+    // Calculate win probability for the matchup
+    const calculateMatchupWinProbability = () => {
+      if (!matchup.value || matchup.value.length !== 2 || !players.value) {
+        return
+      }
+
+      try {
+        const [team1Data, team2Data] = matchup.value
+
+        // Convert team data to player arrays
+        const team1Players = convertTeamToPlayerData(team1Data, players.value, enrichedPlayers.value)
+        const team2Players = convertTeamToPlayerData(team2Data, players.value, enrichedPlayers.value)
+
+        // Run Monte Carlo simulation (3000 for performance)
+        const result = calculateWinProbability(team1Players, team2Players, 3000)
+
+        winProbability.value = {
+          ...result,
+          team1: {
+            rosterId: team1Data.roster_id,
+            currentPoints: team1Data.points || 0,
+            playerCount: team1Players.length
+          },
+          team2: {
+            rosterId: team2Data.roster_id,
+            currentPoints: team2Data.points || 0,
+            playerCount: team2Players.length
+          }
+        }
+      } catch (error) {
+        console.error('Error calculating win probability:', error)
+        winProbability.value = null
+      }
+    }
+
+    // Convert team data from Sleeper to player data for simulation
+    const convertTeamToPlayerData = (teamData, playersData, enrichedPlayersData) => {
+      const starters = teamData.starters || []
+      const playerPoints = teamData.players_points || {}
+
+      return starters
+        .filter(playerId => playerId) // Filter out null/undefined
+        .map(playerId => {
+          const player = playersData?.[playerId] || enrichedPlayersData?.[playerId]
+          const currentPoints = playerPoints[playerId] || 0
+
+          // Get projection and variance
+          const { projection, variance } = getPlayerProjectionAndVariance(
+            playerId,
+            player?.seasonStats,
+            player?.position || 'FLEX'
+          )
+
+          // Determine game status (simplified)
+          const gameStatus = getSimplifiedGameStatus(currentPoints, projection)
+
+          return {
+            playerId,
+            currentPoints,
+            projection,
+            variance,
+            gameStatus: gameStatus.status,
+            percentComplete: gameStatus.percentComplete
+          }
+        })
+    }
+
+    // Get simplified game status based on current points
+    const getSimplifiedGameStatus = (currentPoints, projection) => {
+      if (currentPoints === 0) {
+        return { status: 'scheduled', percentComplete: 0 }
+      }
+
+      // If current points >= 90% of projection, likely finished
+      if (projection > 0 && currentPoints >= projection * 0.9) {
+        return { status: 'final', percentComplete: 1.0 }
+      }
+
+      // Estimate progress based on current points vs projection
+      if (projection > 0) {
+        const percentComplete = Math.min(0.9, currentPoints / projection)
+        return { status: 'in_progress', percentComplete }
+      }
+
+      // Default to in progress at 50%
+      return { status: 'in_progress', percentComplete: 0.5 }
     }
 
     // Refresh matchup data without showing loading state
@@ -800,6 +906,9 @@ export default {
 
         // Update injury data
         injuries.value = await leagueStore.fetchInjuriesForWeek(week.value)
+
+        // Recalculate win probability
+        calculateMatchupWinProbability()
 
         lastUpdated.value = new Date()
         console.log('✅ Refresh complete at', lastUpdated.value.toLocaleTimeString())
@@ -1350,6 +1459,7 @@ export default {
       lastUpdated,
       isAutoRefreshActive,
       gameStatus,
+      winProbability,
       getTeamInfo,
       getPlayerName,
       getPlayerPoints,
