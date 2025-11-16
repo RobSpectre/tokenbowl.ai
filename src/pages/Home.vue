@@ -3,9 +3,9 @@
   //- Main Content - App.vue ensures data is ready before rendering this component
   main.container.mx-auto.px-4.py-6.max-w-7xl
     //- Week Selector (Fixed)
-    div(class="fixed top-24 left-0 right-0 z-30 bg-slate-950 pb-4 pt-4 shadow-lg")
+    div(class="fixed top-24 left-0 right-0 z-30 bg-slate-950 pb-4 pt-4 lg:pb-2 lg:pt-2 shadow-lg")
       .container.mx-auto.px-4.max-w-7xl
-        div(class="flex items-center justify-center gap-3 mb-3")
+        div(class="flex items-center justify-center gap-3 mb-3 lg:mb-2")
           button(class="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-700 disabled:text-slate-500 text-white font-bold rounded-lg transition-all duration-200 disabled:cursor-not-allowed"
             @click="handleWeekChange('prev')"
             :disabled="selectedWeek === 1"
@@ -43,7 +43,7 @@
           ) Refresh Now
 
     //- Spacer for fixed nav (consistent height to prevent scroll jumps)
-    div(style="height: 156px")
+    div(class="h-[156px] lg:h-[136px]")
 
     //- Week Matchups
     .mb-12
@@ -54,8 +54,8 @@
           | Week {{ selectedWeek }}
 
       //- Matchups Grid
-      .bg-slate-900.rounded-b-lg.p-6(v-if="allMatchups[selectedWeek]")
-        .space-y-4
+      .bg-slate-900.rounded-b-lg(class="p-6 lg:p-4" v-if="allMatchups[selectedWeek]")
+        div(class="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-3")
           div(
             v-for="(matchup, index) in allMatchups[selectedWeek]"
             :key="index"
@@ -63,7 +63,7 @@
             class="bg-slate-800 rounded-lg overflow-hidden hover:bg-slate-750 transition-all duration-200 cursor-pointer border-2 border-slate-700 hover:border-blue-500"
             :class="{ 'matchup-highlight': matchup.length === 2 && isMatchupAnimating(selectedWeek, matchup[0].matchup_id) }"
           )
-            div(class="p-4" v-if="matchup.length === 2")
+            div(class="p-4 lg:p-3" v-if="matchup.length === 2")
               //- Mobile Layout (stacked)
               div(class="flex flex-col gap-2 md:hidden")
                 //- Team 1 (Mobile)
@@ -195,7 +195,7 @@
                     )
 
               //- Point Margin Bar Chart
-              .mt-4.pt-4.border-t.border-slate-700(v-if="(matchup[0].points || 0) !== (matchup[1].points || 0)")
+              div(class="mt-4 pt-4 lg:mt-2 lg:pt-2 border-t border-slate-700" v-if="(matchup[0].points || 0) !== (matchup[1].points || 0)")
                 .relative.h-8.flex.items-center
                   //- Center Line
                   div(class="absolute left-1/2 transform -translate-x-1/2 w-0.5 h-full bg-slate-600 z-0")
@@ -228,7 +228,7 @@
               )
 
               //- View Tokens Button
-              .mt-3.pt-3.border-t.border-slate-700.flex.justify-end
+              div(class="mt-3 pt-3 lg:mt-2 lg:pt-2 border-t border-slate-700 flex justify-end")
                 router-link(
                   :to="`/matchup/${selectedWeek}/${matchup[0].matchup_id}#tokens`"
                   @click.stop
