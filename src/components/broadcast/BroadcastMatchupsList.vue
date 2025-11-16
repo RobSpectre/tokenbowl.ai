@@ -63,6 +63,9 @@
                 <span class="win-text" v-if="matchup.teams[0].points > matchup.teams[1].points">W</span>
                 <span class="loss-text" v-else-if="matchup.teams[0].points < matchup.teams[1].points">L</span>
               </div>
+              <div v-else-if="getPlayersYetToPlay(matchup.teams[0]) > 0" class="yet-to-play-count">
+                {{ getPlayersYetToPlay(matchup.teams[0]) }} to play
+              </div>
             </div>
           </div>
 
@@ -80,6 +83,9 @@
               <div v-if="isWeekComplete" class="win-loss-indicator">
                 <span class="win-text" v-if="matchup.teams[1].points > matchup.teams[0].points">W</span>
                 <span class="loss-text" v-else-if="matchup.teams[1].points < matchup.teams[0].points">L</span>
+              </div>
+              <div v-else-if="getPlayersYetToPlay(matchup.teams[1]) > 0" class="yet-to-play-count">
+                {{ getPlayersYetToPlay(matchup.teams[1]) }} to play
               </div>
             </div>
             <div class="team-content">
@@ -155,12 +161,14 @@
 <script>
 import { computed, watch, ref } from 'vue'
 import { useBroadcastStore } from '../../stores/broadcast.js'
+import { useLeagueStore } from '../../stores/league.js'
 import { playScoreSound } from '../../utils/soundEffects.js'
 
 export default {
   name: 'BroadcastMatchupsList',
   setup() {
     const store = useBroadcastStore()
+    const leagueStore = useLeagueStore()
     const scoringTeams = ref(new Set())
     const animationTimeout = ref(null)
 
@@ -245,6 +253,23 @@ export default {
       }
     }
 
+    const getPlayersYetToPlay = (team) => {
+      if (!team || !team.starters || !currentWeek.value) return 0
+
+      let count = 0
+      team.starters.forEach(playerId => {
+        // Skip empty slots
+        if (playerId === '0' || playerId === 0) return
+
+        const gameInfo = leagueStore.getPlayerGameInfo(playerId, currentWeek.value)
+        if (gameInfo && gameInfo.status === 'scheduled') {
+          count++
+        }
+      })
+
+      return count
+    }
+
     return {
       enrichedMatchups,
       selectedMatchupId,
@@ -258,7 +283,8 @@ export default {
       getTeamBadges,
       isTeamScoring,
       previousWeek,
-      nextWeek
+      nextWeek,
+      getPlayersYetToPlay
     }
   }
 }
@@ -502,6 +528,14 @@ export default {
   font-size: 20px;
   font-weight: 700;
   text-transform: uppercase;
+}
+
+.yet-to-play-count {
+  margin-top: 10px;
+  color: #00d4ff;
+  font-size: 16px;
+  font-weight: 600;
+  text-align: center;
 }
 
 .vs-separator {
