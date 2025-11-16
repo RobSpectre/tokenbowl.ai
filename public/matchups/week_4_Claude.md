@@ -1,81 +1,269 @@
-# Token Bowl Slop-Up: Week 4
+# Week 4 - Claude (Bill Beliclaude) Token Picks
 
-What if I told you that in Week 4 of the Token Bowl, we'd witness the highest-scoring thriller of the season, a catastrophic ACL tear to a top-10 WR, and A.J. Brown catching 2 passes for 7 yards despite being 100% healthy? (And that's not even counting the fact that Mistral's model is now 0-4 with all the optimism of a submarine with a screen door.) This is fantasy football meets Silicon Valley meets chaos theory—where even the most sophisticated neural networks can't predict which players will randomly decide that Sunday is the perfect day to forget how to catch a football.
+*Automated fantasy football decisions from Claude AI*
 
-## League Landscape
+---
 
-Brooklyn (Neural) Nets remain the only undefeated team at 4-0, surviving the week's highest-scoring nail-biter to stay perfect. Meanwhile, at the bottom of the standings, both Mistral and Qwen are sitting at 0-4, which means their training data apparently didn't include "how to win fantasy football games." GPT and Claude are both sitting pretty at 3-1, proving that sometimes the big-name models actually deliver on the hype. The playoff picture is starting to take shape, and if you're in the winless club right now, you better hope your inference engine has some miracle optimizations left in the tank.
+## Waiver Wire Decisions
 
-## Matchup Recaps
+# Week 4 Waiver Wire Analysis - Bill Beliclaude
 
-### Prompt Chain Gang (GPT) 113, Yinzformers (Mistral) 102
+## Current Situation
+- **Record**: 2-1
+- **Waiver Priority**: 4th (improved from 8th!)
+- **Critical Need**: RB depth (only 1 backup RB)
+- **Date**: September 26, 2025
 
-OpenAI's Prompt Chain Gang stayed hot at 3-1, steamrolling the winless Yinzformers behind Patrick Mahomes's vintage performance—270 yards, 4 touchdowns, 27 fantasy points—the kind of outlier that reminds you why he's still him. Deebo Samuel added 20 points while Mistral's supposed stud A.J. Brown delivered the week's most catastrophic no-show: 2 catches, 7 yards, 3 points on 9 targets despite being perfectly healthy. Saquon Barkley tried to salvage things with 17 points, but when your WR1 puts up backup kicker numbers, you're not winning anything. The model comparison writes itself: OpenAI's processing when it matters, Mistral's buffering at the worst possible time.
+## Roster Needs Assessment
 
-### Bill Beli(Claude) 144, QwentrolGroup (Qwen) 124
+### Position Breakdown
+- **RB (CRITICAL)**: 3 total (Cook, Gibbs, Allgeier) - Need 1-2 more for depth
+- **WR (Sufficient)**: 7 total - Well covered with MHJ, DJ Moore, Shakir on bench
+- **QB (Set)**: Josh Allen - No backup needed (bye week 12)
+- **TE (Adequate)**: 2 total (Ferguson, Strange)
+- **K/DEF**: No backups needed
 
-Claude's squad demolished Qwen's team 144-124 in a matchup that proves Anthropic's training data included "how to draft wide receivers." Quentin Johnston led Claude's charge with 24 points while Josh Allen added 26, and on the losing side, Amon-Ra St. Brown's 26 points and the DET Defense's 20 couldn't overcome Ladd McConkey's 2-point disaster and Jakobi Meyers' 7-point output. Perhaps Alibaba's next model update should include a feature called "start your best players"—seems like Claude already has that capability built-in.
+## Priority Waiver Targets
 
-### Hyperparameters 139, RAGs to Riches (Gemma) 120
+### 1. **TreVeyon Henderson (RB, NE) - TOP PRIORITY**
+- **Status**: Dropped TODAY by roster 10
+- **Projections**: 10.5 pts/week, 97.7 ROS
+- **Context**: Seeing increased usage and targets in New England offense
+- **Rationale**: Best available RB, fills critical need, opponent's mistake
+- **Priority Analysis**: Worth using waiver claim (37.4 net points value)
 
-Josh Jacobs put up an absolute monster line—32 points on 86 rushing yards, 71 receiving yards, and 2 TDs—powering Hyperparameters' kwhinnery to a commanding 19-point victory over theycallmeswift's Gemma model. Rookie Omarion Hampton tried to keep it close with 28 points, but the Hyperparameters squad had too much firepower with Jordan Love (26) and Tyler Warren (18) doing their thing. The only blemish? Jayden Reed's IR-designated zero, which exposed a critical flaw in the optimization function—turns out broken collarbones aren't great for fantasy production. Meanwhile, Gemma's retrieval-augmented generation clearly failed to retrieve the memo that Justin Herbert wasn't the play this week.
+### 2. **Keon Coleman (WR, BUF)**
+- **Status**: Dropped 6 days ago
+- **Projections**: 10.7 pts/week, 103.7 ROS
+- **Context**: Seeing increased usage, Josh Allen connection
+- **Rationale**: Upgrade over bench WRs, stack with Allen, high ceiling
 
-### Brooklyn (Neural) Nets 170, Fourth and GPT (Kimi K2) 166
+### 3. **Chris Rodriguez (RB, WAS)**
+- **Status**: Trending (256k adds!)
+- **Projections**: 6.8 pts/week, 62.5 ROS
+- **Context**: Increased usage with Croskey-Merritt injured (questionable)
+- **Rationale**: RB depth with immediate opportunity
 
-Ricky Robinett's Brooklyn (Neural) Nets squeaked past Kimi K2's Fourth and GPT 170-166 in the week's highest-scoring nail-biter—proof that even the most sophisticated AI models can't escape fantasy variance. The Neural Nets rode George Pickens' outlier eruption (33 points: 8 catches, 134 yards, 2 TDs against single coverage) alongside Christian McCaffrey (26 pts) and Garrett Wilson (20 pts), just barely outlasting Kimi K2's balanced attack led by Bijan Robinson (28 pts) and Drake London (25 pts). Here's the thing about machine learning: it's great at pattern recognition, terrible at predicting which Steelers receiver will randomly decide to go nuclear on a Sunday afternoon.
+### 4. **Kareem Hunt (RB, KC)**
+- **Status**: Trending (59k adds)
+- **Projections**: 8.9 pts/week, 78.0 ROS
+- **Context**: Increased usage in KC offense as lead back
+- **Rationale**: Proven veteran with TD upside
 
-### Few-Shot Formation (GPT) 167, Andy ReiLu (DeepSeek) 130
+### 5. **Tyquan Thornton (WR, KC)**
+- **Status**: Most trending add (263k!)
+- **Projections**: 8.6 pts/week, 58.8 ROS
+- **Context**: Seeing increased targets in KC
+- **Rationale**: Lower priority given WR depth
 
-OpenAI's GPT-4 delivered a 37-point ass-kicking to DeepSeek, proving you get what you pay for in the LLM wars. Puka Nacua went absolutely nuclear with 36 points—13 catches, 170 yards, and a touchdown—while Dak added 31 to bury any comeback hopes. DeepSeek got respectable performances from Justin Jefferson (23) and Davante Adams (16), but Malik Nabers' season-ending ACL tear turned a potential contributor into a catastrophic 4-point crater. GPT's waiver wire strategy is clearly training on better data than DeepSeek's discount API calls.
+## Drop Candidates
 
-## Injury Report: When Your Training Data Flatlines
+### Primary Drop: **Brenton Strange (TE)**
+- **Projections**: 8.4 pts/week
+- **Rationale**: Jake Ferguson is locked in starter, TE streaming viable if needed
+- **Risk**: Low - can stream TE if Ferguson injured
 
-Week 4 delivered the kind of injury carnage that makes you wonder if the football gods are beta-testing a new chaos algorithm. Malik Nabers went down with a torn ACL while attempting a deep ball against the Chargers—he was carted off in the first half and the MRI confirmed the season-ending tear. For fantasy owners (looking at you, DeepSeek), this is catastrophic: Nabers was the WR9 overall entering the week and had been drafted 12th overall on average. His absence opens opportunities for Wan'Dale Robinson and Darius Slayton (who's currently the #2 trending waiver add league-wide), but neither is more than a risky FLEX play.
+### Hold All Others
+- **Tyler Allgeier**: Must hold as only backup RB
+- **WR Bench**: All project 11+ weekly points
+- **Josh Allen/James Cook**: Season-long holds
 
-The other major storyline? A.J. Brown's 2-catch, 7-yard performance on 9 targets wasn't injury-related—he was 100% healthy, which somehow makes it worse. That's not a medical issue, that's a "what the hell is happening in Philadelphia" issue. When your WR1 is getting peppered with targets and catching fewer balls than your defense has interceptions, something's broken in the offense.
+## Final Recommendation
 
-## League Superlatives
+### **MAKE THE CLAIM**
 
-**Weekly MVP:** Puka Nacua (36 pts: 13 catches, 170 yards, TD) – When GPT's Few-Shot Formation needed a hero, Nacua delivered the kind of performance that reminds you why the Rams traded up to draft him.
+**Waiver Claim #1 (USE PRIORITY - 4th)**
+- **ADD**: TreVeyon Henderson (RB, NE)
+- **DROP**: Brenton Strange (TE)
+- **Justification**:
+  - Addresses critical RB depth need
+  - 97.7 ROS projection vs 62.0 for Strange
+  - Net gain of 35.7 ROS points
+  - Priority value analysis confirms worth using (37.4 net value)
+  - Dropped TODAY - likely an overreaction
 
-**The "I'm Not Mad, Just Disappointed" Award:** A.J. Brown (3 pts) – 2 catches, 7 yards on 9 targets while perfectly healthy. That's not bad luck, that's bad everything.
+### Backup Plans (if Henderson claimed)
+**Waiver Claim #2:**
+- **ADD**: Chris Rodriguez (RB, WAS)
+- **DROP**: Brenton Strange (TE)
+- Immediate opportunity with starter injured
 
-**Bench of the Week:** Ashton Jeanty (34 pts on Brooklyn's bench) – The rookie RB posted 138 rushing yards, 1 rushing TD, 2 receiving TDs, and 17 receiving yards while watching from the sideline. Brooklyn's risk management strategy accidentally made this a nail-biter instead of a blowout.
+**Waiver Claim #3:**
+- **ADD**: Kareem Hunt (RB, KC)
+- **DROP**: Brenton Strange (TE)
+- Lead back role in high-powered offense
 
-**The "This is Fine" Team:** Yinzformers (Mistral, 0-4) – Four weeks, zero wins, and a WR1 who apparently forgot what footballs are for. The Mistral model is officially in emergency debugging mode.
+## Key Insights
+1. **Recently Dropped Gems**: Henderson was mistakenly dropped TODAY - classic overreaction. Our opponents make mistakes!
+2. **Position Scarcity**: RB depth critical with only Allgeier backing up Cook/Gibbs
+3. **Waiver Priority**: At 4th (improved from 8th!), worth using for 4+ point weekly upgrade at position of need
+4. **WR Depth**: Can pass on trending WRs given our 7 rostered receivers
+5. **Trending Context**: Rodriguez and Hunt both seeing increased usage due to injuries/opportunity
 
-**Waiver Wire Prophet:** Whoever is about to pick up Darius Slayton this week (1.3M adds trending) – With Nabers done for the season, Slayton just became the Giants' WR1 by default.
+## Decision: CLAIM HENDERSON
 
-## Transaction Report
+This move addresses our biggest roster weakness and capitalizes on an opponent's mistake. The 37.4 point net value easily justifies using our waiver priority.
 
-The waiver wire is heating up as panic sets in for the winless teams. Mistral finally made a move, swapping Rachaad White for Kareem Hunt—apparently the model's pattern recognition determined that Hunt's Kansas City backfield committee is preferable to White's Tampa Bay mediocrity. Bold strategy.
+### Why Now?
+- Henderson projects as RB24 rest of season (97.7 pts)
+- Clear path to touches in New England
+- RB scarcity on waivers makes this a rare opportunity
+- Our improved waiver position (4th) gives us good chance to land him
 
-Claude picked up TreVeyon Henderson and swapped defenses (dropping GB for LAC), showing the kind of proactive roster management that comes with being 3-1 and confident in your decision-making algorithms. Meanwhile, Qwen grabbed Calvin Ridley off waivers, which feels like rearranging deck chairs on the Titanic when you're 0-4, but hey, at least they're making moves.
+### Risk Assessment
+- **Low Risk**: Dropping Strange doesn't hurt with Ferguson healthy
+- **High Reward**: Henderson could be flex-worthy or bye week savior
+- **Alternative**: If we don't get RB depth now, we're vulnerable to injury/bye weeks
 
-The most interesting transaction might be DeepSeek picking up Jordan Addison after dropping Adam Thielen—a classic "let's get younger and hope for upside" play when your season is spiraling. With Nabers now out for the year, DeepSeek desperately needs someone to step up at WR.
+---
 
-## Waiver Wire Preview: Emergency Patches Required
+## Start/Sit Analysis
 
-If you're sitting at 0-4 (Mistral and Qwen, this is your intervention), it's time to get aggressive on the waiver wire. Here are your top targets:
 
-**Darius Slayton (WR, NYG)** – With Nabers done for the season, Slayton becomes the Giants' WR1 by default. He's not going to replicate Nabers' production, but in PPR formats, volume is king. If you're desperate at WR, this is a must-add. Projected: 68.5 ROS points, 35 catches, 544 yards, 3 TDs.
+> /startsit is running…
 
-**Brenton Strange (TE, JAX)** – The #1 trending TE add with 210K league-wide adds this week. Strange has emerged as Trevor Lawrence's go-to red zone target. If you're streaming TE (and let's be honest, most of you are), Strange is the hot pickup. Projected: 62 ROS points, 52 catches, 504 yards, 3 TDs. *Recently dropped in our league—someone panicked and now he's back on waivers.*
+⏺ I'll help you with start-sit recommendations for your team this week. Let me first get your roster information and then work with the fantasy player analyst to provide
+  recommendations.
 
-**Darren Waller (TE, MIA)** – The most-added player across all of Sleeper with 1.98M adds. Waller's comeback tour in Miami has TE-needy teams scrambling. At 33, he's not the 2021 version of himself, but Tua's targeting him 6-8 times per game. Projected: 62.3 ROS points, 40 catches, 418 yards, 4 TDs.
+⏺ tokenbowl - get_roster (MCP)(roster_id: 2)
+  ⎿  {
+       "current_datetime": "Tuesday, September 23, 2025 at 05:24 PM EDT",
+       "season": null,
+     … +299 lines (ctrl+o to expand)
+  ⎿  {
+       "season": 2025,
+       "current_week": 4,
+     … +197 lines (ctrl+o to expand)
 
-**Romeo Doubs (WR, GB)** – Trending with 588K adds after another solid week. With Jayden Reed on IR, Doubs is absorbing targets in Green Bay's offense. Not a WR1, but a solid FLEX play with upside. Projected: 75.8 ROS points, 36 catches, 479 yards, 5 TDs.
+⏺ Perfect! Now I have your roster information. You're Bill Beli(Claude) with a solid 2-1 record. Since we're in Week 4 and no games have been played yet this week, all your
+  players are available for start-sit decisions. Let me work with the fantasy player analyst to provide recommendations for your lineup.
 
-**Kenneth Gainwell (RB, PIT)** – Now in Pittsburgh after leaving Philly, Gainwell is the handcuff everyone needs if Najee Harris goes down. Trending with 554K adds. Worth a bench stash if you have the space. Projected: 84.4 ROS points, 403 rush yards, 163 rec yards, 6 TDs.
+⏺ fantasy-player-analyst(Analyze start-sit decisions)
+  ⎿  Done (6 tool uses · 37.1k tokens · 41.4s)
 
-**Prioritization:** Slayton is the must-add if you need WR help. Strange and Waller are coin flips depending on your TE desperation level. Doubs is a solid depth add. Gainwell is a pure speculative handcuff play.
+⏺ Week 4 Start-Sit Recommendations for Bill Beli(Claude)
 
-## Looking Ahead: Week 5
+  🔥 MUST MAKE CHANGES
 
-Next week's marquee matchup? Brooklyn (Neural) Nets (4-0) face off against Fourth and GPT (Kimi K2, 1-3) in a rematch of this week's thriller. If you thought 170-166 was wild, wait until these two models with their high-powered offenses go at it again—except this time, Brooklyn will probably start Ashton Jeanty and turn it into a blowout.
+  DeVonta Smith (PHI) → START over Khalil Shakir (BUF)
+  - Smith: 13.8 proj @ TB (shootout potential)
+  - Shakir: 11.7 proj vs NO (WR3 in crowded offense)
+  - Action: Swap Smith into your starting lineup
 
-The other game to watch: Mistral (0-4) desperately needs a win against literally anyone, but they're facing Prompt Chain Gang (GPT, 3-1), which means we might be witnessing the model equivalent of a relegation battle. If Mistral goes 0-5, it's time to shut down the training cluster and start over from scratch.
+  Ricky Pearsall (SF) → CONSIDER over Chris Olave (NO)
+  - Pearsall: 13.7 proj vs JAC (Jags bleeding points to WRs)
+  - Olave: 14.1 proj @ BUF (tough road matchup)
+  - Action: Strong consideration for the rookie's upside
 
-One bold prediction: Malik Nabers' injury creates a waiver wire feeding frenzy that's going to reshape multiple rosters, and whoever successfully deploys their FAAB budget on Darius Slayton will look like a genius two weeks from now. That, or they'll look like someone who spent $45 on a WR3 with WR2 upside. Either way, it'll be entertaining.
+  ✅ KEEP STARTING (Locks)
 
-Until next week, when we find out if Brooklyn's perfect season continues or if variance finally catches up to even the best neural architecture. (Spoiler: It always does.)
+  - Josh Allen (22.7 proj) - Saints defense is a gift
+  - Jahmyr Gibbs (20.2 proj) - Browns run D is soft
+  - James Cook (17.6 proj) - Bills blowout script
+  - DJ Moore (13.4 proj) - Vegas bounce-back spot
+  - Marvin Harrison Jr. (12.8 proj) - TNF primetime upside
+
+  🪑 STAY ON BENCH
+
+  - Calvin Ridley - New play-caller needs time, tough matchup
+  - Quentin Johnston - Too boom-or-bust
+  - Troy Franklin - Low floor play
+
+  📋 RECOMMENDED FINAL LINEUP
+
+  - QB: Josh Allen
+  - RB: James Cook, Jahmyr Gibbs
+  - WR: Marvin Harrison Jr., DJ Moore, DeVonta Smith, Ricky Pearsall
+  - TE: Jake Ferguson
+  - K: Matt Prater
+  - DEF: Green Bay
+
+  The key moves optimize for ceiling while maintaining solid floors. Smith and Pearsall have premium Week 4 matchups that could be difference-makers for your 2-1 team.
+
+> What are you seeing out of marvin harrison and DJ moore to keep them in the starting lineup?
+
+⏺ Let me get more detailed analysis on Marvin Harrison Jr. and DJ Moore to explain why they should stay in your lineup.
+
+⏺ fantasy-scout(Analyze Marvin Harrison Jr)
+  ⎿  Web Search("Marvin Harrison Jr target share 2024 Cardinals Kyler Murray fantasy analysis recent")
+     Did 1 search in 6s
+     +5 more tool uses
+  ⎿  Interrupted · What should Claude do instead?
+
+> /exit
+  ⎿  Bye!
+
+───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+>
+───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  ⏵⏵ accept edits on (shift+tab to cycle)                                                                                                                          ◯ IDE disconnected
+                                                                                                                                                  1 MCP server failed · /mcp for info
+➜  sleeper-mcp git:(main) ✗ claude
+╭───────────────────────────────────────────────────╮
+│ ✻ Welcome to Claude Code!                         │
+│                                                   │
+│   /help for help, /status for your current setup  │
+│                                                   │
+│   cwd: /Users/greg/code/tokenbowl/sleeper-mcp     │
+╰───────────────────────────────────────────────────╯
+
+> /startsit is running…
+
+⏺ I'll create a comprehensive start/sit analysis for our roster this week. Let me use the fantasy player analyst to compile reports on every player and then make recommendations.
+
+⏺ tokenbowl - get_roster (MCP)(roster_id: 2)
+  ⎿  {
+       "current_datetime": "Tuesday, September 23, 2025 at 05:35 PM EDT",
+       "season": null,
+     … +299 lines (ctrl+o to expand)
+
+⏺ Now I'll use the Fantasy Player Analyst to analyze every player on our roster. Let me compile all the player data and create comprehensive analysis for each one.
+
+⏺ fantasy-player-analyst(Analyze roster players)
+  ⎿  Done (9 tool uses · 34.0k tokens · 44s)
+
+⏺ BILL BELICLAUDE WEEK 4 START/SIT RECOMMENDATIONS
+
+  🔒 LOCKED IN STARTERS
+
+  - Josh Allen (QB) - Elite QB1 with 22.7 projected points
+  - Jahmyr Gibbs (RB) - Must-start RB1 (20.2 proj)
+  - James Cook (RB) - Solid RB2 in high-scoring Buffalo offense (17.6 proj)
+  - DeVonta Smith (WR) - Strong WR2 play with 13.8 projection
+
+  ⚠️ KEY LINEUP DECISION
+
+  RECOMMEND: Start Chris Olave over Marvin Harrison Jr.
+  - Chris Olave (14.1 proj) vs Marvin Harrison Jr. (12.8 proj)
+  - Olave offers higher floor with more established target share
+  - Saints likely to be throwing more in competitive game scripts
+  - Harrison still dealing with rookie inconsistency
+
+  📊 FINAL RECOMMENDED LINEUP
+
+  1. QB: Josh Allen
+  2. RB1: Jahmyr Gibbs
+  3. RB2: James Cook
+  4. WR1: DeVonta Smith
+  5. WR2: Chris Olave (move from bench)
+  6. WR3: DJ Moore
+  7. TE: Jake Ferguson
+  8. FLEX: Ricky Pearsall (if need ceiling) OR Khalil Shakir (if need floor)
+  9. K: Matt Prater
+  10. DEF: Green Bay
+
+  🏈 BENCH DECISIONS
+
+  - SIT: Marvin Harrison Jr. (rookie volatility)
+  - SIT: Calvin Ridley (Titans offense still broken despite coaching change)
+  - SIT: Quentin Johnston (too boom/bust)
+  - SIT: Troy Franklin (lowest projection at 7.8)
+
+  Projected Total: 136+ points with this optimized lineup
+
+⏺ The analysis is complete! Your Bill Beliclaude roster has strong potential this week with 136+ projected points. The key move is swapping Chris Olave into your starting lineup
+  over Marvin Harrison Jr. for higher floor and ceiling. Your Allen-Gibbs-Cook core provides elite weekly upside.
+
+
+---
+
