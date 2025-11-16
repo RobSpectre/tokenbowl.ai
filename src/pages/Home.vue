@@ -220,6 +220,13 @@
                   div(v-else class="absolute left-1/2 transform -translate-x-1/2 bg-yellow-500 rounded px-3 py-1")
                     span.text-white.text-xs.font-bold TIE
 
+              //- Win Probability
+              WinProbabilityBar(
+                v-if="matchupWinProbabilities[matchup[0].matchup_id]"
+                :winProb="matchupWinProbabilities[matchup[0].matchup_id]"
+                :showDetails="false"
+              )
+
               //- View Tokens Button
               .mt-3.pt-3.border-t.border-slate-700.flex.justify-end
                 router-link(
@@ -609,9 +616,14 @@ import { useLeagueStore } from '../stores/league.js'
 import { getTeamInfo } from '../teamMappings.js'
 import * as echarts from 'echarts'
 import { trackButtonClick } from '../analytics.js'
+import WinProbabilityBar from '../components/WinProbabilityBar.vue'
+import { calculateWinProbability, getPlayerProjectionAndVariance } from '../utils/winProbability.js'
 
 export default {
   name: 'Home',
+  components: {
+    WinProbabilityBar
+  },
   setup() {
     const router = useRouter()
     const leagueStore = useLeagueStore()
@@ -641,6 +653,9 @@ export default {
     const animatingScores = ref(new Set())
     const previousScores = ref({})
     const animatingMatchups = ref(new Set())
+
+    // Win probability tracking
+    const matchupWinProbabilities = ref({})
 
     // Computed properties from store
     const leagueData = computed(() => ({
@@ -750,12 +765,112 @@ export default {
           renderModelInjuriesChart()
         }
 
+        // Calculate win probabilities for matchups
+        calculateMatchupWinProbabilities()
+
         lastUpdated.value = new Date()
       } catch (err) {
         console.error('[Home] Error in loadData:', err)
         loadingStandings.value = false
         loadingVideos.value = false
       }
+    }
+
+    // Calculate win probabilities for all matchups in the selected week
+    const calculateMatchupWinProbabilities = () => {
+      const weekMatchups = allMatchups.value[selectedWeek.value]
+      if (!weekMatchups || !players.value) {
+        return
+      }
+
+      const newProbabilities = {}
+
+      weekMatchups.forEach((matchup) => {
+        if (matchup.length !== 2) return
+
+        try {
+          const [team1Data, team2Data] = matchup
+          const matchupId = team1Data.matchup_id
+
+          // Convert team data to player arrays
+          const team1Players = convertTeamToPlayerData(team1Data, players.value, enrichedPlayers.value)
+          const team2Players = convertTeamToPlayerData(team2Data, players.value, enrichedPlayers.value)
+
+          // Run Monte Carlo simulation (3000 for performance)
+          const result = calculateWinProbability(team1Players, team2Players, 3000)
+
+          newProbabilities[matchupId] = {
+            ...result,
+            team1: {
+              rosterId: team1Data.roster_id,
+              currentPoints: team1Data.points || 0,
+              playerCount: team1Players.length
+            },
+            team2: {
+              rosterId: team2Data.roster_id,
+              currentPoints: team2Data.points || 0,
+              playerCount: team2Players.length
+            }
+          }
+        } catch (error) {
+          console.error(`Error calculating win probability for matchup ${matchup[0]?.matchup_id}:`, error)
+        }
+      })
+
+      matchupWinProbabilities.value = newProbabilities
+    }
+
+    // Convert team data from Sleeper to player data for simulation
+    const convertTeamToPlayerData = (teamData, playersData, enrichedPlayersData) => {
+      const starters = teamData.starters || []
+      const playerPoints = teamData.players_points || {}
+
+      return starters
+        .filter(playerId => playerId) // Filter out null/undefined
+        .map(playerId => {
+          const player = playersData?.[playerId] || enrichedPlayersData?.[playerId]
+          const currentPoints = playerPoints[playerId] || 0
+
+          // Get projection and variance
+          const { projection, variance } = getPlayerProjectionAndVariance(
+            playerId,
+            player?.seasonStats,
+            player?.position || 'FLEX'
+          )
+
+          // Determine game status (simplified)
+          const gameStatus = getSimplifiedGameStatus(currentPoints, projection)
+
+          return {
+            playerId,
+            currentPoints,
+            projection,
+            variance,
+            gameStatus: gameStatus.status,
+            percentComplete: gameStatus.percentComplete
+          }
+        })
+    }
+
+    // Get simplified game status based on current points
+    const getSimplifiedGameStatus = (currentPoints, projection) => {
+      if (currentPoints === 0) {
+        return { status: 'scheduled', percentComplete: 0 }
+      }
+
+      // If current points >= 90% of projection, likely finished
+      if (projection > 0 && currentPoints >= projection * 0.9) {
+        return { status: 'final', percentComplete: 1.0 }
+      }
+
+      // Estimate progress based on current points vs projection
+      if (projection > 0) {
+        const percentComplete = Math.min(0.9, currentPoints / projection)
+        return { status: 'in_progress', percentComplete }
+      }
+
+      // Default to in progress at 50%
+      return { status: 'in_progress', percentComplete: 0.5 }
     }
 
     // Re-render charts (used for auto-refresh and manual refresh button)
@@ -786,6 +901,9 @@ export default {
           renderInjuriesChart()
           renderModelInjuriesChart()
         }
+
+        // Recalculate win probabilities
+        calculateMatchupWinProbabilities()
       } catch (err) {
         console.error('[Refresh] Error during refresh:', err)
       }
@@ -1105,6 +1223,9 @@ export default {
 
         // Fetch transactions for the new week
         await leagueStore.fetchTransactionsForWeek(newWeek)
+
+        // Calculate win probabilities for the new week
+        calculateMatchupWinProbabilities()
 
         // Re-evaluate auto-refresh when week changes
         checkAutoRefreshStatus()
@@ -2272,6 +2393,7 @@ export default {
       loadingVideos,
       transactionStats,
       injuriesData,
+      matchupWinProbabilities,
       getTeamInfo,
       goToMatchupDetail,
       handleWeekChange,
