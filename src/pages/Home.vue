@@ -55,7 +55,7 @@
 
       //- Matchups Grid
       .bg-slate-900.rounded-b-lg(class="p-6 lg:p-4" v-if="allMatchups[selectedWeek]")
-        div(class="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-3")
+        div(class="grid grid-cols-1 gap-4 lg:gap-3")
           div(
             v-for="(matchup, index) in allMatchups[selectedWeek]"
             :key="index"
