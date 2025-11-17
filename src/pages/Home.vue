@@ -169,14 +169,13 @@
                   span(v-else-if="isWeekComplete(matchup) && matchup[0].points < matchup[1].points" class="text-red-400 text-sm font-bold") L
 
                 //- VS Separator with Point Differential (lg grid column only)
-                div(class="hidden lg:flex flex-col items-center gap-2")
+                div(class="hidden lg:flex flex-col items-center gap-1")
                   div(class="bg-slate-700 rounded px-2 py-1")
                     span(class="text-white font-black text-xs") VS
 
                   //- Point Differential (inline)
-                  div(v-if="(selectedWeek === leagueStore.currentWeek || isWeekComplete(matchup)) && (matchup[0].points || 0) !== (matchup[1].points || 0)" class="text-xs font-bold whitespace-nowrap")
-                    span(v-if="matchup[0].points > matchup[1].points" class="text-green-400") +{{ Math.abs((matchup[0].points || 0) - (matchup[1].points || 0)).toFixed(2) }}
-                    span(v-else-if="matchup[1].points > matchup[0].points" class="text-green-400") +{{ Math.abs((matchup[0].points || 0) - (matchup[1].points || 0)).toFixed(2) }}
+                  div(v-if="(selectedWeek === leagueStore.currentWeek || isWeekComplete(matchup)) && (matchup[0].points || 0) !== (matchup[1].points || 0)" class="text-xs font-bold whitespace-nowrap text-gray-400")
+                    | {{ Math.abs((matchup[0].points || 0) - (matchup[1].points || 0)).toFixed(2) }}
 
                 //- Team 2 Score (lg grid column only)
                 div(class="hidden lg:flex items-center gap-2")
