@@ -209,8 +209,8 @@
                   :class="getTeamInfo(matchup[1].roster?.user?.display_name).invertLogo ? 'invert brightness-200' : ''"
                 )
 
-              //- Point Differential Bar (shown for completed weeks)
-              div(v-if="isWeekComplete(matchup) && (matchup[0].points || 0) !== (matchup[1].points || 0)" class="mt-3 pt-3 border-t border-slate-700")
+              //- Point Differential Bar (shown for current week and completed weeks)
+              div(v-if="(selectedWeek === leagueStore.currentWeek || isWeekComplete(matchup)) && (matchup[0].points || 0) !== (matchup[1].points || 0)" class="mt-3 pt-3 border-t border-slate-700")
                 div(class="relative h-6 flex items-center")
                   //- Center Line
                   div(class="absolute left-1/2 transform -translate-x-1/2 w-0.5 h-full bg-slate-600 z-0")
