@@ -130,8 +130,8 @@
                       span.text-green-400.text-xs.font-bold.uppercase(v-if="matchup[1].points > matchup[0].points") W
                       span.text-red-400.text-xs.font-bold.uppercase(v-else-if="matchup[1].points < matchup[0].points") L
 
-              //- Desktop Layout (single horizontal line on lg screens)
-              div(class="hidden md:flex md:flex-col md:gap-2 lg:grid lg:grid-cols-[48px_minmax(200px,1fr)_auto_auto_auto_minmax(200px,1fr)_48px] lg:items-center lg:gap-4 lg:py-4 lg:px-6")
+              //- Desktop Layout (single horizontal line on lg screens, 2-row grid on lg)
+              div(class="hidden md:flex md:flex-col md:gap-2 lg:grid lg:grid-cols-[48px_minmax(200px,1fr)_auto_auto_auto_minmax(200px,1fr)_48px] lg:grid-rows-[auto_auto] lg:gap-x-4 lg:gap-y-3 lg:py-4 lg:px-6")
                 //- Team 1 Logo (hidden on md, shown on lg in grid)
                 img(class="hidden lg:block h-12 w-12 object-contain"
                   :src="getTeamInfo(matchup[0].roster?.user?.display_name).logo"
@@ -168,32 +168,10 @@
                   span(v-if="isWeekComplete(matchup) && matchup[0].points > matchup[1].points" class="text-green-400 text-sm font-bold") W
                   span(v-else-if="isWeekComplete(matchup) && matchup[0].points < matchup[1].points" class="text-red-400 text-sm font-bold") L
 
-                //- VS Separator with Point Differential (lg grid column only)
-                div(class="hidden lg:flex flex-col items-center gap-2 w-24")
-                  div(class="bg-slate-700 rounded px-2 py-1")
-                    span(class="text-white font-black text-xs") VS
-
-                  //- Point Differential Bar (compact inline version)
-                  div(v-if="(selectedWeek === leagueStore.currentWeek || isWeekComplete(matchup)) && (matchup[0].points || 0) !== (matchup[1].points || 0)" class="w-full")
-                    div(class="relative h-4 flex items-center")
-                      //- Center Line
-                      div(class="absolute left-1/2 transform -translate-x-1/2 w-px h-full bg-slate-600 z-0")
-
-                      //- Bar pointing toward winner (team 0 on left)
-                      div(
-                        v-if="matchup[0].points > matchup[1].points"
-                        class="absolute right-1/2 h-3 bg-gradient-to-l from-green-500 to-green-600 rounded-l flex items-center justify-start pl-1"
-                        :style="{ width: `${Math.min(((matchup[0].points - matchup[1].points) / 70) * 45, 45)}%` }"
-                      )
-                        span(class="text-white text-[9px] font-bold leading-none") {{ Math.abs((matchup[0].points || 0) - (matchup[1].points || 0)).toFixed(1) }}
-
-                      //- Bar pointing toward winner (team 1 on right)
-                      div(
-                        v-else-if="matchup[1].points > matchup[0].points"
-                        class="absolute left-1/2 h-3 bg-gradient-to-r from-green-500 to-green-600 rounded-r flex items-center justify-end pr-1"
-                        :style="{ width: `${Math.min(((matchup[1].points - matchup[0].points) / 70) * 45, 45)}%` }"
-                      )
-                        span(class="text-white text-[9px] font-bold leading-none") {{ Math.abs((matchup[0].points || 0) - (matchup[1].points || 0)).toFixed(1) }}
+                //- VS Separator (lg grid column only)
+                div(class="hidden lg:flex items-center justify-center")
+                  div(class="bg-slate-700 rounded px-3 py-1")
+                    span(class="text-white font-black text-sm") VS
 
                 //- Team 2 Score (lg grid column only)
                 div(class="hidden lg:flex items-center gap-2")
@@ -231,7 +209,29 @@
                   :class="getTeamInfo(matchup[1].roster?.user?.display_name).invertLogo ? 'invert brightness-200' : ''"
                 )
 
-              //- Point Differential Bar (shown on md only, integrated into VS on lg)
+                //- Point Differential Bar (Row 2 - spans columns 2-6 on lg)
+                div(v-if="(selectedWeek === leagueStore.currentWeek || isWeekComplete(matchup)) && (matchup[0].points || 0) !== (matchup[1].points || 0)" class="hidden lg:block lg:col-start-2 lg:col-end-7")
+                  div(class="relative h-8 flex items-center bg-slate-800/50 rounded-lg px-4")
+                    //- Center Line
+                    div(class="absolute left-1/2 transform -translate-x-1/2 w-0.5 h-full bg-slate-600 z-0")
+
+                    //- Bar pointing toward winner (team 0 on left)
+                    div(
+                      v-if="matchup[0].points > matchup[1].points"
+                      class="absolute right-1/2 h-6 bg-gradient-to-l from-green-500 to-green-600 rounded-l flex items-center justify-start pl-3"
+                      :style="{ width: `${Math.min(((matchup[0].points - matchup[1].points) / 70) * 48, 48)}%` }"
+                    )
+                      span(class="text-white text-sm font-bold") +{{ Math.abs((matchup[0].points || 0) - (matchup[1].points || 0)).toFixed(1) }}
+
+                    //- Bar pointing toward winner (team 1 on right)
+                    div(
+                      v-else-if="matchup[1].points > matchup[0].points"
+                      class="absolute left-1/2 h-6 bg-gradient-to-r from-green-500 to-green-600 rounded-r flex items-center justify-end pr-3"
+                      :style="{ width: `${Math.min(((matchup[1].points - matchup[0].points) / 70) * 48, 48)}%` }"
+                    )
+                      span(class="text-white text-sm font-bold") +{{ Math.abs((matchup[0].points || 0) - (matchup[1].points || 0)).toFixed(1) }}
+
+              //- Point Differential Bar (shown on md only, hidden on lg)
               div(v-if="(selectedWeek === leagueStore.currentWeek || isWeekComplete(matchup)) && (matchup[0].points || 0) !== (matchup[1].points || 0)" class="mt-3 pt-3 border-t border-slate-700 lg:hidden")
                 div(class="relative h-6 flex items-center")
                   //- Center Line
