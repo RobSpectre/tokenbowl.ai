@@ -158,8 +158,8 @@
                         class="text-white font-black text-3xl lg:text-xl transition-all duration-300"
                         :class="{ 'score-pulse': isScoreAnimating(selectedWeek, matchup[0].matchup_id, matchup[0].roster_id) }"
                       ) {{ matchup[0].points?.toFixed(2) || '0.00' }}
-                      span(v-if="isWeekComplete(matchup)" class="text-green-400 text-xs lg:text-[10px] font-bold uppercase ml-1" v-if="matchup[0].points > matchup[1].points") W
-                      span(v-if="isWeekComplete(matchup)" class="text-red-400 text-xs lg:text-[10px] font-bold uppercase ml-1" v-else-if="matchup[0].points < matchup[1].points") L
+                      span(v-if="isWeekComplete(matchup) && matchup[0].points > matchup[1].points" class="text-green-400 text-xs lg:text-[10px] font-bold uppercase ml-1") W
+                      span(v-else-if="isWeekComplete(matchup) && matchup[0].points < matchup[1].points" class="text-red-400 text-xs lg:text-[10px] font-bold uppercase ml-1") L
 
                   //- VS Separator (Desktop) - minimal
                   div(class="flex-shrink-0 px-2 lg:px-0.5")
@@ -169,8 +169,8 @@
                   //- Team 2 (Desktop) - horizontal layout
                   div(class="flex-1 flex items-center justify-between bg-slate-750 rounded-lg p-3 lg:py-2 lg:px-2.5")
                     div(class="flex items-center gap-1 lg:gap-0.5 flex-shrink-0")
-                      span(v-if="isWeekComplete(matchup)" class="text-green-400 text-xs lg:text-[10px] font-bold uppercase mr-1" v-if="matchup[1].points > matchup[0].points") W
-                      span(v-if="isWeekComplete(matchup)" class="text-red-400 text-xs lg:text-[10px] font-bold uppercase mr-1" v-else-if="matchup[1].points < matchup[0].points") L
+                      span(v-if="isWeekComplete(matchup) && matchup[1].points > matchup[0].points" class="text-green-400 text-xs lg:text-[10px] font-bold uppercase mr-1") W
+                      span(v-else-if="isWeekComplete(matchup) && matchup[1].points < matchup[0].points" class="text-red-400 text-xs lg:text-[10px] font-bold uppercase mr-1") L
                       div(
                         class="text-white font-black text-3xl lg:text-xl transition-all duration-300"
                         :class="{ 'score-pulse': isScoreAnimating(selectedWeek, matchup[1].matchup_id, matchup[1].roster_id) }"
