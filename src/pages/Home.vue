@@ -185,9 +185,9 @@
                     span(v-if="isWeekComplete(matchup) && matchup[1].points > matchup[0].points" class="text-green-400 text-sm font-bold") W
                     span(v-else-if="isWeekComplete(matchup) && matchup[1].points < matchup[0].points" class="text-red-400 text-sm font-bold") L
                     div(class="text-white font-black text-2xl") {{ matchup[1].points?.toFixed(2) || '0.00' }}
-                  div(class="flex-1 min-w-0")
+                  div(class="flex-1 min-w-0 lg:text-right")
                     div(class="text-white font-bold text-base") {{ getTeamInfo(matchup[1].roster?.user?.display_name).aiModel }}
-                    div(class="flex items-center gap-2 text-xs")
+                    div(class="flex items-center gap-2 text-xs lg:justify-end")
                       span(class="text-blue-400 font-semibold") {{ getTeamInfo(matchup[1].roster?.user?.display_name).owner }}
                       span(:class="getRecordColor(getRecordThroughWeek(matchup[1].roster_id, selectedWeek - 1).wins, getRecordThroughWeek(matchup[1].roster_id, selectedWeek - 1).losses)" class="font-bold") {{ getRecordThroughWeek(matchup[1].roster_id, selectedWeek - 1).wins }}-{{ getRecordThroughWeek(matchup[1].roster_id, selectedWeek - 1).losses }}
                       span(
@@ -209,9 +209,31 @@
                   :class="getTeamInfo(matchup[1].roster?.user?.display_name).invertLogo ? 'invert brightness-200' : ''"
                 )
 
-              //- Win Probability
+              //- Point Differential Bar (shown for completed weeks)
+              div(v-if="isWeekComplete(matchup) && (matchup[0].points || 0) !== (matchup[1].points || 0)" class="mt-3 pt-3 border-t border-slate-700")
+                div(class="relative h-6 flex items-center")
+                  //- Center Line
+                  div(class="absolute left-1/2 transform -translate-x-1/2 w-0.5 h-full bg-slate-600 z-0")
+
+                  //- Bar pointing toward winner (team 0 on left)
+                  div(
+                    v-if="matchup[0].points > matchup[1].points"
+                    class="absolute right-1/2 h-5 bg-gradient-to-l from-green-500 to-green-600 rounded-l flex items-center justify-start pl-2"
+                    :style="{ width: `${Math.min(((matchup[0].points - matchup[1].points) / 70) * 45, 45)}%` }"
+                  )
+                    span(class="text-white text-xs font-bold") {{ Math.abs((matchup[0].points || 0) - (matchup[1].points || 0)).toFixed(2) }}
+
+                  //- Bar pointing toward winner (team 1 on right)
+                  div(
+                    v-else-if="matchup[1].points > matchup[0].points"
+                    class="absolute left-1/2 h-5 bg-gradient-to-r from-green-500 to-green-600 rounded-r flex items-center justify-end pr-2"
+                    :style="{ width: `${Math.min(((matchup[1].points - matchup[0].points) / 70) * 45, 45)}%` }"
+                  )
+                    span(class="text-white text-xs font-bold") {{ Math.abs((matchup[0].points || 0) - (matchup[1].points || 0)).toFixed(2) }}
+
+              //- Win Probability (only for current week)
               WinProbabilityBar(
-                v-if="matchupWinProbabilities[matchup[0].matchup_id]"
+                v-if="matchupWinProbabilities[matchup[0].matchup_id] && selectedWeek === leagueStore.currentWeek"
                 :winProb="matchupWinProbabilities[matchup[0].matchup_id]"
                 :showDetails="false"
               )
