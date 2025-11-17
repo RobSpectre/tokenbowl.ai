@@ -6,22 +6,22 @@
     div(class="text-xs text-gray-500") {{ winProb.simulations.toLocaleString() }} simulations
 
   //- Probability Bar
-  div(class="relative h-12 lg:h-16 bg-slate-700 rounded-lg overflow-hidden")
+  div(class="relative h-12 lg:h-6 bg-slate-700 rounded-lg overflow-hidden")
     //- Team 1 Bar (left side)
     .absolute.left-0.top-0.bottom-0.transition-all.duration-500(
       :style="{ width: team1Percentage + '%' }"
       :class="team1BarColor"
     )
-      div(class="absolute inset-0 flex items-center justify-start px-3 lg:px-2")
-        div(class="text-white font-black text-lg lg:text-sm" v-if="team1Percentage > 15") {{ team1Percentage }}%
+      div(class="absolute inset-0 flex items-center justify-start px-3 lg:px-1.5")
+        div(class="text-white font-black text-lg lg:text-xs" v-if="team1Percentage > 15") {{ team1Percentage }}%
 
     //- Team 2 Bar (right side)
     .absolute.right-0.top-0.bottom-0.transition-all.duration-500(
       :style="{ width: team2Percentage + '%' }"
       :class="team2BarColor"
     )
-      div(class="absolute inset-0 flex items-center justify-end px-3 lg:px-2")
-        div(class="text-white font-black text-lg lg:text-sm" v-if="team2Percentage > 15") {{ team2Percentage }}%
+      div(class="absolute inset-0 flex items-center justify-end px-3 lg:px-1.5")
+        div(class="text-white font-black text-lg lg:text-xs" v-if="team2Percentage > 15") {{ team2Percentage }}%
 
     //- Center line
     div(class="absolute left-1/2 top-0 bottom-0 w-0.5 lg:w-px bg-white opacity-30" style="transform: translateX(-50%)")
@@ -105,12 +105,10 @@ export default {
   border-top: 1px solid rgb(51, 65, 85); /* slate-700 */
 }
 
-/* When used inline (parent has w-32 class), make it vertical and compact */
 @media (min-width: 1024px) {
   .win-probability-container {
-    margin-top: 0;
-    padding-top: 0;
-    border-top: none;
+    margin-top: 0.5rem; /* 8px */
+    padding-top: 0.5rem; /* 8px */
   }
 }
 </style>

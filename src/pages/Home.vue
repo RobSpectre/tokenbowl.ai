@@ -131,80 +131,90 @@
                       span.text-red-400.text-xs.font-bold.uppercase(v-else-if="matchup[1].points < matchup[0].points") L
 
               //- Desktop Layout (single horizontal line on lg screens)
-              div(class="hidden md:flex md:flex-col md:gap-2 lg:flex-row lg:items-center lg:gap-3 lg:py-3 lg:px-4")
-                //- Team 1 (Desktop) - single line
-                div(class="flex-1 flex items-center gap-3 min-w-0 md:bg-slate-750 md:rounded-lg md:p-3 lg:bg-transparent lg:p-0")
-                  img(class="h-12 w-12 lg:h-16 lg:w-16 object-contain flex-shrink-0"
+              div(class="hidden md:flex md:flex-col md:gap-2 lg:grid lg:grid-cols-[48px_minmax(200px,1fr)_auto_auto_auto_minmax(200px,1fr)_48px] lg:items-center lg:gap-4 lg:py-4 lg:px-6")
+                //- Team 1 Logo (hidden on md, shown on lg in grid)
+                img(class="hidden lg:block h-12 w-12 object-contain"
+                  :src="getTeamInfo(matchup[0].roster?.user?.display_name).logo"
+                  :alt="getTeamInfo(matchup[0].roster?.user?.display_name).aiModel"
+                  :class="getTeamInfo(matchup[0].roster?.user?.display_name).invertLogo ? 'invert brightness-200' : ''"
+                )
+
+                //- Team 1 Info (full width on md, grid column on lg)
+                div(class="flex items-center gap-3 md:bg-slate-750 md:rounded-lg md:p-3 lg:bg-transparent lg:p-0 lg:min-w-0")
+                  img(class="h-12 w-12 lg:hidden object-contain flex-shrink-0"
                     :src="getTeamInfo(matchup[0].roster?.user?.display_name).logo"
                     :alt="getTeamInfo(matchup[0].roster?.user?.display_name).aiModel"
                     :class="getTeamInfo(matchup[0].roster?.user?.display_name).invertLogo ? 'invert brightness-200' : ''"
                   )
                   div(class="flex-1 min-w-0")
-                    div(class="text-white font-bold text-lg lg:text-base truncate") {{ getTeamInfo(matchup[0].roster?.user?.display_name).aiModel }}
-                    div(class="flex items-center gap-1.5 flex-wrap")
-                      div(class="text-blue-400 text-sm lg:text-xs font-semibold") {{ getTeamInfo(matchup[0].roster?.user?.display_name).owner }}
-                      div(:class="getRecordColor(getRecordThroughWeek(matchup[0].roster_id, selectedWeek - 1).wins, getRecordThroughWeek(matchup[0].roster_id, selectedWeek - 1).losses)" class="text-xs font-bold") {{ getRecordThroughWeek(matchup[0].roster_id, selectedWeek - 1).wins }}-{{ getRecordThroughWeek(matchup[0].roster_id, selectedWeek - 1).losses }}
-                      div(
+                    div(class="text-white font-bold text-base") {{ getTeamInfo(matchup[0].roster?.user?.display_name).aiModel }}
+                    div(class="flex items-center gap-2 text-xs")
+                      span(class="text-blue-400 font-semibold") {{ getTeamInfo(matchup[0].roster?.user?.display_name).owner }}
+                      span(:class="getRecordColor(getRecordThroughWeek(matchup[0].roster_id, selectedWeek - 1).wins, getRecordThroughWeek(matchup[0].roster_id, selectedWeek - 1).losses)" class="font-bold") {{ getRecordThroughWeek(matchup[0].roster_id, selectedWeek - 1).wins }}-{{ getRecordThroughWeek(matchup[0].roster_id, selectedWeek - 1).losses }}
+                      span(
                         v-for="badge in getTeamBadges(matchup[0])"
                         :key="badge.type"
                         :class="[badge.color, badge.color === 'bg-yellow-500' ? 'text-black' : 'text-white']"
-                        class="px-1.5 py-0.5 rounded text-xs font-bold"
+                        class="px-1.5 py-0.5 rounded font-bold"
                       ) {{ badge.label }}
-                  div(class="flex items-center gap-1 flex-shrink-0")
-                    div(
-                      class="text-white font-black text-3xl lg:text-2xl transition-all duration-300"
-                      :class="{ 'score-pulse': isScoreAnimating(selectedWeek, matchup[0].matchup_id, matchup[0].roster_id) }"
-                    ) {{ matchup[0].points?.toFixed(2) || '0.00' }}
-                    span(v-if="isWeekComplete(matchup) && matchup[0].points > matchup[1].points" class="text-green-400 text-sm font-bold uppercase") W
-                    span(v-else-if="isWeekComplete(matchup) && matchup[0].points < matchup[1].points" class="text-red-400 text-sm font-bold uppercase") L
+                  div(class="lg:hidden flex items-center gap-1")
+                    div(class="text-white font-black text-2xl") {{ matchup[0].points?.toFixed(2) || '0.00' }}
+                    span(v-if="isWeekComplete(matchup) && matchup[0].points > matchup[1].points" class="text-green-400 text-sm font-bold") W
+                    span(v-else-if="isWeekComplete(matchup) && matchup[0].points < matchup[1].points" class="text-red-400 text-sm font-bold") L
 
-                //- VS Separator
-                div(class="flex-shrink-0 px-3 md:px-2 lg:px-3")
-                  div(class="bg-slate-700 rounded-full px-3 py-1")
-                    span(class="text-white font-black text-sm") VS
+                //- Team 1 Score (lg grid column only)
+                div(class="hidden lg:flex items-center gap-2")
+                  div(class="text-white font-black text-2xl whitespace-nowrap") {{ matchup[0].points?.toFixed(2) || '0.00' }}
+                  span(v-if="isWeekComplete(matchup) && matchup[0].points > matchup[1].points" class="text-green-400 text-sm font-bold") W
+                  span(v-else-if="isWeekComplete(matchup) && matchup[0].points < matchup[1].points" class="text-red-400 text-sm font-bold") L
 
-                //- Team 2 (Desktop) - single line
-                div(class="flex-1 flex items-center gap-3 min-w-0 md:bg-slate-750 md:rounded-lg md:p-3 lg:bg-transparent lg:p-0")
-                  div(class="flex items-center gap-1 flex-shrink-0")
-                    span(v-if="isWeekComplete(matchup) && matchup[1].points > matchup[0].points" class="text-green-400 text-sm font-bold uppercase") W
-                    span(v-else-if="isWeekComplete(matchup) && matchup[1].points < matchup[0].points" class="text-red-400 text-sm font-bold uppercase") L
-                    div(
-                      class="text-white font-black text-3xl lg:text-2xl transition-all duration-300"
-                      :class="{ 'score-pulse': isScoreAnimating(selectedWeek, matchup[1].matchup_id, matchup[1].roster_id) }"
-                    ) {{ matchup[1].points?.toFixed(2) || '0.00' }}
-                  div(class="flex-1 min-w-0 order-last lg:order-none")
-                    div(class="text-white font-bold text-lg lg:text-base truncate") {{ getTeamInfo(matchup[1].roster?.user?.display_name).aiModel }}
-                    div(class="flex items-center gap-1.5 flex-wrap")
-                      div(class="text-blue-400 text-sm lg:text-xs font-semibold") {{ getTeamInfo(matchup[1].roster?.user?.display_name).owner }}
-                      div(:class="getRecordColor(getRecordThroughWeek(matchup[1].roster_id, selectedWeek - 1).wins, getRecordThroughWeek(matchup[1].roster_id, selectedWeek - 1).losses)" class="text-xs font-bold") {{ getRecordThroughWeek(matchup[1].roster_id, selectedWeek - 1).wins }}-{{ getRecordThroughWeek(matchup[1].roster_id, selectedWeek - 1).losses }}
-                      div(
+                //- VS Separator (lg grid column only)
+                div(class="hidden lg:flex justify-center")
+                  div(class="bg-slate-700 rounded px-2 py-1")
+                    span(class="text-white font-black text-xs") VS
+
+                //- Team 2 Score (lg grid column only)
+                div(class="hidden lg:flex items-center gap-2")
+                  span(v-if="isWeekComplete(matchup) && matchup[1].points > matchup[0].points" class="text-green-400 text-sm font-bold") W
+                  span(v-else-if="isWeekComplete(matchup) && matchup[1].points < matchup[0].points" class="text-red-400 text-sm font-bold") L
+                  div(class="text-white font-black text-2xl whitespace-nowrap") {{ matchup[1].points?.toFixed(2) || '0.00' }}
+
+                //- Team 2 Info (full width on md, grid column on lg)
+                div(class="flex items-center gap-3 md:bg-slate-750 md:rounded-lg md:p-3 lg:bg-transparent lg:p-0 lg:min-w-0")
+                  div(class="lg:hidden flex items-center gap-1 order-first")
+                    span(v-if="isWeekComplete(matchup) && matchup[1].points > matchup[0].points" class="text-green-400 text-sm font-bold") W
+                    span(v-else-if="isWeekComplete(matchup) && matchup[1].points < matchup[0].points" class="text-red-400 text-sm font-bold") L
+                    div(class="text-white font-black text-2xl") {{ matchup[1].points?.toFixed(2) || '0.00' }}
+                  div(class="flex-1 min-w-0")
+                    div(class="text-white font-bold text-base") {{ getTeamInfo(matchup[1].roster?.user?.display_name).aiModel }}
+                    div(class="flex items-center gap-2 text-xs")
+                      span(class="text-blue-400 font-semibold") {{ getTeamInfo(matchup[1].roster?.user?.display_name).owner }}
+                      span(:class="getRecordColor(getRecordThroughWeek(matchup[1].roster_id, selectedWeek - 1).wins, getRecordThroughWeek(matchup[1].roster_id, selectedWeek - 1).losses)" class="font-bold") {{ getRecordThroughWeek(matchup[1].roster_id, selectedWeek - 1).wins }}-{{ getRecordThroughWeek(matchup[1].roster_id, selectedWeek - 1).losses }}
+                      span(
                         v-for="badge in getTeamBadges(matchup[1])"
                         :key="badge.type"
                         :class="[badge.color, badge.color === 'bg-yellow-500' ? 'text-black' : 'text-white']"
-                        class="px-1.5 py-0.5 rounded text-xs font-bold"
+                        class="px-1.5 py-0.5 rounded font-bold"
                       ) {{ badge.label }}
-                  img(
-                    class="h-12 w-12 lg:h-16 lg:w-16 object-contain flex-shrink-0"
+                  img(class="h-12 w-12 lg:hidden object-contain flex-shrink-0"
                     :src="getTeamInfo(matchup[1].roster?.user?.display_name).logo"
                     :alt="getTeamInfo(matchup[1].roster?.user?.display_name).aiModel"
                     :class="getTeamInfo(matchup[1].roster?.user?.display_name).invertLogo ? 'invert brightness-200' : ''"
                   )
 
-                //- Win Probability Bar (integrated on same line for lg)
-                div(class="hidden lg:block lg:w-32 flex-shrink-0")
-                  WinProbabilityBar(
-                    v-if="matchupWinProbabilities[matchup[0].matchup_id]"
-                    :winProb="matchupWinProbabilities[matchup[0].matchup_id]"
-                    :showDetails="false"
-                  )
-
-              //- Win Probability (shown below on md, hidden on lg since integrated above)
-              div(class="md:block lg:hidden")
-                WinProbabilityBar(
-                  v-if="matchupWinProbabilities[matchup[0].matchup_id]"
-                  :winProb="matchupWinProbabilities[matchup[0].matchup_id]"
-                  :showDetails="false"
+                //- Team 2 Logo (hidden on md, shown on lg in grid)
+                img(class="hidden lg:block h-12 w-12 object-contain"
+                  :src="getTeamInfo(matchup[1].roster?.user?.display_name).logo"
+                  :alt="getTeamInfo(matchup[1].roster?.user?.display_name).aiModel"
+                  :class="getTeamInfo(matchup[1].roster?.user?.display_name).invertLogo ? 'invert brightness-200' : ''"
                 )
+
+              //- Win Probability
+              WinProbabilityBar(
+                v-if="matchupWinProbabilities[matchup[0].matchup_id]"
+                :winProb="matchupWinProbabilities[matchup[0].matchup_id]"
+                :showDetails="false"
+              )
 
               //- View Tokens Button (hidden on lg+)
               div(class="mt-3 pt-3 border-t border-slate-700 flex justify-end lg:hidden")
