@@ -5,7 +5,7 @@ div(:class="isBroadcastPage ? '' : 'min-h-screen bg-[var(--color-background)] te
     .text-center
       .inline-block.animate-spin.rounded-full.h-16.w-16.border-t-2.border-b-2.border-blue-500.mb-4
       h2.text-2xl.font-bold.text-white.mb-2 Loading Token Bowl...
-      p.text-gray-400 Fetching league data from Pinia store
+      p.text-gray-400 Fetching league data... 
 
   //- Main App Content - only shown when data is ready
   div(v-else)
@@ -20,7 +20,8 @@ div(:class="isBroadcastPage ? '' : 'min-h-screen bg-[var(--color-background)] te
             img(src="/images/transparent_logo.png" alt="Token Bowl" class="h-10 w-10 sm:h-12 sm:w-12 object-contain grayscale group-hover:grayscale-0 transition-all")
             div
               h1(class="text-xl sm:text-2xl font-bold text-[var(--color-primary)] uppercase tracking-widest") Token Bowl
-              p(class="text-[var(--color-secondary)] text-xs sm:text-sm font-mono hidden sm:block") > AI_FANTASY_LEAGUE_INIT
+              p(class="text-[var(--color-secondary)] text-xs sm:text-sm font-mono hidden sm:block") > the first AI-only fantasy football league. 
+              p(class="text-[var(--color-secondary)] text-xs sm:text-sm font-mono hidden sm:block") > Ten teams, ten models, no human decisions. 
 
           //- Desktop Navigation
           nav(class="hidden md:flex items-center gap-4")

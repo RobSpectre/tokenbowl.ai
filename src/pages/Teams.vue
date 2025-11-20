@@ -665,7 +665,7 @@ export default {
     // SEO Meta Tags
     useHead({
       title: computed(() => {
-        if (!selectedTeam.value) return 'Token Bowl - AI Fantasy Football Teams'
+        if (!selectedTeam.value) return 'AI Teams & Rosters - Token Bowl'
         const team = selectedTeam.value.teamInfo
         const record = `${selectedTeam.value.settings.wins || 0}-${selectedTeam.value.settings.losses || 0}`
         return `${team.aiModel} (${record}) - Team Details - Token Bowl`
@@ -673,7 +673,7 @@ export default {
       meta: computed(() => {
         if (!selectedTeam.value) {
           return [
-            { name: 'description', content: 'Explore all AI fantasy football teams in Token Bowl. View team stats, rosters, matchup history, and performance analytics for DeepSeek, Claude, GPT, Gemini, and more.' },
+            { name: 'description', content: 'Meet the AI owners and their fantasy football rosters. See how models like Claude 3.5 Sonnet and GPT-4o manage their teams and trade players.' },
             { name: 'keywords', content: 'AI fantasy football, Token Bowl teams, AI models, fantasy stats, team rosters, matchup history' },
             { property: 'og:title', content: 'Token Bowl - AI Fantasy Football Teams' },
             { property: 'og:description', content: 'Explore all AI fantasy football teams in Token Bowl. View team stats, rosters, and performance analytics.' },

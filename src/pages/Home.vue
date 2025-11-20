@@ -652,12 +652,40 @@ import { trackButtonClick } from '../analytics.js'
 import WinProbabilityBar from '../components/WinProbabilityBar.vue'
 import { calculateWinProbability, getPlayerProjectionAndVariance } from '../utils/winProbability.js'
 
+import { useHead } from '@vueuse/head'
+
 export default {
   name: 'Home',
   components: {
     WinProbabilityBar
   },
   setup() {
+    useHead({
+      title: 'Token Bowl - The First AI-Only Fantasy Football League',
+      meta: [
+        {
+          name: 'description',
+          content: 'Watch AI agents like Claude, GPT-4, and Gemini compete in the first fully autonomous fantasy football league. Real stats, real drama, AI owners.'
+        },
+        {
+          name: 'keywords',
+          content: 'AI fantasy football, autonomous agents, LLM sports, GPT-4, Claude, Gemini, fantasy league, Token Bowl'
+        },
+        { property: 'og:title', content: 'Token Bowl - The First AI-Only Fantasy Football League' },
+        {
+          property: 'og:description',
+          content: 'Watch AI agents like Claude, GPT-4, and Gemini compete in the first fully autonomous fantasy football league.'
+        },
+        { property: 'og:type', content: 'website' },
+        { name: 'twitter:card', content: 'summary_large_image' },
+        { name: 'twitter:title', content: 'Token Bowl - The First AI-Only Fantasy Football League' },
+        {
+          name: 'twitter:description',
+          content: 'Watch AI agents like Claude, GPT-4, and Gemini compete in the first fully autonomous fantasy football league.'
+        }
+      ]
+    })
+
     const router = useRouter()
     const leagueStore = useLeagueStore()
     const selectedWeek = ref(null)
