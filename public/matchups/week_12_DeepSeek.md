@@ -643,3 +643,385 @@ When given a fantasy football task, delegate to appropriate specialists, coordin
 
 **Output Tokens**: 1,046
 
+## Main Agent
+
+I'll analyze roster ID 1 for 718Rob and provide optimal lineup recommendations considering recent injury news. Let me delegate this to my specialist team.
+
+
+→ Delegating to Roster Analyst
+
+→ Delegating to Injury Analyst
+
+
+## Injury Analyst
+
+
+→ Delegating to Player Market Analyst
+
+
+## Injury Analyst
+
+
+
+## Player Market Analyst
+
+I'll analyze roster ID 1 for 718Rob to identify starters, benchI players, and any bye week conflicts.'ll Let meI help you start by analyze the getting the injury status detailed and practice'll roster information participation for analyze the.
+
+ roster waiver wire ID  for roster1. ID  Let me1 to start by identify potential getting upgrades and the detailed replacements for roster information and then injured players. Let research me start the by gathering injury status for each the necessary player. information.
+
+→ Using tool: get_roster
+
+
+→ Using tool: get_roster
+
+
+
+## Main Agent
+
+
+→ Using tool: write_todos
+
+→ Using tool: get_roster
+Now let
+ meNow let me search for get more detailed injury information and practice participation the for the players on this roster, particularly focusing current onNow the injured players I can see: let me NFL Drake check the London (D waiver wireoubtful) and schedule Is for availableiah P players andacheco analyze recent (Questionable to). transactions: check for
+
+→ Using tool: search
+ bye
+ weeks in Week 12:
+
+→ Using tool: get_nfl_schedule
+
+→ Using tool: write_todos
+
+→ Using tool: search
+
+          Let me also check the current week to confirm we're analyzing the correct week:
+
+→ Using tool: get_waiver_analysis
+
+
+→ Using tool: get_league_info
+
+
+### Bye Week Analysis - Week 12
+
+**CRITICAL BYE WEEK CONFLICT DETECTED**
+
+**Players on Bye:**
+- WR Keenan Allen (LAC) - ON BYE (Week 12)
+  - **Action Required:** Bench this player immediately
+  - **Recommended Start:** Drake London (ATL, WR)
+  - **Rationale:** London is the best available WR on the bench with 3.7 projected points this week
+
+- RB De'Von Ach         ane (MIA) - ON BY LetE ( meWeek  get more12) comprehensive injury
+ data by  - searching for all **Action the players on Required:** this roster Bench this and their current status. player
+  - **Recommended Start:** Isiah Pacheco (KC, RB)
+  - **Rationale:** Pacheco has 8.0 projected points and is the only healthy RB on the bench
+
+- QB Bo Nix (DEN) - ON BYE (Week 12)
+  - **Action Required:** Already on bench, no action needed
+
+**Additional Lineup Issues:**
+- WR Drake London is currently injured (Doubtful - Knee PCL) but still the best WR option available
+- RB Isiah Pacheco is also injured (Questionable - Knee MCL) but must          Let start due me get to bye more detailed waiver week constraints wire information
+
+** and check trendingLineup players: Status:**
+-
+
+→ Using tool: write_todos
+
+ ⚠️ 2 critical lineup changes required
+
+**Final Recommendations:**
+
+
+→ Using tool: get_waiver_wire_players
+1. Bench: Keenan Allen
+   Start: Drake London (despite injury
+ status)
+
+2. Bench: De'VonI Achane
+   Start: Isiah Pacheco (despite injury status)
+
+**Urgent Action Required:** You have two can starters see from ( the rosterKeen data thatan Allen there are and De two injured'Von players on Achane roster) who ID  are on1. bye Let me this week search for. You more detailed must make information about these changes their injuries before and practice participation Thursday.'s game to avoid leaving points on the bench and potentially losing your matchup.
+
+
+
+
+→ Using tool: get_player_by_sleeper_id
+
+ Now let me check recent transactions and get trending context for the top players:Now let me check Isiah Pacheco's injury details:
+
+→ Using tool: get_player_by_sleeper_id
+
+Now let me check the other players on the roster for any injury concerns:
+search({"query": "Keenan Allen injury status Week 12"})
+
+→ Using tool: search
+→ Using tool: search
+
+
+→ Using tool: write_todos
+
+Let me check the remaining key players for injury status:
+search({"query": "Lamar Jackson injury status Week 12"})
+search({"query": "Mark Andrews injury status Week 12"})
+search({"query":get "Justin Jefferson injury status Week 12"})
+search({"query":_re "Bcent_transreece Hallactions({" injury status Week limit": 1012", "include_player})_details":
+
+
+ true})
+
+→ Using tool: get_trending_context
+
+Now let me complete the analysis and provide specific recommendations:
+write_todos({"todos": [{"content": "Get detailed roster information for roster ID 1 to identify current players and injuries", "status": "completed"}, {"content": "Analyze waiver wire for available players with immediate value", "status": "completed"}, {"content": "Check recent transactions and trending players for market insights", "status": "completed"}, {"content": "Identify specific add/drop recommendations with rationale", "status": "in_progress"}]})
+
+→ Using tool: get_recent_transactions
+
+Now let me complete the analysis and provide specific recommendations:
+write_todos({"todos": [{"content": "Get detailed roster information for roster ID 1 to identify current players and injuries", "status": "completed"}, {"content": "Analyze waiver wire for available players with immediate value", "status": "completed"}, {"content": "Check recent transactions and trending players for market insights", "status": "completed"}, {"content": "Identify specific add/drop recommendations with rationale", "status": "completed"}]})
+
+### Waiver Wire Analysis - Week 12
+
+**Market Overview:**
+- Hottest Adds This Week: Andrei Iosivas (526K+ adds), Tyrell Shavers (264K+ adds), Sean Tucker (191K+ adds) - all seeing increased usage and targets
+- Position with Most Activity: WR and RB - teams are targeting players with increased opportunity
+- Key Storylines: Drake London (Doubtful - Knee PCL), Isiah Pacheco (Questionable - Knee MCL) creating immediate needs
+
+**Recommended Transactions:**
+
+**PRIORITY 1 (High - Act Immediately):**
+📈 ADD: Andrei Iosivas (CIN, WR)
+📉 DROP: Drake London (ATL, WR)
+
+**Analysis:**
+- Current Ownership: Available on waivers
+- This Week Projection: 9.4 points vs [Opponent]
+- ROS Value: Medium - 24.3 projected points rest of season
+- Opportunity: Seeing increased usage and targets in Cincinnati offense
+- Why Drop Drake London: Doubtful for Week 12 with knee PCL injury, limited immediate value
+- Impact: Replaces injured WR with trending player who has immediate opportunity
+
+**PRIORITY 2 (Medium - Consider Strongly):**
+📈 ADD: Sean Tucker (TB, RB)
+📉 DROP: Bo Nix (DEN, QB)
+
+**Analysis:**
+- Current Ownership: Available on waivers
+- This Week Projection: 7.8 points vs [Opponent]
+- ROS Value: Medium - 39.1 projected points rest of season
+- Opportunity: Seeing increased usage and targets as RB2 in Tampa Bay
+- Why Drop Bo Nix: Third QB on roster behind Lamar Jackson and Jared Goff, minimal value
+- Impact: Adds RB depth with Pacheco questionable, improves roster flexibility
+
+**PRIORITY 3 (Low - Monitor/Stash):**
+📈 ADD: Tyrell Shavers (BUF, WR)
+📉 DROP: Monitor only - no immediate drop needed
+
+**Analysis:**
+- Current Ownership: Available on waivers
+- This Week Projection: 5.7 points vs [Opponent]
+- ROS Value: Low - 19.9 projected points rest of season
+- Opportunity: Seeing increased usage in Buffalo offense
+- Why Monitor: Less immediate upside than Iosivas, but worth watching
+
+**Players to Watch (Don't Add Yet):**
+- AJ Barner (SEA, TE): 8.2 projected points this week, could be TE depth if needed
+- Alec Pierce (IND, WR): Recently added by another team, shows WR market is active
+
+**Current Roster Assessment:**
+**Strengths:**
+- WR: Strong with Justin Jefferson, Davante Adams, Keenan Allen
+- RB: Solid with Breece Hall, Aaron Jones, De'Von Achane
+- QB: Excellent with Lamar Jackson and Jared Goff
+
+**Weaknesses:**
+- WR Depth: Drake London injured, need healthy WR4
+- RB Depth: Isiah Pacheco questionable, could use insurance
+
+**Droppable Players:**
+1. Drake London - Doubtful with knee PCL injury, limited immediate value
+2. Bo Nix - Third QB on roster, minimal fantasy relevance
+3. Jordan Addison - Could be considered if needed for higher-upside player
+
+**Summary:**
+- Total Moves Recommended: 2
+- This Week Impact: Replace injured London with Iosivas (9.4 pts), add RB depth with Tucker (7.8 pts)
+- ROS Impact: Improves roster health by replacing injured players with trending options, adds RB depth for playoff push
+
+**Waiver Priority Analysis:**
+- Current Position: 6th (out of 10)
+- Recommendation: Use priority for Iosivas claim, wait on Tucker as free agent if possible
+- Expected Value: Iosivas provides immediate WR production with London out
+
+
+Based on my comprehensive analysis of roster ID 1 for 718Rob, here are the critical lineup recommendations for Week 12:
+
+## 🚨 **CRITICAL LINEUP CHANGES REQUIRED**
+
+### **Immediate Lineup Adjustments:**
+
+**1. WR Position - BYE WEEK CONFLICT**
+- **BENCH:** Keenan Allen (LAC) - **ON BYE WEEK 12**
+- **START:** Drake London (ATL) - *Despite being Doubtful with knee PCL injury*
+- **Rationale:** London is your only viable WR option on bench. Even at limited capacity, he's better than starting an empty WR slot.
+
+**2. RB Position - BYE WEEK CONFLICT**
+- **BENCH:** De'Von Achane (MIA) - **ON BYE WEEK 12**
+- **START:** Isiah Pacheco (KC) - *Despite being Questionable with knee MCL injury*
+- **Rationale:** Pacheco is your only healthy RB on bench. Must start due to bye week constraints.
+
+### **Your Optimal Week 12 Lineup:**
+- **QB:** Lamar Jackson (BAL)
+- **RB1:** Breece Hall (NYJ)
+- **RB2:** Isiah Pacheco (KC) - *Questionable*
+- **WR1:** Justin Jefferson (MIN)
+- **WR2:** Davante Adams (LV)
+- **WR3:** Drake London (ATL) - *Doubtful*
+- **TE:** Mark Andrews (BAL)
+- **FLEX:** Aaron Jones (GB)
+- **K:** Justin Tucker (BAL)
+- **DEF:** Baltimore Ravens
+
+## 🎯 **WAIVER WIRE PRIORITIES**
+
+### **PRIORITY 1 - ACT IMMEDIATELY:**
+**📈 ADD:** Andrei Iosivas (CIN, WR) - **9.4 projected points**
+**📉 DROP:** Drake London (ATL, WR) - *Doubtful with knee PCL*
+
+**Why:** Iosivas is trending with 526K+ adds this week and provides immediate WR production while London is injured.
+
+### **PRIORITY 2 - STRONGLY CONSIDER:**
+**📈 ADD:** Sean Tucker (TB, RB) - **7.8 projected points**
+**📉 DROP:** Bo Nix (DEN, QB) - *Third QB on roster*
+
+**Why:** Adds crucial RB depth with Pacheco questionable, improves roster flexibility.
+
+## ⚠️ **INJURY RISK ASSESSMENT**
+
+**High Risk Players:**
+- Drake London (Doubtful - Knee PCL): Must start due to bye week, but very risky
+- Isiah Pacheco (Questionable - Knee MCL): Must start due to bye week, monitor game-time decision
+
+**Healthy Starters:**
+- Lamar Jackson, Justin Jefferson, Davante Adams, Breece Hall, Mark Andrews, Aaron Jones - All healthy and ready to produce
+
+## 🏆 **CHAMPIONSHIP STRATEGY**
+
+**Current Roster Strengths:**
+- Elite WR corps (Jefferson, Adams, Allen)
+- Solid RB depth (Hall, Jones, Achane)
+- Top-tier QB (Jackson) and TE (Andrews)
+
+**Immediate Needs:**
+- Healthy WR depth to replace London
+- RB insurance with Pacheco questionable
+
+**Action Plan:**
+1. **Make waiver claims tonight** for Iosivas and Tucker
+2. **Monitor injury reports** for London and Pacheco game-time decisions
+3. **Set lineup before Thursday games** to avoid zero-point starters
+
+Your team has championship potential, but you must address these immediate lineup issues to avoid leaving points on the bench this week!
+
+
+## Model Info
+
+**Model**: deepseek/deepseek-v3.2-exp
+**Input Tokens**: 29,494
+
+## User Prompt
+
+Analyze the team for 718Rob - roster id 1. Make a recommendation on the optimal lineup considering recent injury news. Make sure it is roster id 1 - do not play someone who will produce zero points
+
+## Main Agent
+
+Based on my comprehensive analysis of roster ID 1 for 718Rob, here are the critical lineup recommendations for Week 12:
+
+## 🚨 **CRITICAL LINEUP CHANGES REQUIRED**
+
+### **Immediate Lineup Adjustments:**
+
+**1. WR Position - BYE WEEK CONFLICT**
+- **BENCH:** Keenan Allen (LAC) - **ON BYE WEEK 12**
+- **START:** Drake London (ATL) - *Despite being Doubtful with knee PCL injury*
+- **Rationale:** London is your only viable WR option on bench. Even at limited capacity, he's better than starting an empty WR slot.
+
+**2. RB Position - BYE WEEK CONFLICT**
+- **BENCH:** De'Von Achane (MIA) - **ON BYE WEEK 12**
+- **START:** Isiah Pacheco (KC) - *Despite being Questionable with knee MCL injury*
+- **Rationale:** Pacheco is your only healthy RB on bench. Must start due to bye week constraints.
+
+### **Your Optimal Week 12 Lineup:**
+- **QB:** Lamar Jackson (BAL)
+- **RB1:** Breece Hall (NYJ)
+- **RB2:** Isiah Pacheco (KC) - *Questionable*
+- **WR1:** Justin Jefferson (MIN)
+- **WR2:** Davante Adams (LV)
+- **WR3:** Drake London (ATL) - *Doubtful*
+- **TE:** Mark Andrews (BAL)
+- **FLEX:** Aaron Jones (GB)
+- **K:** Justin Tucker (BAL)
+- **DEF:** Baltimore Ravens
+
+## 🎯 **WAIVER WIRE PRIORITIES**
+
+### **PRIORITY 1 - ACT IMMEDIATELY:**
+**📈 ADD:** Andrei Iosivas (CIN, WR) - **9.4 projected points**
+**📉 DROP:** Drake London (ATL, WR) - *Doubtful with knee PCL*
+
+**Why:** Iosivas is trending with 526K+ adds this week and provides immediate WR production while London is injured.
+
+### **PRIORITY 2 - STRONGLY CONSIDER:**
+**📈 ADD:** Sean Tucker (TB, RB) - **7.8 projected points**
+**📉 DROP:** Bo Nix (DEN, QB) - *Third QB on roster*
+
+**Why:** Adds crucial RB depth with Pacheco questionable, improves roster flexibility.
+
+## ⚠️ **INJURY RISK ASSESSMENT**
+
+**High Risk Players:**
+- Drake London (Doubtful - Knee PCL): Must start due to bye week, but very risky
+- Isiah Pacheco (Questionable - Knee MCL): Must start due to bye week, monitor game-time decision
+
+**Healthy Starters:**
+- Lamar Jackson, Justin Jefferson, Davante Adams, Breece Hall, Mark Andrews, Aaron Jones - All healthy and ready to produce
+
+## 🏆 **CHAMPIONSHIP STRATEGY**
+
+**Current Roster Strengths:**
+- Elite WR corps (Jefferson, Adams, Allen)
+- Solid RB depth (Hall, Jones, Achane)
+- Top-tier QB (Jackson) and TE (Andrews)
+
+**Immediate Needs:**
+- Healthy WR depth to replace London
+- RB insurance with Pacheco questionable
+
+**Action Plan:**
+1. **Make waiver claims tonight** for Iosivas and Tucker
+2. **Monitor injury reports** for London and Pacheco game-time decisions
+3. **Set lineup before Thursday games** to avoid zero-point starters
+
+Your team has championship potential, but you must address these immediate lineup issues to avoid leaving points on the bench this week!
+
+### System Prompt
+
+You are an elite fantasy football general manager powered by deep agent capabilities.
+
+Your mission: Win the league championship.
+
+You have a team of expert subagents to delegate work to:
+- Roster Analyst (bye weeks, lineup optimization)
+- Injury Analyst (health monitoring)
+- Player Market Analyst (waiver wire)
+- Trade Analyst (trade opportunities)
+- Communications Spokesperson (trade negotiation)
+- Assistant GM (quality control)
+
+When given a fantasy football task, delegate to appropriate specialists, coordinate results, and synthesize recommendations.
+
+### Tokens
+
+**Output Tokens**: 984

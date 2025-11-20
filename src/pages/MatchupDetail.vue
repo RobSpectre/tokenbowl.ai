@@ -610,12 +610,12 @@ export default {
         const team2 = getTeamInfo(matchup.value[1].roster?.user?.display_name)
         const score1 = matchup.value[0].points?.toFixed(2) || '0.00'
         const score2 = matchup.value[1].points?.toFixed(2) || '0.00'
-        const description = `Week ${week.value} matchup: ${team1.aiModel} (${score1}) vs ${team2.aiModel} (${score2}). Watch AI models compete in fantasy football with live stats, injury updates, and detailed player breakdowns.`
+        const description = `Week ${week.value} Live Matchup: ${team1.aiModel} (${score1}) vs ${team2.aiModel} (${score2}). Watch two AI models battle for fantasy football dominance. Real-time scoring, win probabilities, and roster moves in the first AI-only league.`
         const url = `https://tokenbowl.ai/matchup/${week.value}/${matchupId.value}`
 
         return [
           { name: 'description', content: description },
-          { name: 'keywords', content: `${team1.aiModel}, ${team2.aiModel}, week ${week.value}, fantasy football, AI matchup, ${gameStatus.value}` },
+          { name: 'keywords', content: `${team1.aiModel}, ${team2.aiModel}, week ${week.value}, fantasy football, AI matchup, ${gameStatus.value}, win probability` },
           { property: 'og:title', content: `Week ${week.value}: ${team1.aiModel} vs ${team2.aiModel} - Token Bowl` },
           { property: 'og:description', content: description },
           { property: 'og:url', content: url },
@@ -828,46 +828,56 @@ export default {
           const player = playersData?.[playerId] || enrichedPlayersData?.[playerId]
           const currentPoints = playerPoints[playerId] || 0
 
+          // Get historical stats from store for better variance calculation
+          const seasonStats = leagueStore.getPlayerSeasonStats(playerId)
+
           // Get projection and variance
           const { projection, variance } = getPlayerProjectionAndVariance(
             playerId,
-            player?.seasonStats,
+            seasonStats,
             player?.position || 'FLEX'
           )
 
-          // Determine game status (simplified)
-          const gameStatus = getSimplifiedGameStatus(currentPoints, projection)
+          // Determine game status and progress using real schedule data
+          let gameStatus = 'scheduled'
+          let percentComplete = 0
+
+          const gameInfo = leagueStore.getPlayerGameInfo(playerId, week.value)
+          if (gameInfo) {
+            gameStatus = gameInfo.status
+            
+            if (gameStatus === 'final') {
+              percentComplete = 1.0
+            } else if (gameStatus === 'in_progress') {
+              // Estimate progress based on time since kickoff
+              // NFL games take roughly 3 hours (180 mins)
+              const now = new Date()
+              const kickoff = new Date(gameInfo.gameDate)
+              const minutesPlayed = (now - kickoff) / (1000 * 60)
+              
+              if (minutesPlayed <= 0) percentComplete = 0
+              else if (minutesPlayed >= 180) percentComplete = 0.95 // Cap at 95% until final
+              else percentComplete = minutesPlayed / 180
+            }
+          } else {
+            // Fallback if no game info (e.g. bye week or error)
+            // If they have points, assume some progress
+            if (currentPoints > 0) {
+               if (currentPoints >= projection) percentComplete = 1.0
+               else percentComplete = 0.5
+               gameStatus = 'in_progress'
+            }
+          }
 
           return {
             playerId,
             currentPoints,
             projection,
             variance,
-            gameStatus: gameStatus.status,
-            percentComplete: gameStatus.percentComplete
+            gameStatus,
+            percentComplete
           }
         })
-    }
-
-    // Get simplified game status based on current points
-    const getSimplifiedGameStatus = (currentPoints, projection) => {
-      if (currentPoints === 0) {
-        return { status: 'scheduled', percentComplete: 0 }
-      }
-
-      // If current points >= 90% of projection, likely finished
-      if (projection > 0 && currentPoints >= projection * 0.9) {
-        return { status: 'final', percentComplete: 1.0 }
-      }
-
-      // Estimate progress based on current points vs projection
-      if (projection > 0) {
-        const percentComplete = Math.min(0.9, currentPoints / projection)
-        return { status: 'in_progress', percentComplete }
-      }
-
-      // Default to in progress at 50%
-      return { status: 'in_progress', percentComplete: 0.5 }
     }
 
     // Refresh matchup data without showing loading state

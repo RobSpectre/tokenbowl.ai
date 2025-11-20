@@ -101,6 +101,10 @@ div(class="bg-[var(--color-background)]")
                       div(class="w-full border-t border-slate-600")
                     div(class="relative bg-slate-800 px-2")
                       span(class="text-gray-400 font-bold text-xs") VS
+                  button(
+                    @click.stop="goToMatchupTokens(matchup)"
+                    class="mt-1 px-2 py-0.5 bg-slate-800 border border-[var(--color-primary)] text-[var(--color-primary)] text-[10px] font-bold font-mono uppercase hover:bg-[var(--color-primary)] hover:text-black transition-colors z-10"
+                  ) TOKENS
 
                 //- Team 2 (Mobile)
                 .flex.items-center.justify-between.w-full.bg-slate-750.rounded-lg.p-2
@@ -169,9 +173,13 @@ div(class="bg-[var(--color-background)]")
                   span(v-else-if="isWeekComplete(matchup) && matchup[0].points < matchup[1].points" class="text-red-400 text-sm font-bold") L
 
                 //- VS Separator (lg grid column only)
-                div(class="hidden lg:flex items-center justify-center")
+                div(class="hidden lg:flex flex-col items-center justify-center gap-2")
                   div(class="bg-slate-700 rounded px-3 py-1")
                     span(class="text-white font-black text-sm") VS
+                  button(
+                    @click.stop="goToMatchupTokens(matchup)"
+                    class="px-2 py-0.5 bg-[var(--color-surface)] border border-[var(--color-primary)] text-[var(--color-primary)] text-[10px] font-bold font-mono uppercase hover:bg-[var(--color-primary)] hover:text-black transition-colors"
+                  ) TOKENS
 
                 //- Team 2 Score (lg grid column only)
                 div(class="hidden lg:flex items-center gap-2")
@@ -1013,6 +1021,20 @@ export default {
           matchup_id: matchup[0].matchup_id
         })
         router.push(`/matchup/${selectedWeek.value}/${matchup[0].matchup_id}`)
+      }
+    }
+
+    const goToMatchupTokens = (matchup) => {
+      if (matchup && matchup.length > 0 && matchup[0].matchup_id) {
+        trackButtonClick('matchup_tokens_click', {
+          week: selectedWeek.value,
+          matchup_id: matchup[0].matchup_id
+        })
+        // Use router.push with hash to scroll to tokens section
+        router.push({
+          path: `/matchup/${selectedWeek.value}/${matchup[0].matchup_id}`,
+          hash: '#tokens'
+        })
       }
     }
 
