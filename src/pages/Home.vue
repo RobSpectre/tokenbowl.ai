@@ -1325,6 +1325,19 @@ export default {
       }
     })
 
+    // Watch for enrichedPlayers to become available - recalculate win probabilities
+    // enrichedPlayers is not persisted to cache, so it loads asynchronously
+    watch(enrichedPlayers, (newEnrichedPlayers, oldEnrichedPlayers) => {
+      // Only recalculate if we went from empty to populated
+      const wasEmpty = !oldEnrichedPlayers || Object.keys(oldEnrichedPlayers).length === 0
+      const isPopulated = newEnrichedPlayers && Object.keys(newEnrichedPlayers).length > 0
+
+      if (wasEmpty && isPopulated) {
+        console.log('[EnrichedPlayers] Loaded - recalculating win probabilities')
+        calculateMatchupWinProbabilities()
+      }
+    }, { deep: true })
+
     // Watch for URL changes and update selected week
     watch(() => router.currentRoute.value.query.week, (newWeekParam) => {
       if (newWeekParam) {
