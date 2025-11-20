@@ -1,13 +1,13 @@
 <template>
-  <div class="w-screen h-screen bg-[#0000FF] fixed inset-0 font-sans overflow-hidden flex items-start justify-center">
+  <div class="w-screen h-screen bg-[#000000] fixed inset-0 font-mono overflow-hidden flex items-start justify-center">
     <div
-      class="w-[1920px] mt-24 grid grid-cols-4 items-center bg-gradient-to-r from-[#1a1a2e] to-[#2d2d44] border-b border-white/20 shadow-lg min-h-[80px] text-white"
+      class="w-[1920px] mt-24 grid grid-cols-4 items-center bg-[#000000] border-b border-[var(--color-primary)] shadow-none min-h-[80px] text-[var(--color-text)]"
       v-motion
       :initial="{ opacity: 0, y: -16 }"
       :enter="{ opacity: 1, y: 0, transition: { duration: 600, delay: 100 } }"
     >
       <!-- Model Badge -->
-      <div class="flex items-center justify-center gap-2 pl-2 pr-4 border-r border-white/20">
+      <div class="flex items-center justify-center gap-2 pl-2 pr-4 border-r border-[var(--color-primary)]">
         <span
           v-if="emoji"
           class="text-3xl leading-none"
@@ -20,13 +20,13 @@
           alt="OpenRouter"
           class="w-8 h-8"
         />
-        <span class="text-xl font-extrabold bg-gradient-to-r from-[#00d4ff] to-[#7b2ff7] bg-clip-text text-transparent whitespace-nowrap">
+        <span class="text-xl font-extrabold text-[var(--color-primary)] whitespace-nowrap uppercase tracking-wider">
           {{ displayModelName }}
         </span>
       </div>
 
       <!-- Session Stats with Sparkline -->
-      <div class="flex items-center justify-center px-4 border-r border-white/20 overflow-hidden">
+      <div class="flex items-center justify-center px-4 border-r border-[var(--color-primary)] overflow-hidden">
         <div class="w-full max-w-full">
           <SessionSparkline
             :inputTokens="sessionStats.inputTokens"
@@ -38,16 +38,16 @@
       </div>
 
       <!-- Today Stats -->
-      <div class="flex items-center justify-center gap-2 px-4 border-r border-white/20">
+      <div class="flex items-center justify-center gap-2 px-4 border-r border-[var(--color-primary)]">
         <span class="text-3xl" style="line-height: 1;">📅</span>
-        <span class="text-base text-white/70 font-bold uppercase tracking-wide">Today</span>
+        <span class="text-base text-[var(--color-secondary)] font-bold uppercase tracking-wide">Today</span>
         <span class="text-xl font-extrabold tabular-nums whitespace-nowrap">
-          {{ abbreviateNumber(todayStats.inputTokens) }}<span class="ml-1 text-sm text-white/60 font-semibold">in</span>
+          {{ abbreviateNumber(todayStats.inputTokens) }}<span class="ml-1 text-sm text-[var(--color-secondary)] font-semibold">in</span>
         </span>
         <span class="text-xl font-extrabold tabular-nums whitespace-nowrap">
-          {{ abbreviateNumber(todayStats.outputTokens) }}<span class="ml-1 text-sm text-white/60 font-semibold">out</span>
+          {{ abbreviateNumber(todayStats.outputTokens) }}<span class="ml-1 text-sm text-[var(--color-secondary)] font-semibold">out</span>
         </span>
-        <span class="text-3xl font-extrabold bg-gradient-to-r from-[#00ff88] to-[#00d4ff] bg-clip-text text-transparent whitespace-nowrap">
+        <span class="text-3xl font-extrabold text-[var(--color-primary)] whitespace-nowrap">
           $<OdometerNumber :value="todayStats.totalCost" :decimals="2" :playSound="true" />
         </span>
       </div>
@@ -55,14 +55,14 @@
       <!-- Last 30 Days Stats -->
       <div class="flex items-center justify-center gap-2 px-4">
         <span class="text-3xl" style="line-height: 1;">📊</span>
-        <span class="text-base text-white/70 font-bold uppercase tracking-wide whitespace-nowrap">30 Days</span>
+        <span class="text-base text-[var(--color-secondary)] font-bold uppercase tracking-wide whitespace-nowrap">30 Days</span>
         <span class="text-xl font-extrabold tabular-nums whitespace-nowrap">
-          {{ abbreviateNumber(last30DaysStats.inputTokens) }}<span class="ml-1 text-sm text-white/60 font-semibold">in</span>
+          {{ abbreviateNumber(last30DaysStats.inputTokens) }}<span class="ml-1 text-sm text-[var(--color-secondary)] font-semibold">in</span>
         </span>
         <span class="text-xl font-extrabold tabular-nums whitespace-nowrap">
-          {{ abbreviateNumber(last30DaysStats.outputTokens) }}<span class="ml-1 text-sm text-white/60 font-semibold">out</span>
+          {{ abbreviateNumber(last30DaysStats.outputTokens) }}<span class="ml-1 text-sm text-[var(--color-secondary)] font-semibold">out</span>
         </span>
-        <span class="text-3xl font-extrabold bg-gradient-to-r from-[#00ff88] to-[#00d4ff] bg-clip-text text-transparent whitespace-nowrap">
+        <span class="text-3xl font-extrabold text-[var(--color-primary)] whitespace-nowrap">
           $<OdometerNumber :value="last30DaysStats.totalCost" :decimals="2" :playSound="true" />
         </span>
       </div>

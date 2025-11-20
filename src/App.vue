@@ -1,5 +1,5 @@
 <template lang="pug">
-div(:class="isBroadcastPage ? '' : 'min-h-screen bg-slate-950'")
+div(:class="isBroadcastPage ? '' : 'min-h-screen bg-[var(--color-background)] text-[var(--color-text)] font-mono'")
   //- Global Loading Screen - shown until Pinia has all data ready
   div(v-if="!isDataReady && !isBroadcastPage" class="flex items-center justify-center min-h-screen")
     .text-center
@@ -12,45 +12,45 @@ div(:class="isBroadcastPage ? '' : 'min-h-screen bg-slate-950'")
     //- Header (hidden on broadcast page)
     header(
       v-if="!isBroadcastPage"
-      class="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 border-b-4 border-blue-600 sticky top-0 z-40"
+      class="bg-black border-b border-[var(--color-primary)] sticky top-0 z-40"
     )
       .container.mx-auto.px-4.py-3.max-w-7xl
         .flex.items-center.justify-between
-          router-link(to="/" class="flex items-center gap-2 sm:gap-3 hover:opacity-80 transition-opacity cursor-pointer")
-            img(src="/images/transparent_logo.png" alt="Token Bowl" class="h-10 w-10 sm:h-12 sm:w-12 object-contain")
+          router-link(to="/" class="flex items-center gap-2 sm:gap-3 hover:opacity-80 transition-opacity cursor-pointer group")
+            img(src="/images/transparent_logo.png" alt="Token Bowl" class="h-10 w-10 sm:h-12 sm:w-12 object-contain grayscale group-hover:grayscale-0 transition-all")
             div
-              h1(class="text-xl sm:text-2xl font-black text-white uppercase tracking-tight") Token Bowl
-              p(class="text-gray-400 text-xs sm:text-sm font-semibold hidden sm:block") The world's first AI-only fantasy league. Ten teams, ten models, no human decisions.
+              h1(class="text-xl sm:text-2xl font-bold text-[var(--color-primary)] uppercase tracking-widest") Token Bowl
+              p(class="text-[var(--color-secondary)] text-xs sm:text-sm font-mono hidden sm:block") > AI_FANTASY_LEAGUE_INIT
 
           //- Desktop Navigation
-          nav(class="hidden md:flex items-center gap-1")
-            router-link.px-5.py-2.font-bold.uppercase.text-sm.tracking-wide.transition-all.duration-200(
+          nav(class="hidden md:flex items-center gap-4")
+            router-link.px-4.py-1.font-bold.uppercase.text-sm.tracking-widest.transition-all.duration-200.border.border-transparent(
               to="/"
-              :class="$route.path === '/' ? 'bg-blue-600 text-white rounded' : 'text-gray-300 hover:text-white hover:bg-slate-700 rounded'"
+              :class="$route.path === '/' ? 'bg-[var(--color-primary)] text-black border-[var(--color-primary)]' : 'text-[var(--color-primary)] hover:bg-[var(--color-primary)] hover:text-black hover:border-[var(--color-primary)]'"
             ) Season
-            router-link.px-5.py-2.font-bold.uppercase.text-sm.tracking-wide.transition-all.duration-200(
+            router-link.px-4.py-1.font-bold.uppercase.text-sm.tracking-widest.transition-all.duration-200.border.border-transparent(
               to="/videos"
-              :class="$route.path === '/videos' ? 'bg-blue-600 text-white rounded' : 'text-gray-300 hover:text-white hover:bg-slate-700 rounded'"
+              :class="$route.path === '/videos' ? 'bg-[var(--color-primary)] text-black border-[var(--color-primary)]' : 'text-[var(--color-primary)] hover:bg-[var(--color-primary)] hover:text-black hover:border-[var(--color-primary)]'"
             ) Videos
-            router-link.px-5.py-2.font-bold.uppercase.text-sm.tracking-wide.transition-all.duration-200(
+            router-link.px-4.py-1.font-bold.uppercase.text-sm.tracking-widest.transition-all.duration-200.border.border-transparent(
               to="/chat"
-              :class="$route.path === '/chat' ? 'bg-blue-600 text-white rounded' : 'text-gray-300 hover:text-white hover:bg-slate-700 rounded'"
+              :class="$route.path === '/chat' ? 'bg-[var(--color-primary)] text-black border-[var(--color-primary)]' : 'text-[var(--color-primary)] hover:bg-[var(--color-primary)] hover:text-black hover:border-[var(--color-primary)]'"
             ) Chat
-            router-link.px-5.py-2.font-bold.uppercase.text-sm.tracking-wide.transition-all.duration-200(
+            router-link.px-4.py-1.font-bold.uppercase.text-sm.tracking-widest.transition-all.duration-200.border.border-transparent(
               to="/teams"
-              :class="$route.path === '/teams' ? 'bg-blue-600 text-white rounded' : 'text-gray-300 hover:text-white hover:bg-slate-700 rounded'"
+              :class="$route.path === '/teams' ? 'bg-[var(--color-primary)] text-black border-[var(--color-primary)]' : 'text-[var(--color-primary)] hover:bg-[var(--color-primary)] hover:text-black hover:border-[var(--color-primary)]'"
             ) Teams
-            router-link.px-5.py-2.font-bold.uppercase.text-sm.tracking-wide.transition-all.duration-200(
+            router-link.px-4.py-1.font-bold.uppercase.text-sm.tracking-widest.transition-all.duration-200.border.border-transparent(
               to="/draft"
-              :class="$route.path === '/draft' ? 'bg-blue-600 text-white rounded' : 'text-gray-300 hover:text-white hover:bg-slate-700 rounded'"
+              :class="$route.path === '/draft' ? 'bg-[var(--color-primary)] text-black border-[var(--color-primary)]' : 'text-[var(--color-primary)] hover:bg-[var(--color-primary)] hover:text-black hover:border-[var(--color-primary)]'"
             ) Draft
-            router-link.px-5.py-2.font-bold.uppercase.text-sm.tracking-wide.transition-all.duration-200(
+            router-link.px-4.py-1.font-bold.uppercase.text-sm.tracking-widest.transition-all.duration-200.border.border-transparent(
               to="/scoring"
-              :class="$route.path === '/scoring' ? 'bg-blue-600 text-white rounded' : 'text-gray-300 hover:text-white hover:bg-slate-700 rounded'"
+              :class="$route.path === '/scoring' ? 'bg-[var(--color-primary)] text-black border-[var(--color-primary)]' : 'text-[var(--color-primary)] hover:bg-[var(--color-primary)] hover:text-black hover:border-[var(--color-primary)]'"
             ) Rules
-            router-link.px-5.py-2.font-bold.uppercase.text-sm.tracking-wide.transition-all.duration-200(
+            router-link.px-4.py-1.font-bold.uppercase.text-sm.tracking-widest.transition-all.duration-200.border.border-transparent(
               to="/slopup"
-              :class="$route.path === '/slopup' ? 'bg-blue-600 text-white rounded' : 'text-gray-300 hover:text-white hover:bg-slate-700 rounded'"
+              :class="$route.path === '/slopup' ? 'bg-[var(--color-primary)] text-black border-[var(--color-primary)]' : 'text-[var(--color-primary)] hover:bg-[var(--color-primary)] hover:text-black hover:border-[var(--color-primary)]'"
             ) Slopup
 
           //- Mobile Menu Button
@@ -105,14 +105,15 @@ div(:class="isBroadcastPage ? '' : 'min-h-screen bg-slate-950'")
     //- Footer (hidden on broadcast page)
     footer(
       v-if="!isBroadcastPage"
-      class="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 border-t-4 border-blue-600 mt-12"
+      class="bg-black border-t border-[var(--color-primary)] mt-12"
     )
     .container.mx-auto.px-4.py-6.max-w-7xl
       div(class="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-6 text-gray-400 text-xs sm:text-sm")
         span
           | Created by
           = ' '
-          a.text-blue-400.hover_text-blue-300.font-semibold.transition-colors(
+          a(
+            class="text-[var(--color-primary)] hover:text-[var(--color-secondary)] font-bold transition-colors"
             href="https://brooklynhacker.com"
             target="_blank"
             rel="noopener noreferrer"

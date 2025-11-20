@@ -1,5 +1,5 @@
 <template>
-  <span class="odometer-number">{{ formattedValue }}</span>
+  <span class="odometer-number font-mono">{{ formattedValue }}</span>
 </template>
 
 <script>

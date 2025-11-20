@@ -1,26 +1,26 @@
 <template lang="pug">
-.container.mx-auto.px-4.py-8.bg-slate-950
+div(class="container mx-auto px-4 py-8 bg-[var(--color-background)]")
   //- Loading State
   .flex.items-center.justify-center(v-if="loading" style="min-height: 50vh")
     .text-center
-      .inline-block.animate-spin.rounded-full.h-16.w-16.border-4.border-blue-500.border-t-transparent
+      div(class="inline-block animate-spin rounded-full h-16 w-16 border-4 border-blue-500 border-t-transparent")
       p.text-white.mt-4.text-xl.font-bold.uppercase.tracking-wider Loading teams...
 
   //- Error State
   .py-12(v-else-if="error")
-    .bg-red-600.border-l-4.border-red-800.rounded.p-6.text-center
+    div(class="bg-red-600 border-l-4 border-red-800 rounded p-6 text-center")
       p.text-white.text-xl.font-bold {{ error }}
 
   //- Main Content
   main(v-else-if="teams.length > 0")
     //- Team Selector (Fixed)
-    div(class="fixed top-16 md:top-24 left-0 right-0 z-30 bg-slate-950 pb-2 sm:pb-4 pt-2 sm:pt-4 shadow-lg")
+    div(class="fixed top-16 md:top-24 left-0 right-0 z-30 bg-[var(--color-background)] pb-2 sm:pb-4 pt-2 sm:pt-4 border-b border-[var(--color-primary)]")
       div(class="container mx-auto px-2 sm:px-4 max-w-7xl")
         //- Mobile Custom Dropdown
         div(class="md:hidden relative")
           //- Dropdown Button
           button(
-            class="w-full px-4 py-3 bg-slate-800 text-white font-bold rounded-lg border-2 border-blue-600 focus:outline-none focus:border-yellow-400 transition-colors flex items-center justify-between"
+            class="w-full px-4 py-3 bg-[var(--color-surface)] text-[var(--color-text)] font-bold border border-[var(--color-primary)] focus:outline-none focus:bg-[var(--color-primary)] focus:text-black transition-colors flex items-center justify-between"
             @click="toggleMobileDropdown"
           )
             .flex.items-center.gap-3(v-if="selectedTeam")
@@ -42,13 +42,13 @@
           //- Dropdown Menu
           div(
             v-if="mobileDropdownOpen"
-            class="absolute top-full left-0 right-0 mt-2 bg-slate-800 rounded-lg border-2 border-blue-600 shadow-xl max-h-96 overflow-y-auto z-50"
+            class="absolute top-full left-0 right-0 mt-2 bg-black border border-[var(--color-primary)] terminal-shadow max-h-96 overflow-y-auto z-50"
           )
             button(
               v-for="team in teams"
               :key="team.roster_id"
-              class="w-full px-4 py-3 flex items-center gap-3 hover:bg-slate-700 transition-colors border-b border-slate-700 last:border-b-0"
-              :class="selectedTeam?.roster_id === team.roster_id ? 'bg-blue-600' : ''"
+              class="w-full px-4 py-3 flex items-center gap-3 hover:bg-[var(--color-primary)] hover:text-black transition-colors border-b border-[var(--color-primary)] last:border-b-0"
+              :class="selectedTeam?.roster_id === team.roster_id ? 'bg-[var(--color-primary)] text-black' : 'text-[var(--color-text)]'"
               @click="selectTeamFromDropdown(team)"
             )
               img.h-8.w-8.object-contain.flex-shrink-0(
@@ -60,10 +60,10 @@
 
         //- Desktop Buttons
         div(class="hidden md:flex gap-1 sm:gap-2 overflow-x-auto scrollbar-hide justify-start sm:justify-center")
-          button(class="px-2 py-1.5 sm:px-3 sm:py-2 rounded-lg font-bold text-xs transition-all duration-200 flex flex-col items-center gap-1 flex-shrink-0"
+          button(class="px-2 py-1.5 sm:px-3 sm:py-2 font-bold text-xs transition-all duration-200 flex flex-col items-center gap-1 flex-shrink-0 border border-transparent hover:border-[var(--color-primary)]"
             v-for="team in teams"
             :key="team.roster_id"
-            :class="selectedTeam?.roster_id === team.roster_id ? 'bg-blue-600 text-white' : 'bg-slate-800 text-gray-300 hover:bg-slate-700'"
+            :class="selectedTeam?.roster_id === team.roster_id ? 'bg-[var(--color-primary)] text-black border-[var(--color-primary)]' : 'bg-[var(--color-surface)] text-[var(--color-secondary)]'"
             @click="selectTeam(team)"
           )
             img(class="h-5 w-5 sm:h-6 sm:w-6 object-contain"
@@ -82,7 +82,7 @@
       div(class="lg:col-span-2")
         //- Team Header
         section(class="mb-4 sm:mb-8")
-          div(class="bg-gradient-to-r from-blue-600 to-blue-800 px-4 sm:px-6 py-3 sm:py-4 rounded-t-lg border-b-4 border-yellow-400")
+          div(class="bg-[var(--color-surface)] px-4 sm:px-6 py-3 sm:py-4 border-t border-x border-[var(--color-primary)]")
             div(class="flex items-center gap-3 sm:gap-4")
               img(class="h-12 w-12 sm:h-16 sm:w-16 object-contain"
                 :src="selectedTeam.teamInfo.logo"
@@ -90,19 +90,19 @@
                 :class="selectedTeam.teamInfo.invertLogo ? 'invert brightness-200' : ''"
               )
               div
-                h2(class="text-white text-xl sm:text-3xl font-bold") {{ selectedTeam.teamInfo.aiModel }}
-                p(class="text-white/90 text-sm sm:text-lg") {{ selectedTeam.teamInfo.owner }}
+                h2(class="text-[var(--color-primary)] text-xl sm:text-3xl font-bold uppercase tracking-widest") {{ selectedTeam.teamInfo.aiModel }}
+                p(class="text-[var(--color-secondary)] text-sm sm:text-lg") {{ selectedTeam.teamInfo.owner }}
                 div(class="flex items-center gap-2 flex-wrap")
                   p(class="text-white/80 text-xs sm:text-sm") {{ selectedTeam.settings.wins || 0 }}-{{ selectedTeam.settings.losses || 0 }} • {{ (selectedTeam.settings.fpts || 0).toFixed(0) }} pts
                   div(
                     v-for="badge in getTeamBadges()"
                     :key="badge.type"
-                    :class="[badge.color, badge.color === 'bg-yellow-500' ? 'text-black' : 'text-white']"
-                    class="px-2 py-0.5 rounded text-xs font-bold"
+                    :class="[badge.color, badge.color === 'bg-yellow-500' ? 'text-black border-yellow-500' : 'text-[var(--color-text)] border-[var(--color-primary)]']"
+                    class="px-2 py-0.5 border text-xs font-bold"
                   ) {{ badge.label }}
 
           //- Model Info
-          div(class="bg-slate-900 rounded-b-lg p-4 sm:p-6" v-if="selectedTeam.modelInfo")
+          div(class="bg-black border-b border-x border-[var(--color-primary)] p-4 sm:p-6" v-if="selectedTeam.modelInfo")
             div(class="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4")
               div
                 div(class="text-gray-400 text-xs sm:text-sm mb-1") Latest Model Version
@@ -131,22 +131,22 @@
 
         //- Current Week Roster
         section(class="mb-4 sm:mb-8")
-          div(class="bg-gradient-to-r from-purple-600 to-purple-800 rounded-t-lg px-4 sm:px-6 py-3 sm:py-4 border-b-4 border-yellow-400")
-            h3(class="text-white text-lg sm:text-2xl font-black uppercase tracking-wide flex items-center gap-2 sm:gap-3")
-              span.text-yellow-400 📋
+          div(class="bg-[var(--color-surface)] border-t border-x border-[var(--color-primary)] px-4 sm:px-6 py-3 sm:py-4")
+            h3(class="text-[var(--color-primary)] text-lg sm:text-2xl font-bold uppercase tracking-widest flex items-center gap-2 sm:gap-3")
+              span(class="text-[var(--color-secondary)]") >
               | Week {{ currentWeek }} Roster
 
-          div(class="bg-slate-900 rounded-b-lg p-4 sm:p-6")
+          div(class="bg-black border-b border-x border-[var(--color-primary)] p-4 sm:p-6")
             //- Current Week Score
-            div(class="mb-4 sm:mb-6 p-3 sm:p-4 bg-slate-800 rounded-lg" v-if="currentMatchup")
+            div(class="mb-4 sm:mb-6 p-3 sm:p-4 bg-[var(--color-surface)] border border-[var(--color-primary)]" v-if="currentMatchup")
               .text-center
                 div(class="text-gray-400 text-xs sm:text-sm mb-1") Current Week Score
-                div(class="text-white font-black text-2xl sm:text-4xl") {{ currentMatchup.points?.toFixed(2) || '0.00' }}
+                div(class="text-[var(--color-primary)] font-bold text-2xl sm:text-4xl") {{ currentMatchup.points?.toFixed(2) || '0.00' }}
 
             //- Starters
-            h4.text-gray-400.font-bold.text-sm.uppercase.tracking-wider.mb-3 Starters
+            h4(class="text-gray-400 font-bold text-sm uppercase tracking-wider mb-3") Starters
             .space-y-2.mb-6
-              div(class="bg-slate-800 rounded p-2 sm:p-3"
+              div(class="bg-[var(--color-surface)] border border-[var(--color-primary)] p-2 sm:p-3"
                 v-for="playerId in currentMatchup?.starters || []"
                 :key="playerId"
               )
@@ -157,27 +157,27 @@
                     :alt="getPlayerName(playerId)"
                     @error="$event.target.style.display='none'"
                   )
-                  div(class="w-8 h-8 sm:w-10 sm:h-10 rounded flex items-center justify-center text-xs font-bold flex-shrink-0"
+                  div(class="w-8 h-8 sm:w-10 sm:h-10 border flex items-center justify-center text-xs font-bold flex-shrink-0"
                     :class="getPositionColor(getPlayerPosition(playerId))"
                   ) {{ getPlayerPosition(playerId) }}
                   .flex-1.min-w-0
                     .flex.items-center.gap-2
-                      div(class="text-white font-semibold text-sm sm:text-base truncate") {{ getPlayerName(playerId) }}
+                      div(class="text-[var(--color-text)] font-semibold text-sm sm:text-base truncate") {{ getPlayerName(playerId) }}
                       //- BYE badge
                       div(
                         v-if="getPlayerBye(playerId)"
-                        class="px-2 py-0.5 rounded text-xs font-bold bg-gray-600 text-white"
+                        class="px-2 py-0.5 border text-xs font-bold bg-transparent border-gray-600 text-gray-400"
                       ) BYE
                       //- SUSP badge
                       div(
                         v-if="getPlayerSuspended(playerId)"
-                        class="px-2 py-0.5 rounded text-xs font-bold bg-purple-600 text-white"
+                        class="px-2 py-0.5 border text-xs font-bold bg-transparent border-purple-600 text-purple-400"
                       ) SUSP
                       //- Injury badges
                       div(
                         v-if="getPlayerInjury(playerId)"
-                        class="px-2 py-0.5 rounded text-xs font-bold"
-                        :class="getPlayerInjury(playerId) === 'O' || getPlayerInjury(playerId) === 'IR' ? 'bg-red-600 text-white' : getPlayerInjury(playerId) === 'D' ? 'bg-orange-500 text-white' : 'bg-yellow-500 text-black'"
+                        :class="getPlayerInjury(playerId) === 'O' || getPlayerInjury(playerId) === 'IR' ? 'border-red-600 text-red-600' : getPlayerInjury(playerId) === 'D' ? 'border-orange-500 text-orange-500' : 'border-yellow-500 text-yellow-500'"
+                        class="px-2 py-0.5 border text-xs font-bold bg-transparent"
                       ) {{ getPlayerInjury(playerId) }}
                     div(class="text-gray-400 text-xs hidden sm:block") {{ getPlayerTeam(playerId) }}
                     //- Game info (time/status)
@@ -193,10 +193,10 @@
 
             //- Bench
             div(v-if="getBenchPlayers(currentMatchup).length > 0")
-              h4.text-gray-400.font-bold.text-sm.uppercase.tracking-wider.mb-3 Bench
+              h4(class="text-gray-400 font-bold text-sm uppercase tracking-wider mb-3") Bench
               .space-y-2
                 div(
-                  class="bg-slate-800/50 rounded p-3"
+                  class="bg-[var(--color-surface)] border border-[var(--color-primary)] p-3"
                   v-for="playerId in getBenchPlayers(currentMatchup)"
                   :key="playerId"
                 )
@@ -207,29 +207,29 @@
                       :alt="getPlayerName(playerId)"
                       @error="$event.target.style.display='none'"
                     )
-                    div.w-8.h-8.rounded.flex.items-center.justify-center.text-xs.font-bold.flex-shrink-0(
+                    div.w-8.h-8.border.flex.items-center.justify-center.text-xs.font-bold.flex-shrink-0(
                       :class="getPositionColor(getPlayerPosition(playerId))"
                     ) {{ getPlayerPosition(playerId) }}
                     .flex-1
                       .flex.items-center.gap-2
-                        .text-white.font-semibold.text-sm {{ getPlayerName(playerId) }}
+                        div(class="text-[var(--color-text)] font-semibold text-sm") {{ getPlayerName(playerId) }}
                         //- BYE badge
                         div(
                           v-if="getPlayerBye(playerId)"
-                          class="px-1.5 py-0.5 rounded text-xs font-bold bg-gray-600 text-white"
+                          class="px-1.5 py-0.5 border text-xs font-bold bg-transparent border-gray-600 text-gray-400"
                         ) BYE
                         //- SUSP badge
                         div(
                           v-if="getPlayerSuspended(playerId)"
-                          class="px-1.5 py-0.5 rounded text-xs font-bold bg-purple-600 text-white"
+                          class="px-1.5 py-0.5 border text-xs font-bold bg-transparent border-purple-600 text-purple-400"
                         ) SUSP
                         //- Injury badges
                         div(
                           v-if="getPlayerInjury(playerId)"
-                          class="px-1.5 py-0.5 rounded text-xs font-bold"
-                          :class="getPlayerInjury(playerId) === 'O' || getPlayerInjury(playerId) === 'IR' ? 'bg-red-600 text-white' : getPlayerInjury(playerId) === 'D' ? 'bg-orange-500 text-white' : 'bg-yellow-500 text-black'"
+                          class="px-1.5 py-0.5 border text-xs font-bold bg-transparent"
+                          :class="getPlayerInjury(playerId) === 'O' || getPlayerInjury(playerId) === 'IR' ? 'border-red-600 text-red-600' : getPlayerInjury(playerId) === 'D' ? 'border-orange-500 text-orange-500' : 'border-yellow-500 text-yellow-500'"
                         ) {{ getPlayerInjury(playerId) }}
-                      .text-gray-400.text-xs {{ getPlayerTeam(playerId) }}
+                      div(class="text-gray-400 text-xs") {{ getPlayerTeam(playerId) }}
                       //- Game info (time/status)
                       div(class="text-xs mt-0.5" v-if="getPlayerGameInfo(playerId)")
                         span(:class="getPlayerGameInfo(playerId).status === 'in_progress' ? 'text-red-400 font-bold animate-pulse' : getPlayerGameInfo(playerId).status === 'final' ? 'text-gray-500' : 'text-blue-400'")
@@ -241,21 +241,21 @@
 
         //- Matchup History
         section(class="mb-4 sm:mb-8" v-if="teamHistory")
-          div(class="bg-gradient-to-r from-green-600 to-green-800 rounded-t-lg px-4 sm:px-6 py-3 sm:py-4 border-b-4 border-yellow-400")
-            h3(class="text-white text-lg sm:text-2xl font-black uppercase tracking-wide flex items-center gap-2 sm:gap-3")
-              span.text-yellow-400 📅
+          div(class="bg-[var(--color-surface)] border-t border-x border-[var(--color-primary)] px-4 sm:px-6 py-3 sm:py-4")
+            h3(class="text-[var(--color-primary)] text-lg sm:text-2xl font-bold uppercase tracking-widest flex items-center gap-2 sm:gap-3")
+              span(class="text-[var(--color-secondary)]") >
               | Matchup History
 
-          div(class="bg-slate-900 rounded-b-lg p-4 sm:p-6")
+          div(class="bg-black border-b border-x border-[var(--color-primary)] p-4 sm:p-6")
             div(class="space-y-4")
               div(
                 v-for="matchup in teamHistory.matchups"
                 :key="matchup.week"
-                class="bg-slate-800 rounded-lg overflow-hidden border-2 border-slate-700"
+                class="bg-[var(--color-surface)] border border-[var(--color-primary)]"
               )
                 //- Week Header
-                .bg-gradient-to-r.from-slate-700.to-slate-600.px-4.py-2.flex.items-center.justify-between
-                  .text-white.font-bold.text-sm Week {{ matchup.week }}
+                div(class="bg-[var(--color-background)] border-b border-[var(--color-primary)] px-4 py-2 flex items-center justify-between")
+                  div(class="text-[var(--color-primary)] font-bold text-sm font-mono") Week {{ matchup.week }}
                   .flex.items-center.gap-2(v-if="matchup.opponentScore !== null")
                     span.text-xs.font-bold.uppercase(
                       :class="matchup.won ? 'text-green-400' : 'text-red-400'"
@@ -265,7 +265,7 @@
                   //- Mobile Layout (stacked)
                   div(class="flex flex-col gap-2 md:hidden")
                     //- Team 1 (Mobile)
-                    .flex.items-center.justify-between.w-full.bg-slate-750.rounded-lg.p-2
+                    div(class="flex items-center justify-between w-full bg-black border border-[var(--color-primary)] p-2")
                       div(class="flex items-center gap-2 flex-1 min-w-0")
                         img(class="h-10 w-10 flex-shrink-0 object-contain"
                           :src="selectedTeam.teamInfo.logo"
@@ -273,10 +273,10 @@
                           :class="selectedTeam.teamInfo.invertLogo ? 'invert brightness-200' : ''"
                         )
                         div(class="min-w-0 flex-1")
-                          div(class="text-white font-bold text-sm truncate") {{ selectedTeam.teamInfo.aiModel }}
-                          div(class="text-blue-400 text-xs font-semibold truncate") {{ selectedTeam.teamInfo.owner }}
+                          div(class="text-[var(--color-text)] font-bold text-sm truncate") {{ selectedTeam.teamInfo.aiModel }}
+                          div(class="text-[var(--color-secondary)] text-xs font-semibold truncate") {{ selectedTeam.teamInfo.owner }}
                       div(class="flex flex-col items-end flex-shrink-0 ml-2")
-                        div(class="text-white font-black text-xl") {{ matchup.teamScore.toFixed(2) }}
+                        div(class="text-[var(--color-primary)] font-bold text-xl") {{ matchup.teamScore.toFixed(2) }}
                         div(v-if="matchup.opponentScore !== null")
                           span.text-green-400.text-xs.font-bold.uppercase(v-if="matchup.won") W
                           span.text-red-400.text-xs.font-bold.uppercase(v-else) L
@@ -286,11 +286,11 @@
                       div(class="relative flex items-center justify-center w-full")
                         div(class="absolute inset-0 flex items-center")
                           div(class="w-full border-t border-slate-600")
-                        div(class="relative bg-slate-800 px-2")
-                          span(class="text-gray-400 font-bold text-xs") VS
+                        div(class="relative bg-black px-2")
+                          span(class="text-[var(--color-secondary)] font-bold text-xs") VS
 
                     //- Team 2 (Mobile)
-                    .flex.items-center.justify-between.w-full.bg-slate-750.rounded-lg.p-2
+                    div(class="flex items-center justify-between w-full bg-black border border-[var(--color-primary)] p-2")
                       div(class="flex items-center gap-2 flex-1 min-w-0")
                         img(class="h-10 w-10 flex-shrink-0 object-contain"
                           :src="matchup.opponent.logo"
@@ -298,10 +298,10 @@
                           :class="matchup.opponent.invertLogo ? 'invert brightness-200' : ''"
                         )
                         div(class="min-w-0 flex-1")
-                          div(class="text-white font-bold text-sm truncate") {{ matchup.opponent.aiModel }}
-                          div(class="text-blue-400 text-xs font-semibold truncate") {{ matchup.opponent.owner }}
+                          div(class="text-[var(--color-text)] font-bold text-sm truncate") {{ matchup.opponent.aiModel }}
+                          div(class="text-[var(--color-secondary)] text-xs font-semibold truncate") {{ matchup.opponent.owner }}
                       div(class="flex flex-col items-end flex-shrink-0 ml-2")
-                        div(class="text-white font-black text-xl") {{ matchup.opponentScore.toFixed(2) }}
+                        div(class="text-[var(--color-primary)] font-bold text-xl") {{ matchup.opponentScore.toFixed(2) }}
                         div(v-if="matchup.opponentScore !== null")
                           span.text-green-400.text-xs.font-bold.uppercase(v-if="!matchup.won") W
                           span.text-red-400.text-xs.font-bold.uppercase(v-else) L
@@ -309,7 +309,7 @@
                   //- Desktop Layout (side by side with VS in the middle)
                   div(class="hidden md:flex md:items-center md:gap-2")
                     //- Team 1 (Desktop)
-                    div(class="flex-1 flex items-center justify-between bg-slate-750 rounded-lg p-3")
+                    div(class="flex-1 flex items-center justify-between bg-black border border-[var(--color-primary)] p-3")
                       div(class="flex items-center gap-3")
                         img(class="h-12 w-12 object-contain"
                           :src="selectedTeam.teamInfo.logo"
@@ -317,30 +317,30 @@
                           :class="selectedTeam.teamInfo.invertLogo ? 'invert brightness-200' : ''"
                         )
                         div
-                          div(class="text-white font-bold text-lg") {{ selectedTeam.teamInfo.aiModel }}
-                          div(class="text-blue-400 text-sm font-semibold") {{ selectedTeam.teamInfo.owner }}
+                          div(class="text-[var(--color-text)] font-bold text-lg") {{ selectedTeam.teamInfo.aiModel }}
+                          div(class="text-[var(--color-secondary)] text-sm font-semibold") {{ selectedTeam.teamInfo.owner }}
                       div(class="text-right")
-                        div(class="text-white font-black text-3xl") {{ matchup.teamScore.toFixed(2) }}
+                        div(class="text-[var(--color-primary)] font-bold text-3xl") {{ matchup.teamScore.toFixed(2) }}
                         div(v-if="matchup.opponentScore !== null" class="mt-2")
                           span(class="text-green-400 text-xs font-bold uppercase" v-if="matchup.won") W
                           span(class="text-red-400 text-xs font-bold uppercase" v-else) L
 
                     //- VS Separator (Desktop)
                     div(class="flex-shrink-0 px-2")
-                      div(class="bg-slate-700 rounded-full px-3 py-1")
-                        span(class="text-white font-black text-sm") VS
+                      div(class="bg-[var(--color-surface)] border border-[var(--color-primary)] px-3 py-1")
+                        span(class="text-[var(--color-primary)] font-bold text-sm") VS
 
                     //- Team 2 (Desktop)
-                    div(class="flex-1 flex items-center justify-between bg-slate-750 rounded-lg p-3")
+                    div(class="flex-1 flex items-center justify-between bg-black border border-[var(--color-primary)] p-3")
                       div(class="text-left")
-                        div(class="text-white font-black text-3xl") {{ matchup.opponentScore.toFixed(2) }}
+                        div(class="text-[var(--color-primary)] font-bold text-3xl") {{ matchup.opponentScore.toFixed(2) }}
                         div(v-if="matchup.opponentScore !== null" class="mt-2")
                           span(class="text-green-400 text-xs font-bold uppercase" v-if="!matchup.won") W
                           span(class="text-red-400 text-xs font-bold uppercase" v-else) L
                       div(class="flex items-center gap-3")
                         div(class="text-right")
-                          div(class="text-white font-bold text-lg") {{ matchup.opponent.aiModel }}
-                          div(class="text-blue-400 text-sm font-semibold") {{ matchup.opponent.owner }}
+                          div(class="text-[var(--color-text)] font-bold text-lg") {{ matchup.opponent.aiModel }}
+                          div(class="text-[var(--color-secondary)] text-sm font-semibold") {{ matchup.opponent.owner }}
                         img(
                           class="h-12 w-12 object-contain"
                           :src="matchup.opponent.logo"
@@ -376,170 +376,170 @@
 
         //- Weekly Performance Chart
         section(class="mb-4 sm:mb-8" v-if="teamHistory")
-          div(class="bg-gradient-to-r from-indigo-600 to-indigo-800 rounded-t-lg px-4 sm:px-6 py-3 sm:py-4 border-b-4 border-yellow-400")
-            h3(class="text-white text-lg sm:text-2xl font-black uppercase tracking-wide flex items-center gap-2 sm:gap-3")
-              span.text-yellow-400 ⚡
+          div(class="bg-[var(--color-surface)] border-t border-x border-[var(--color-primary)] px-4 sm:px-6 py-3 sm:py-4")
+            h3(class="text-[var(--color-primary)] text-lg sm:text-2xl font-bold uppercase tracking-widest flex items-center gap-2 sm:gap-3")
+              span(class="text-[var(--color-secondary)]") >
               | Weekly Performance
 
-          div(class="bg-slate-900 rounded-b-lg p-4 sm:p-6 overflow-x-auto")
+          div(class="bg-black border-b border-x border-[var(--color-primary)] p-4 sm:p-6 overflow-x-auto")
             div(:ref="setWeeklyChartRef" class="w-full min-w-[350px] h-[300px] sm:h-[500px]")
 
         //- Transactions Activity Chart
         section(class="mb-4 sm:mb-8" v-if="teamTransactions.length > 0")
-          div(class="bg-gradient-to-r from-teal-600 to-teal-800 rounded-t-lg px-4 sm:px-6 py-3 sm:py-4 border-b-4 border-yellow-400")
-            h3(class="text-white text-lg sm:text-2xl font-black uppercase tracking-wide flex items-center gap-2 sm:gap-3")
-              span.text-yellow-400 💼
+          div(class="bg-[var(--color-surface)] border-t border-x border-[var(--color-primary)] px-4 sm:px-6 py-3 sm:py-4")
+            h3(class="text-[var(--color-primary)] text-lg sm:text-2xl font-bold uppercase tracking-widest flex items-center gap-2 sm:gap-3")
+              span(class="text-[var(--color-secondary)]") >
               | Transactions Activity
 
-          div(class="bg-slate-900 rounded-b-lg p-4 sm:p-6 overflow-x-auto")
+          div(class="bg-black border-b border-x border-[var(--color-primary)] p-4 sm:p-6 overflow-x-auto")
             div(:ref="setTransactionsChartRef" class="w-full min-w-[350px] h-[300px] sm:h-[400px]")
 
         //- Injury Status by Week Chart
         section(class="mb-4 sm:mb-8" v-if="teamInjuries.length > 0")
-          div(class="bg-gradient-to-r from-red-600 to-red-800 rounded-t-lg px-4 sm:px-6 py-3 sm:py-4 border-b-4 border-yellow-400")
-            h3(class="text-white text-lg sm:text-2xl font-black uppercase tracking-wide flex items-center gap-2 sm:gap-3")
-              span.text-yellow-400 🏥
+          div(class="bg-[var(--color-surface)] border-t border-x border-[var(--color-primary)] px-4 sm:px-6 py-3 sm:py-4")
+            h3(class="text-[var(--color-primary)] text-lg sm:text-2xl font-bold uppercase tracking-widest flex items-center gap-2 sm:gap-3")
+              span(class="text-[var(--color-secondary)]") >
               | Injury Status by Week
 
-          div(class="bg-slate-900 rounded-b-lg p-4 sm:p-6 overflow-x-auto")
+          div(class="bg-black border-b border-x border-[var(--color-primary)] p-4 sm:p-6 overflow-x-auto")
             div(:ref="setInjuriesChartRef" class="w-full min-w-[350px] h-[300px] sm:h-[400px]")
 
       //- Sidebar
       div(class="lg:col-span-1 space-y-8")
         //- Season History
         section
-          .bg-gradient-to-r.from-blue-600.to-indigo-800.rounded-t-lg.px-6.py-4.border-b-4.border-yellow-400
-            h3.text-white.text-xl.font-black.uppercase.tracking-wide.flex.items-center.gap-3
-              span.text-yellow-400 📊
+          div(class="bg-[var(--color-surface)] border-t border-x border-[var(--color-primary)] px-6 py-4")
+            h3(class="text-[var(--color-primary)] text-xl font-bold uppercase tracking-widest flex items-center gap-3")
+              span(class="text-[var(--color-secondary)]") >
               | Season History
 
-          .bg-slate-900.rounded-b-lg.p-6
+          div(class="bg-black border-b border-x border-[var(--color-primary)] p-6")
             .space-y-4(v-if="teamHistory")
               //- Record
-              .bg-slate-800.rounded-lg.p-4
+              div(class="bg-[var(--color-surface)] border border-[var(--color-primary)] p-4")
                 .text-gray-400.text-sm.mb-2 Season Record
-                .text-white.font-black.text-3xl {{ teamHistory.wins }}-{{ teamHistory.losses }}
+                div(class="text-[var(--color-primary)] font-bold text-3xl") {{ teamHistory.wins }}-{{ teamHistory.losses }}
 
               //- Total Points
-              .bg-slate-800.rounded-lg.p-4
+              div(class="bg-[var(--color-surface)] border border-[var(--color-primary)] p-4")
                 .text-gray-400.text-sm.mb-2 Total Points For
-                .text-white.font-black.text-3xl {{ teamHistory.totalPoints.toFixed(2) }}
+                div(class="text-[var(--color-primary)] font-bold text-3xl") {{ teamHistory.totalPoints.toFixed(2) }}
 
               //- Points Against
-              .bg-slate-800.rounded-lg.p-4
+              div(class="bg-[var(--color-surface)] border border-[var(--color-primary)] p-4")
                 .text-gray-400.text-sm.mb-2 Total Points Against
-                .text-white.font-black.text-3xl {{ teamHistory.totalPointsAgainst.toFixed(2) }}
+                div(class="text-[var(--color-primary)] font-bold text-3xl") {{ teamHistory.totalPointsAgainst.toFixed(2) }}
 
               //- Top 3 Players
-              .bg-slate-800.rounded-lg.p-4
+              div(class="bg-[var(--color-surface)] border border-[var(--color-primary)] p-4")
                 .text-gray-400.text-sm.mb-3 Top 3 Players
                 .space-y-3
                   .flex.items-center.gap-3(v-for="(player, index) in teamHistory.topPlayers" :key="player.playerId")
-                    .text-2xl.font-black.text-yellow-400 {{ index + 1 }}
+                    div(class="text-2xl font-bold text-[var(--color-accent)]") {{ index + 1 }}
                     img.h-12.w-12.rounded-full.object-cover(
                       :src="getPlayerPortrait(player.playerId)"
                       :alt="player.name"
                       @error="$event.target.style.display='none'"
                     )
                     .flex-1
-                      .text-white.font-semibold.text-sm {{ player.name }}
+                      div(class="text-[var(--color-text)] font-semibold text-sm") {{ player.name }}
                       .text-gray-400.text-xs {{ player.position }} • {{ getPlayerTeam(player.playerId) }}
                     .text-right
                       .text-blue-400.font-bold.text-lg {{ player.totalPoints.toFixed(1) }}
                       .text-gray-500.text-xs pts
 
               //- Injury Summary
-              .bg-slate-800.rounded-lg.p-4(v-if="teamHistory.injuryStats")
-                .text-gray-400.text-sm.mb-3.flex.items-center.gap-2
+              div(class="bg-[var(--color-surface)] border border-[var(--color-primary)] p-4" v-if="teamHistory.injuryStats")
+                div(class="text-gray-400 text-sm mb-3 flex items-center gap-2")
                   span 🏥
                   span Injuries This Season
-                .grid.grid-cols-2.gap-3
+                div(class="grid grid-cols-2 gap-3")
                   div
-                    .text-white.font-black.text-2xl {{ teamHistory.injuryStats.total }}
-                    .text-gray-500.text-xs Total Injuries
+                    div(class="text-[var(--color-primary)] font-bold text-2xl") {{ teamHistory.injuryStats.total }}
+                    div(class="text-gray-500 text-xs") Total Injuries
                   div(v-if="teamHistory.injuryStats.out > 0")
-                    .text-red-400.font-black.text-2xl {{ teamHistory.injuryStats.out }}
-                    .text-gray-500.text-xs Out
+                    div(class="text-red-400 font-black text-2xl") {{ teamHistory.injuryStats.out }}
+                    div(class="text-gray-500 text-xs") Out
                   div(v-if="teamHistory.injuryStats.ir > 0")
-                    .text-red-500.font-black.text-2xl {{ teamHistory.injuryStats.ir }}
-                    .text-gray-500.text-xs IR
+                    div(class="text-red-500 font-black text-2xl") {{ teamHistory.injuryStats.ir }}
+                    div(class="text-gray-500 text-xs") IR
                   div(v-if="teamHistory.injuryStats.doubtful > 0")
-                    .text-orange-400.font-black.text-2xl {{ teamHistory.injuryStats.doubtful }}
-                    .text-gray-500.text-xs Doubtful
+                    div(class="text-orange-400 font-black text-2xl") {{ teamHistory.injuryStats.doubtful }}
+                    div(class="text-gray-500 text-xs") Doubtful
                   div(v-if="teamHistory.injuryStats.questionable > 0")
-                    .text-yellow-400.font-black.text-2xl {{ teamHistory.injuryStats.questionable }}
-                    .text-gray-500.text-xs Questionable
+                    div(class="text-yellow-400 font-black text-2xl") {{ teamHistory.injuryStats.questionable }}
+                    div(class="text-gray-500 text-xs") Questionable
 
               //- Transaction Summary
-              .bg-slate-800.rounded-lg.p-4(v-if="teamHistory.transactionStats")
-                .text-gray-400.text-sm.mb-3.flex.items-center.gap-2
+              div(class="bg-[var(--color-surface)] border border-[var(--color-primary)] p-4" v-if="teamHistory.transactionStats")
+                div(class="text-gray-400 text-sm mb-3 flex items-center gap-2")
                   span 💼
                   span Transactions This Season
-                .grid.grid-cols-2.gap-3
+                div(class="grid grid-cols-2 gap-3")
                   div
-                    .text-white.font-black.text-2xl {{ teamHistory.transactionStats.total }}
-                    .text-gray-500.text-xs Total Transactions
+                    div(class="text-[var(--color-primary)] font-bold text-2xl") {{ teamHistory.transactionStats.total }}
+                    div(class="text-gray-500 text-xs") Total Transactions
                   div
-                    .text-blue-400.font-black.text-2xl {{ teamHistory.transactionStats.waivers }}
-                    .text-gray-500.text-xs Waivers
+                    div(class="text-blue-400 font-black text-2xl") {{ teamHistory.transactionStats.waivers }}
+                    div(class="text-gray-500 text-xs") Waivers
                   div
-                    .text-green-400.font-black.text-2xl {{ teamHistory.transactionStats.freeAgents }}
-                    .text-gray-500.text-xs Free Agent Adds
+                    div(class="text-green-400 font-black text-2xl") {{ teamHistory.transactionStats.freeAgents }}
+                    div(class="text-gray-500 text-xs") Free Agent Adds
                   div(v-if="teamHistory.transactionStats.trades > 0")
-                    .text-purple-400.font-black.text-2xl {{ teamHistory.transactionStats.trades }}
-                    .text-gray-500.text-xs Trades
+                    div(class="text-purple-400 font-black text-2xl") {{ teamHistory.transactionStats.trades }}
+                    div(class="text-gray-500 text-xs") Trades
 
             .text-center.text-gray-500.py-4(v-else)
               p Loading history...
 
         //- Transaction History
         section
-          .bg-gradient-to-r.from-orange-600.to-orange-800.rounded-t-lg.px-6.py-4.border-b-4.border-yellow-400
-            h3.text-white.text-xl.font-black.uppercase.tracking-wide.flex.items-center.gap-3
-              span.text-yellow-400 💼
+          div(class="bg-[var(--color-surface)] border-t border-x border-[var(--color-primary)] px-6 py-4")
+            h3(class="text-[var(--color-primary)] text-xl font-bold uppercase tracking-widest flex items-center gap-3")
+              span(class="text-[var(--color-secondary)]") >
               | Transactions
 
-          .bg-slate-900.rounded-b-lg.p-6
+          div(class="bg-black border-b border-x border-[var(--color-primary)] p-6")
             .space-y-3(v-if="teamTransactions.length > 0")
-              .bg-slate-800.rounded-lg.p-4(
+              div(class="bg-[var(--color-surface)] border border-[var(--color-primary)] p-4"
                 v-for="(transaction, index) in teamTransactions"
                 :key="index"
               )
                 //- Trade Layout (Two-way exchange)
                 div(v-if="transaction.type === 'trade' && transaction.counterpartyInfo")
-                  .flex.items-center.justify-between.mb-4
-                    .flex.items-center.gap-3
-                      .text-purple-400.font-black.text-lg 🔄 Trade
-                      .text-gray-400.text-sm with
-                      .flex.items-center.gap-2
+                  div(class="flex items-center justify-between mb-4")
+                    div(class="flex items-center gap-3")
+                      div(class="text-purple-400 font-black text-lg") 🔄 Trade
+                      div(class="text-gray-400 text-sm") with
+                      div(class="flex items-center gap-2")
                         img.w-8.h-8.rounded(:src="transaction.counterpartyInfo.logo" :alt="transaction.counterpartyInfo.aiModel")
-                        .text-white.font-bold {{ transaction.counterpartyInfo.aiModel }}
-                    .text-gray-500.text-sm.whitespace-nowrap {{ formatTransactionDate(transaction.created) }}
+                        div(class="text-[var(--color-text)] font-bold") {{ transaction.counterpartyInfo.aiModel }}
+                    div(class="text-gray-500 text-sm whitespace-nowrap") {{ formatTransactionDate(transaction.created) }}
 
                   div(class="grid grid-cols-1 md:grid-cols-2 gap-4")
                     //- What this team received (filter by roster_id)
-                    .bg-slate-700.rounded-lg.p-4(v-if="transaction.adds && Object.keys(transaction.adds).filter(playerId => transaction.adds[playerId] === selectedTeam.roster_id).length > 0")
-                      .flex.items-center.gap-2.mb-3
+                    div(class="bg-black border border-[var(--color-primary)] p-4" v-if="transaction.adds && Object.keys(transaction.adds).filter(playerId => transaction.adds[playerId] === selectedTeam.roster_id).length > 0")
+                      div(class="flex items-center gap-2 mb-3")
                         span.text-2xl ⬅️
-                        .text-green-400.font-semibold Received
+                        div(class="text-green-400 font-semibold") Received
                       .space-y-3
                         .flex.items-start.gap-3(v-for="playerId in Object.keys(transaction.adds).filter(playerId => transaction.adds[playerId] === selectedTeam.roster_id)" :key="playerId")
                           img.w-14.h-14.rounded-lg.bg-slate-600.object-cover(:src="getPlayerImageUrl(playerId)" :alt="getPlayerNameFromId(playerId)" @error="$event.target.style.display='none'")
                           div.flex-1
-                            .text-gray-200.text-sm.font-semibold {{ getPlayerNameFromId(playerId) }}
+                            div(class="text-gray-200 text-sm font-semibold") {{ getPlayerNameFromId(playerId) }}
                             div(class="text-blue-400 text-xs font-bold mt-0.5") {{ getPlayerPositionFromId(playerId) }}
                             div(class="text-gray-400 text-xs mt-0.5" v-if="getPlayerRankECR(playerId)") ROS: {{ getPlayerRankECR(playerId) }}
 
                     //- What this team gave away (filter by roster_id)
-                    .bg-slate-700.rounded-lg.p-4(v-if="transaction.drops && Object.keys(transaction.drops).filter(playerId => transaction.drops[playerId] === selectedTeam.roster_id).length > 0")
-                      .flex.items-center.gap-2.mb-3
+                    div(class="bg-black border border-[var(--color-primary)] p-4" v-if="transaction.drops && Object.keys(transaction.drops).filter(playerId => transaction.drops[playerId] === selectedTeam.roster_id).length > 0")
+                      div(class="flex items-center gap-2 mb-3")
                         span.text-2xl ➡️
-                        .text-orange-400.font-semibold Sent
+                        div(class="text-orange-400 font-semibold") Sent
                       .space-y-3
                         .flex.items-start.gap-3(v-for="playerId in Object.keys(transaction.drops).filter(playerId => transaction.drops[playerId] === selectedTeam.roster_id)" :key="playerId")
                           img.w-14.h-14.rounded-lg.bg-slate-600.object-cover(:src="getPlayerImageUrl(playerId)" :alt="getPlayerNameFromId(playerId)" @error="$event.target.style.display='none'")
                           div.flex-1
-                            .text-gray-200.text-sm.font-semibold {{ getPlayerNameFromId(playerId) }}
+                            div(class="text-gray-200 text-sm font-semibold") {{ getPlayerNameFromId(playerId) }}
                             div(class="text-blue-400 text-xs font-bold mt-0.5") {{ getPlayerPositionFromId(playerId) }}
                             div(class="text-gray-400 text-xs mt-0.5" v-if="getPlayerRankECR(playerId)") ROS: {{ getPlayerRankECR(playerId) }}
 
@@ -549,34 +549,34 @@
                       span.text-gray-400.text-xs.font-semibold.uppercase.tracking-wider.ml-2 Δ ROS
 
                 //- Regular transaction layout (Waiver/Free Agent)
-                .flex.items-start.gap-4(v-else)
+                div(class="flex items-start gap-4" v-else)
                   .flex-1
-                    .text-white.font-bold {{ getTransactionType(transaction.type) }}
-                    .flex.items-start.gap-6.mt-3
+                    div(class="text-[var(--color-text)] font-bold") {{ getTransactionType(transaction.type) }}
+                    div(class="flex items-start gap-6 mt-3")
                       .flex-1(v-if="transaction.adds")
-                        .text-green-400.text-sm.font-semibold.mb-2 Added:
-                        .flex.items-start.gap-4.flex-wrap
+                        div(class="text-green-400 text-sm font-semibold mb-2") Added:
+                        div(class="flex items-start gap-4 flex-wrap")
                           .flex.items-start.gap-3(v-for="playerId in Object.keys(transaction.adds)" :key="playerId")
                             img.w-16.h-16.rounded-lg.bg-slate-700.object-cover(:src="getPlayerImageUrl(playerId)" :alt="getPlayerNameFromId(playerId)" @error="$event.target.style.display='none'")
                             div
-                              .text-gray-300.text-sm.font-semibold {{ getPlayerNameFromId(playerId) }}
+                              div(class="text-gray-300 text-sm font-semibold") {{ getPlayerNameFromId(playerId) }}
                               div(class="text-blue-400 text-xs font-bold mt-0.5") {{ getPlayerPositionFromId(playerId) }}
                               div(class="text-gray-400 text-xs mt-0.5" v-if="getPlayerRankECR(playerId)") ROS: {{ getPlayerRankECR(playerId) }}
 
                       .flex-1(v-if="transaction.drops")
-                        .text-red-400.text-sm.font-semibold.mb-2 Dropped:
-                        .flex.items-start.gap-4.flex-wrap
+                        div(class="text-red-400 text-sm font-semibold mb-2") Dropped:
+                        div(class="flex items-start gap-4 flex-wrap")
                           .flex.items-start.gap-3(v-for="playerId in Object.keys(transaction.drops)" :key="playerId")
                             img.w-16.h-16.rounded-lg.bg-slate-700.object-cover(:src="getPlayerImageUrl(playerId)" :alt="getPlayerNameFromId(playerId)" @error="$event.target.style.display='none'")
                             div
-                              .text-gray-300.text-sm.font-semibold {{ getPlayerNameFromId(playerId) }}
+                              div(class="text-gray-300 text-sm font-semibold") {{ getPlayerNameFromId(playerId) }}
                               div(class="text-blue-400 text-xs font-bold mt-0.5") {{ getPlayerPositionFromId(playerId) }}
                               div(class="text-gray-400 text-xs mt-0.5" v-if="getPlayerRankECR(playerId)") ROS: {{ getPlayerRankECR(playerId) }}
 
-                  .flex.flex-col.items-end.gap-2
+                  div(class="flex flex-col items-end gap-2")
                     div(:class="getTransactionDelta(transaction) > 0 ? 'text-green-400' : 'text-red-400'" class="text-3xl font-black") {{ getTransactionDelta(transaction) > 0 ? '+' : '' }}{{ getTransactionDelta(transaction) }}
-                    .text-gray-400.text-xs.font-semibold.uppercase.tracking-wider Δ ROS
-                    .text-gray-500.text-sm.whitespace-nowrap {{ formatTransactionDate(transaction.created) }}
+                    div(class="text-gray-400 text-xs font-semibold uppercase tracking-wider") Δ ROS
+                    div(class="text-gray-500 text-sm whitespace-nowrap") {{ formatTransactionDate(transaction.created) }}
 
             .text-center.text-gray-500.py-4(v-else)
               p No transactions yet
@@ -1569,13 +1569,13 @@ export default {
         animationEasing: 'cubicOut',
         tooltip: {
           trigger: 'axis',
-          backgroundColor: 'rgba(15, 23, 42, 0.9)',
-          borderColor: '#3b82f6',
-          textStyle: { color: '#fff' },
+          backgroundColor: 'rgba(0, 0, 0, 0.9)',
+          borderColor: '#00ff00',
+          textStyle: { color: '#00ff00', fontFamily: 'monospace' },
           axisPointer: {
             type: 'cross',
             crossStyle: {
-              color: '#999'
+              color: '#00ff00'
             }
           }
         },
@@ -1583,7 +1583,8 @@ export default {
           data: ['Score', 'Point Differential'],
           top: 10,
           textStyle: {
-            color: '#9ca3af'
+            color: '#00ff00',
+            fontFamily: 'monospace'
           }
         },
         grid: {
@@ -1596,8 +1597,8 @@ export default {
         xAxis: {
           type: 'category',
           data: weeks,
-          axisLabel: { color: '#9ca3af', rotate: 45 },
-          axisLine: { lineStyle: { color: '#475569' } }
+          axisLabel: { color: '#00ff00', rotate: 45, fontFamily: 'monospace' },
+          axisLine: { lineStyle: { color: '#00ff00' } }
         },
         yAxis: [
           {
@@ -1606,15 +1607,17 @@ export default {
             position: 'left',
             min: 0,
             axisLabel: {
-              color: '#9ca3af',
-              formatter: '{value}'
+              color: '#00ff00',
+              formatter: '{value}',
+              fontFamily: 'monospace'
             },
-            axisLine: { lineStyle: { color: '#475569' } },
-            splitLine: { lineStyle: { color: '#334155' } },
+            axisLine: { lineStyle: { color: '#00ff00' } },
+            splitLine: { lineStyle: { color: '#333333', type: 'dashed' } },
             nameTextStyle: {
-              color: '#06b6d4',
+              color: '#00ff00',
               fontSize: 14,
-              fontWeight: 'bold'
+              fontWeight: 'bold',
+              fontFamily: 'monospace'
             }
           },
           {
@@ -1622,17 +1625,19 @@ export default {
             name: 'Point Differential',
             position: 'right',
             axisLabel: {
-              color: '#9ca3af',
+              color: '#00ff00',
               formatter: function(value) {
                 return value > 0 ? `+${value}` : value
-              }
+              },
+              fontFamily: 'monospace'
             },
-            axisLine: { lineStyle: { color: '#475569' } },
+            axisLine: { lineStyle: { color: '#00ff00' } },
             splitLine: { show: false },
             nameTextStyle: {
-              color: '#8b5cf6',
+              color: '#00f3ff',
               fontSize: 14,
-              fontWeight: 'bold'
+              fontWeight: 'bold',
+              fontFamily: 'monospace'
             }
           }
         ],
@@ -1666,7 +1671,7 @@ export default {
             data: weeklyDifferentials,
             itemStyle: {
               color: function(params) {
-                return params.value >= 0 ? '#22c55e80' : '#ef444480'
+                return params.value >= 0 ? '#00ff00' : '#ff003c'
               }
             },
             barMaxWidth: 30
@@ -1725,9 +1730,9 @@ export default {
         animationEasing: 'cubicOut',
         tooltip: {
           trigger: 'axis',
-          backgroundColor: 'rgba(15, 23, 42, 0.9)',
-          borderColor: '#14b8a6',
-          textStyle: { color: '#fff' },
+          backgroundColor: 'rgba(0, 0, 0, 0.9)',
+          borderColor: '#00ff00',
+          textStyle: { color: '#00ff00', fontFamily: 'monospace' },
           formatter: function(params) {
             const param = params[0]
             return `Week ${param.name}<br/>${param.marker}${param.value} transaction${param.value !== 1 ? 's' : ''}`
@@ -1744,20 +1749,22 @@ export default {
           type: 'category',
           data: weeks,
           axisLabel: {
-            color: '#9ca3af',
-            formatter: (value) => `Week ${value}`
+            color: '#00ff00',
+            formatter: (value) => `Week ${value}`,
+            fontFamily: 'monospace'
           },
-          axisLine: { lineStyle: { color: '#475569' } }
+          axisLine: { lineStyle: { color: '#00ff00' } }
         },
         yAxis: {
           type: 'value',
           minInterval: 1,
           axisLabel: {
-            color: '#9ca3af',
-            formatter: '{value}'
+            color: '#00ff00',
+            formatter: '{value}',
+            fontFamily: 'monospace'
           },
-          axisLine: { lineStyle: { color: '#475569' } },
-          splitLine: { lineStyle: { color: '#334155' } }
+          axisLine: { lineStyle: { color: '#00ff00' } },
+          splitLine: { lineStyle: { color: '#333333', type: 'dashed' } }
         },
         series: [{
           type: 'line',
@@ -1766,19 +1773,19 @@ export default {
           lineStyle: {
             width: 3,
             color: new echarts.graphic.LinearGradient(0, 0, 1, 0, [
-              { offset: 0, color: '#14b8a6' },
-              { offset: 1, color: '#0d9488' }
+              { offset: 0, color: '#00ff00' },
+              { offset: 1, color: '#00f3ff' }
             ])
           },
           itemStyle: {
-            color: '#14b8a6'
+            color: '#00ff00'
           },
           symbol: 'circle',
           symbolSize: 8,
           areaStyle: {
             color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-              { offset: 0, color: '#14b8a640' },
-              { offset: 1, color: '#14b8a610' }
+              { offset: 0, color: '#00ff0040' },
+              { offset: 1, color: '#00ff0010' }
             ])
           }
         }]
@@ -1850,12 +1857,12 @@ export default {
 
       // Status colors
       const statusColors = {
-        'Questionable': '#eab308',
-        'Doubtful': '#f97316',
-        'Out': '#ef4444',
-        'IR': '#dc2626',
-        'Probable': '#84cc16',
-        'Unknown': '#6b7280'
+        'Questionable': '#eab308', // Keep yellow
+        'Doubtful': '#f97316', // Keep orange
+        'Out': '#ff003c', // Neon Red
+        'IR': '#ff003c', // Neon Red
+        'Probable': '#00ff00', // Neon Green
+        'Unknown': '#a3a3a3' // Terminal Gray
       }
 
       // Create series for each status
@@ -1876,15 +1883,15 @@ export default {
         animationEasing: 'cubicOut',
         legend: {
           data: statuses,
-          textStyle: { color: '#9ca3af' },
+          textStyle: { color: '#00ff00', fontFamily: 'monospace' },
           top: 10
         },
         tooltip: {
           trigger: 'axis',
           axisPointer: { type: 'shadow' },
-          backgroundColor: 'rgba(15, 23, 42, 0.9)',
-          borderColor: '#ef4444',
-          textStyle: { color: '#fff' },
+          backgroundColor: 'rgba(0, 0, 0, 0.9)',
+          borderColor: '#ff003c',
+          textStyle: { color: '#00ff00', fontFamily: 'monospace' },
           formatter: function(params) {
             let result = `Week ${params[0].name}<br/>`
             let total = 0
@@ -1909,20 +1916,22 @@ export default {
           type: 'category',
           data: weeks,
           axisLabel: {
-            color: '#9ca3af',
-            formatter: (value) => `Week ${value}`
+            color: '#00ff00',
+            formatter: (value) => `Week ${value}`,
+            fontFamily: 'monospace'
           },
-          axisLine: { lineStyle: { color: '#475569' } }
+          axisLine: { lineStyle: { color: '#00ff00' } }
         },
         yAxis: {
           type: 'value',
           minInterval: 1,
           axisLabel: {
-            color: '#9ca3af',
-            formatter: '{value}'
+            color: '#00ff00',
+            formatter: '{value}',
+            fontFamily: 'monospace'
           },
-          axisLine: { lineStyle: { color: '#475569' } },
-          splitLine: { lineStyle: { color: '#334155' } }
+          axisLine: { lineStyle: { color: '#00ff00' } },
+          splitLine: { lineStyle: { color: '#333333', type: 'dashed' } }
         },
         series
       }

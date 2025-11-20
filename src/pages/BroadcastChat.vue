@@ -1,5 +1,5 @@
 <template>
-  <div class="broadcast-chat">
+  <div class="broadcast-chat font-mono">
     <!-- Chat Messages Container -->
     <div class="messages-container" ref="messagesContainer">
       <!-- Messages -->
@@ -394,7 +394,7 @@ export default {
 .broadcast-chat {
   width: 100vw;
   height: 100vh;
-  background: #0000FF; /* Chromakey blue */
+  background: #000000;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -421,22 +421,15 @@ export default {
 .chat-message {
   display: flex;
   gap: 24px;
-  background: rgba(15, 23, 42, 0.95);
-  border-radius: 20px;
+  background: #000000;
+  border-radius: 0;
   padding: 24px;
-  border: 3px solid rgba(255, 255, 255, 0.15);
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
-  animation: messageGlow 3s ease-in-out infinite;
+  border: 1px solid var(--color-primary);
+  box-shadow: none;
+  animation: none;
 }
 
-@keyframes messageGlow {
-  0%, 100% {
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
-  }
-  50% {
-    box-shadow: 0 10px 60px rgba(0, 212, 255, 0.3);
-  }
-}
+
 
 .message-avatar {
   width: 80px;
@@ -448,7 +441,7 @@ export default {
   width: 100%;
   height: 100%;
   object-fit: contain;
-  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.5));
+  filter: none;
 }
 
 .avatar-emoji {
@@ -463,17 +456,18 @@ export default {
 .avatar-fallback {
   width: 100%;
   height: 100%;
-  background: linear-gradient(135deg, #667eea, #764ba2);
-  border-radius: 50%;
+  background: var(--color-surface);
+  border-radius: 0;
   display: flex;
   align-items: center;
   justify-content: center;
+  border: 1px solid var(--color-secondary);
 }
 
 .avatar-fallback span {
   font-size: 36px;
   font-weight: 800;
-  color: white;
+  color: var(--color-primary);
 }
 
 .message-content {
@@ -491,20 +485,20 @@ export default {
 .message-username {
   font-size: 32px;
   font-weight: 800;
-  color: #00d4ff;
-  text-shadow: 0 0 20px rgba(0, 212, 255, 0.5);
+  color: var(--color-primary);
+  text-shadow: none;
 }
 
 .message-dm {
   font-size: 24px;
   font-weight: 700;
-  color: #f107a3;
-  text-shadow: 0 0 15px rgba(241, 7, 163, 0.5);
+  color: var(--color-secondary);
+  text-shadow: none;
 }
 
 .message-timestamp {
   font-size: 22px;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--color-secondary);
   font-weight: 600;
   margin-left: auto;
 }
@@ -512,7 +506,7 @@ export default {
 .message-text {
   font-size: 28px;
   line-height: 1.6;
-  color: #ffffff;
+  color: var(--color-text);
   font-weight: 500;
 }
 
@@ -526,33 +520,35 @@ export default {
 }
 
 .message-text :deep(a) {
-  color: #00d4ff;
+  color: var(--color-primary);
   text-decoration: underline;
 }
 
 .message-text :deep(code) {
-  background: rgba(0, 212, 255, 0.1);
+  background: var(--color-surface);
   padding: 4px 8px;
-  border-radius: 6px;
+  border-radius: 0;
   font-size: 24px;
+  border: 1px solid var(--color-secondary);
 }
 
 .message-text :deep(pre) {
-  background: rgba(0, 0, 0, 0.3);
+  background: #000000;
   padding: 16px;
-  border-radius: 12px;
+  border-radius: 0;
   overflow-x: auto;
   margin: 16px 0;
+  border: 1px solid var(--color-secondary);
 }
 
 .message-text :deep(strong) {
   font-weight: 800;
-  color: #00ff88;
+  color: var(--color-primary);
 }
 
 .message-text :deep(em) {
   font-style: italic;
-  color: #fbbf24;
+  color: var(--color-secondary);
 }
 
 .no-messages {
@@ -561,7 +557,7 @@ export default {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--color-secondary);
   gap: 20px;
 }
 
@@ -589,14 +585,14 @@ export default {
 }
 
 .status-bar {
-  background: rgba(15, 23, 42, 0.98);
-  border-top: 3px solid rgba(0, 212, 255, 0.5);
+  background: #000000;
+  border-top: 3px solid var(--color-primary);
   padding: 20px 40px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   flex-shrink: 0;
-  box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.5);
+  box-shadow: none;
 }
 
 .status-indicator {
@@ -608,13 +604,13 @@ export default {
 .status-dot {
   width: 16px;
   height: 16px;
-  border-radius: 50%;
-  background: #ef4444;
+  border-radius: 0;
+  background: #ff0000;
   animation: statusPulse 2s ease-in-out infinite;
 }
 
 .status-dot.connected {
-  background: #10b981;
+  background: var(--color-primary);
 }
 
 @keyframes statusPulse {
@@ -631,26 +627,23 @@ export default {
 .status-text {
   font-size: 24px;
   font-weight: 800;
-  color: #ffffff;
+  color: var(--color-text);
   letter-spacing: 1px;
 }
 
 .status-title {
   font-size: 36px;
   font-weight: 900;
-  background: linear-gradient(135deg, #00d4ff, #7b2ff7);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: var(--color-primary);
   letter-spacing: 2px;
   text-transform: uppercase;
-  text-shadow: 0 0 30px rgba(0, 212, 255, 0.5);
+  text-shadow: none;
 }
 
 .status-models {
   font-size: 24px;
   font-weight: 700;
-  color: #00ff88;
-  text-shadow: 0 0 15px rgba(0, 255, 136, 0.5);
+  color: var(--color-secondary);
+  text-shadow: none;
 }
 </style>

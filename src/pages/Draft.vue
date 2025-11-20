@@ -1,35 +1,35 @@
 <template lang="pug">
-.container.mx-auto.px-4.py-8.bg-slate-950
+.container.mx-auto.px-4.py-8(class="bg-[var(--color-background)]")
   //- Loading State
   .flex.items-center.justify-center(v-if="loading" style="min-height: 50vh")
     .text-center
-      .inline-block.animate-spin.rounded-full.h-16.w-16.border-4.border-blue-500.border-t-transparent
-      p.text-white.mt-4.text-xl.font-bold.uppercase.tracking-wider Loading draft data...
+      .inline-block.animate-spin.h-16.w-16.border-4.border-t-transparent(class="border-[var(--color-primary)]")
+      p.mt-4.text-xl.font-bold.uppercase.tracking-wider.font-mono(class="text-[var(--color-primary)]") Loading draft data...
 
   //- Error State
   .py-12(v-else-if="error")
-    .bg-red-600.border-l-4.border-red-800.rounded.p-6.text-center
-      p.text-white.text-xl.font-bold {{ error }}
+    .bg-black.border.border-red-600.p-6.text-center
+      p.text-red-600.text-xl.font-bold.font-mono {{ error }}
 
   //- Main Content
   main(v-else)
     //- Header
     section.mb-8
-      .bg-gradient-to-r.from-blue-600.to-blue-800.rounded-t-lg.px-6.py-4.border-b-4.border-yellow-400
-        h1.text-white.text-3xl.font-black.uppercase.tracking-wide.flex.items-center.gap-3
-          span.text-yellow-400 📜
+      .px-6.py-4.border-t.border-x(class="bg-[var(--color-surface)] border-[var(--color-primary)]")
+        h1.text-3xl.font-bold.uppercase.tracking-widest.flex.items-center.gap-3(class="text-[var(--color-primary)]")
+          span(class="text-[var(--color-secondary)]") >
           | Draft Results - 2025 Season
-        p.text-white.text-xs.opacity-50 v2025-10-16
+        p.text-xs.font-mono.mt-1(class="text-[var(--color-secondary)]") v2025-10-16
 
     //- Featured Video
     section.mb-8
-      .bg-gradient-to-r.from-red-600.to-red-800.rounded-t-lg.px-6.py-4.border-b-4.border-yellow-400
-        h2.text-white.text-2xl.font-black.uppercase.tracking-wide.flex.items-center.gap-3
-          span.text-yellow-400 📺
+      .px-6.py-4.border-t.border-x(class="bg-[var(--color-surface)] border-[var(--color-primary)]")
+        h2.text-2xl.font-bold.uppercase.tracking-widest.flex.items-center.gap-3(class="text-[var(--color-primary)]")
+          span(class="text-[var(--color-secondary)]") >
           | Draft Day Video
-      .bg-slate-900.rounded-b-lg.p-6
+      .bg-black.border-b.border-x.p-6(class="border-[var(--color-primary)]")
         .aspect-video.w-full
-          iframe.w-full.h-full.rounded-lg(
+          iframe.w-full.h-full.border(class="border-[var(--color-primary)]"
             src="https://www.youtube.com/embed/CrN52Bf6x9A"
             title="Draft Day Video"
             frameborder="0"
@@ -39,40 +39,40 @@
 
     //- Draft Info Bar
     section.mb-6
-      div(class="bg-gradient-to-r from-amber-600 to-yellow-600 rounded-lg px-4 sm:px-6 py-4 border-l-4 border-yellow-400")
+      div(class="bg-black border border-yellow-500 px-4 sm:px-6 py-4")
         .flex.items-start.gap-3
-          span(class="text-yellow-100 text-xl sm:text-2xl") ℹ️
+          span(class="text-yellow-500 text-xl sm:text-2xl") ℹ️
           div
-            p(class="text-white font-bold mb-2 text-sm sm:text-base") Draft Notes:
-            ul(class="text-white space-y-1 text-xs sm:text-sm")
-              li • Hermes (run by Carter Rabasa) was originally used for the draft, then switched to Kimi K2
-              li • Qwen was a last minute drop and the draft was autopicked by Sleeper
+            p(class="text-yellow-500 font-bold mb-2 text-sm sm:text-base font-mono uppercase") Draft Notes:
+            ul(class="text-yellow-500 space-y-1 text-xs sm:text-sm font-mono")
+              li > Hermes (run by Carter Rabasa) was originally used for the draft, then switched to Kimi K2
+              li > Qwen was a last minute drop and the draft was autopicked by Sleeper
 
     //- ADP Chart
     section.mb-8
-      .bg-gradient-to-r.from-green-600.to-emerald-800.rounded-t-lg.px-6.py-4.border-b-4.border-yellow-400
-        h2.text-white.text-2xl.font-black.uppercase.tracking-wide.flex.items-center.gap-3
-          span.text-yellow-400 📊
+      div(class="bg-[var(--color-surface)] px-6 py-4 border-t border-x border-[var(--color-primary)]")
+        h2(class="text-[var(--color-primary)] text-2xl font-bold uppercase tracking-widest flex items-center gap-3")
+          span(class="text-[var(--color-secondary)]") >
           | Draft Analysis
-      .bg-slate-900.rounded-b-lg.p-6
+      div(class="bg-black border-b border-x border-[var(--color-primary)] p-6")
         div(ref="adpChartRef" style="width: 100%; height: 400px")
 
     //- Divergence Chart
     section.mb-8
-      .bg-gradient-to-r.from-purple-600.to-indigo-800.rounded-t-lg.px-6.py-4.border-b-4.border-yellow-400
-        h2.text-white.text-2xl.font-black.uppercase.tracking-wide.flex.items-center.gap-3
-          span.text-yellow-400 📈
+      div(class="bg-[var(--color-surface)] px-6 py-4 border-t border-x border-[var(--color-primary)]")
+        h2(class="text-[var(--color-primary)] text-2xl font-bold uppercase tracking-widest flex items-center gap-3")
+          span(class="text-[var(--color-secondary)]") >
           | Draft Efficiency by Model
-      .bg-slate-900.rounded-b-lg.p-6
+      div(class="bg-black border-b border-x border-[var(--color-primary)] p-6")
         div(ref="divergenceChartRef" style="width: 100%; height: 450px")
 
     //- Draft Board
     section(v-if="draftPicks && draftPicks.length > 0")
-      .bg-slate-900.rounded-lg.overflow-hidden
+      div(class="bg-black border border-[var(--color-primary)] overflow-hidden")
         .overflow-x-auto
           table.w-full.min-w-max
-            thead.bg-slate-800.sticky.top-0
-              tr.text-left.text-gray-300.uppercase.text-xs.font-bold.tracking-wider
+            thead(class="bg-[var(--color-surface)] border-b border-[var(--color-primary)] sticky top-0")
+              tr(class="text-left text-[var(--color-primary)] uppercase text-xs font-bold tracking-wider font-mono")
                 th(class="px-2 sm:px-4 py-3 whitespace-nowrap") Pick
                 th(class="px-2 sm:px-4 py-3 whitespace-nowrap") Rd
                 th(class="px-2 sm:px-4 py-3 whitespace-nowrap") Team
@@ -86,16 +86,16 @@
                 th(class="px-2 sm:px-4 py-3 whitespace-nowrap hidden xl:table-cell") Age
                 th(class="px-2 sm:px-4 py-3 whitespace-nowrap hidden xl:table-cell") College
                 th(class="px-2 sm:px-4 py-3 whitespace-nowrap hidden xl:table-cell") Exp
-            tbody.divide-y.divide-slate-800
+            tbody(class="divide-y divide-[var(--color-primary)]")
               tr(
                 v-for="(pick, index) in draftPicks"
                 :key="index"
-                class="hover:bg-slate-800 transition-colors duration-150"
+                class="hover:bg-[var(--color-surface)] transition-colors duration-150"
               )
-                td(class="px-2 sm:px-4 py-3")
-                  div(class="text-white font-bold text-sm sm:text-base") {{ pick.draft_position }}
-                td(class="px-2 sm:px-4 py-3")
-                  div(class="text-gray-300 text-sm sm:text-base") {{ pick.round }}
+                td(class="px-2 sm:px-4 py-3 border-r border-[var(--color-primary)]")
+                  div(class="text-[var(--color-text)] font-bold text-sm sm:text-base font-mono") {{ pick.draft_position }}
+                td(class="px-2 sm:px-4 py-3 border-r border-[var(--color-primary)]")
+                  div(class="text-[var(--color-secondary)] text-sm sm:text-base font-mono") {{ pick.round }}
                 td(class="px-2 sm:px-4 py-3")
                   div(class="flex items-center gap-1 sm:gap-2")
                     img(class="h-5 w-5 sm:h-6 sm:w-6 object-contain"
@@ -104,51 +104,50 @@
                       :class="shouldInvertLogo(pick.manager) ? 'invert brightness-200' : ''"
                     )
                     //- FIX: Removed extra wrapping div() that was causing the syntax error.
-                    div(class="hidden sm:inline-block px-2 py-0.5 rounded text-white font-semibold text-xs"
-                      :style="{ background: getTeamGradient(pick.manager) }"
+                    div(class="hidden sm:inline-block px-2 py-0.5 border border-[var(--color-primary)] text-[var(--color-text)] font-semibold text-xs font-mono"
                     ) {{ pick.manager }}
                 td(class="px-2 sm:px-4 py-3")
                   div(class="flex items-center gap-1 sm:gap-2")
-                    img(class="h-6 w-6 sm:h-8 sm:w-8 rounded-full object-cover hidden sm:block"
+                    img(class="h-6 w-6 sm:h-8 sm:w-8 border border-[var(--color-secondary)] object-cover hidden sm:block"
                       v-if="pick.portrait_url"
                       :src="pick.portrait_url"
                       :alt="pick.player_name"
                       @error="$event.target.style.display='none'"
                     )
-                    div(class="text-white font-semibold text-xs sm:text-sm") {{ pick.player_name }}
+                    div(class="text-[var(--color-text)] font-semibold text-xs sm:text-sm uppercase") {{ pick.player_name }}
                 td(class="px-2 sm:px-4 py-3")
                   //- FIX: Removed extra wrapping div() that was causing the syntax error.
-                  div(class="inline-block px-1 sm:px-2 py-0.5 rounded text-xs font-bold"
+                  div(class="inline-block px-1 sm:px-2 py-0.5 border text-xs font-bold font-mono"
                     :class="getPositionColor(pick.position)"
                   ) {{ pick.position }}
                 td(class="px-2 sm:px-4 py-3 hidden sm:table-cell")
-                  div(class="text-gray-300 text-xs sm:text-sm") {{ pick.team || 'FA' }}
+                  div(class="text-[var(--color-secondary)] text-xs sm:text-sm font-mono") {{ pick.team || 'FA' }}
                 td(class="px-2 sm:px-4 py-3 text-right")
-                  div(class="text-yellow-400 font-bold text-xs sm:text-sm") {{ pick.vorp }}
+                  div(class="text-yellow-500 font-bold text-xs sm:text-sm font-mono") {{ pick.vorp }}
                 td(class="px-2 sm:px-4 py-3 text-right hidden md:table-cell")
-                  div(class="text-gray-300 text-xs sm:text-sm") {{ pick.adp }}
+                  div(class="text-[var(--color-secondary)] text-xs sm:text-sm font-mono") {{ pick.adp }}
                 td(class="px-2 sm:px-4 py-3 text-right hidden lg:table-cell")
-                  div(class="text-blue-400 font-semibold text-xs sm:text-sm") {{ pick.fantasy_points_2024?.toFixed(1) || '-' }}
+                  div(class="text-[var(--color-primary)] font-semibold text-xs sm:text-sm font-mono") {{ pick.fantasy_points_2024?.toFixed(1) || '-' }}
                 td(class="px-2 sm:px-4 py-3 text-right hidden lg:table-cell")
-                  div(class="text-green-400 font-semibold text-xs sm:text-sm") {{ pick.projected_points_2025?.toFixed(1) || '-' }}
+                  div(class="text-[var(--color-accent)] font-semibold text-xs sm:text-sm font-mono") {{ pick.projected_points_2025?.toFixed(1) || '-' }}
                 td(class="px-2 sm:px-4 py-3 hidden xl:table-cell")
-                  div(class="text-gray-300 text-xs sm:text-sm") {{ pick.age || '-' }}
+                  div(class="text-[var(--color-secondary)] text-xs sm:text-sm font-mono") {{ pick.age || '-' }}
                 td(class="px-2 sm:px-4 py-3 hidden xl:table-cell")
-                  div(class="text-gray-400 text-xs") {{ pick.college || '-' }}
+                  div(class="text-[var(--color-secondary)] text-xs font-mono") {{ pick.college || '-' }}
                 td(class="px-2 sm:px-4 py-3 hidden xl:table-cell")
-                  div(class="text-gray-300 text-xs sm:text-sm") {{ pick.years_exp || '-' }}
+                  div(class="text-[var(--color-secondary)] text-xs sm:text-sm font-mono") {{ pick.years_exp || '-' }}
 
     //- Team Breakouts
     section.mt-12(v-if="draftedTeams && draftedTeams.length > 0")
-      div(class="bg-gradient-to-r from-purple-600 to-purple-800 rounded-t-lg px-4 sm:px-6 py-4 border-b-4 border-yellow-400 mb-8")
-        h2(class="text-white text-2xl sm:text-3xl font-black uppercase tracking-wide flex items-center gap-3")
-          span.text-yellow-400 🏈
+      div(class="bg-[var(--color-surface)] px-4 sm:px-6 py-4 border-t border-x border-[var(--color-primary)] mb-8")
+        h2(class="text-[var(--color-primary)] text-2xl sm:text-3xl font-bold uppercase tracking-widest flex items-center gap-3")
+          span(class="text-[var(--color-secondary)]") >
           | Drafted Teams
 
       div(class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-8")
-        div(v-for="team in draftedTeams" :key="team.aiModel" class="bg-slate-900 rounded-lg overflow-hidden")
+        div(v-for="team in draftedTeams" :key="team.aiModel" class="bg-[var(--color-surface)] border border-[var(--color-primary)]")
           //- Team Header
-          div(class="px-4 sm:px-6 py-3 sm:py-4 border-b border-slate-800" :style="{ background: getTeamGradient(team.aiModel) }")
+          div(class="px-4 sm:px-6 py-3 sm:py-4 border-b border-[var(--color-primary)] bg-black")
             div(class="flex items-center gap-2 sm:gap-3")
               img(class="h-8 w-8 sm:h-10 sm:w-10 object-contain"
                 v-if="team.logo"
@@ -157,26 +156,26 @@
                 :class="team.invertLogo ? 'invert brightness-200' : ''"
               )
               div
-                h3(class="text-white text-base sm:text-xl font-bold") {{ team.aiModel }}
-                p(class="text-white/80 text-xs sm:text-sm") {{ team.owner }}
+                h3(class="text-[var(--color-text)] text-base sm:text-xl font-bold uppercase tracking-wider") {{ team.aiModel }}
+                p(class="text-[var(--color-primary)] text-xs sm:text-sm font-mono") {{ team.owner }}
 
           //- Drafted Players
           div(class="p-3 sm:p-4")
-            h4(class="text-white font-bold text-xs sm:text-sm uppercase tracking-wider mb-2 sm:mb-3 text-gray-400") Roster ({{ team.players.length }} Players)
+            h4(class="text-[var(--color-secondary)] font-bold text-xs sm:text-sm uppercase tracking-wider mb-2 sm:mb-3 font-mono") Roster ({{ team.players.length }} Players)
             div(class="space-y-1 sm:space-y-2")
-              div(v-for="(pick, index) in team.players" :key="index" class="bg-slate-800 rounded p-2 sm:p-3")
+              div(v-for="(pick, index) in team.players" :key="index" class="bg-black border border-[var(--color-primary)] p-2 sm:p-3")
                 div(class="flex items-center gap-2 sm:gap-3")
-                  div(class="text-gray-500 text-xs font-bold w-6 sm:w-8 text-center") {{ pick.draft_position }}
+                  div(class="text-[var(--color-secondary)] text-xs font-bold w-6 sm:w-8 text-center font-mono") {{ pick.draft_position }}
                   div(
-                    class="w-6 h-6 sm:w-8 sm:h-8 rounded flex items-center justify-center text-xs font-bold"
+                    class="w-6 h-6 sm:w-8 sm:h-8 flex items-center justify-center text-xs font-bold border"
                     :class="getPositionColor(pick.position)"
                   ) {{ pick.position }}
                   div(class="flex-1 min-w-0")
-                    div(class="text-white font-semibold text-xs sm:text-sm truncate") {{ pick.player_name }}
-                    div(class="text-gray-400 text-xs hidden sm:block") {{ pick.team || 'FA' }}
+                    div(class="text-[var(--color-text)] font-semibold text-xs sm:text-sm truncate uppercase") {{ pick.player_name }}
+                    div(class="text-[var(--color-secondary)] text-xs hidden sm:block font-mono") {{ pick.team || 'FA' }}
                   div(class="text-right flex-shrink-0")
-                    div(class="text-yellow-400 text-xs font-bold") VORP: {{ pick.vorp }}
-                    div(class="text-gray-400 text-xs hidden sm:block") ROS: {{ pick.ros?.toFixed(1) || '-' }}
+                    div(class="text-yellow-500 text-xs font-bold font-mono") VORP: {{ pick.vorp }}
+                    div(class="text-[var(--color-secondary)] text-xs hidden sm:block font-mono") ROS: {{ pick.ros?.toFixed(1) || '-' }}
 </template>
 
 <script>
@@ -385,21 +384,21 @@ export default {
 
       const updateChart = () => {
         const option = {
-          backgroundColor: '#1e293b',
+          backgroundColor: 'transparent',
           animation: true,
           animationDuration: 1000,
           animationEasing: 'cubicOut',
           tooltip: {
             trigger: 'axis',
-            backgroundColor: 'rgba(15, 23, 42, 0.9)',
-            borderColor: '#3b82f6',
-            textStyle: { color: '#fff' },
+            backgroundColor: 'rgba(0, 0, 0, 0.9)',
+            borderColor: '#00ff00',
+            textStyle: { color: '#00ff00', fontFamily: 'monospace' },
             formatter: (params) => {
               const pickIndex = params[0].dataIndex
               const manager = adpData.value[pickIndex]?.manager || ''
-              let result = `<div style="font-weight: bold; margin-bottom: 4px;">Pick ${params[0].axisValue}</div>`
+              let result = `<div style="font-weight: bold; margin-bottom: 4px; color: #00ff00; font-family: monospace;">Pick ${params[0].axisValue}</div>`
               if (manager) {
-                result += `<div style="color: #facc15; font-size: 11px; margin-bottom: 4px;">${manager}</div>`
+                result += `<div style="color: #00f3ff; font-size: 11px; margin-bottom: 4px; font-family: monospace;">${manager}</div>`
               }
               params.forEach(param => {
                 result += `<div style="margin-top: 4px;">${param.marker} ${param.seriesName}: ${param.value?.toFixed(1) || 'N/A'}</div>`
@@ -410,7 +409,7 @@ export default {
           legend: {
             data: ['Ideal Average Draft Position', 'Token Bowl Picks'],
             top: 10,
-            textStyle: { color: '#e2e8f0' },
+            textStyle: { color: '#00ff00', fontFamily: 'monospace' },
             itemGap: 20
           },
           grid: {
@@ -425,21 +424,22 @@ export default {
             name: 'Draft Position',
             nameLocation: 'middle',
             nameGap: 30,
-            nameTextStyle: { color: '#e2e8f0', fontSize: 14 },
+            nameTextStyle: { color: '#00ff00', fontSize: 14, fontFamily: 'monospace' },
             axisLabel: {
-              color: '#94a3b8',
+              color: '#00ff00',
               interval: 'auto',
-              rotate: 0
+              rotate: 0,
+              fontFamily: 'monospace'
             },
-            axisLine: { lineStyle: { color: '#475569' } }
+            axisLine: { lineStyle: { color: '#00ff00' } }
           },
           yAxis: {
             type: 'value',
             name: 'ADP Value',
-            nameTextStyle: { color: '#e2e8f0', fontSize: 14 },
-            axisLabel: { color: '#94a3b8' },
-            axisLine: { lineStyle: { color: '#475569' } },
-            splitLine: { lineStyle: { color: '#334155', type: 'dashed' } }
+            nameTextStyle: { color: '#00ff00', fontSize: 14, fontFamily: 'monospace' },
+            axisLabel: { color: '#00ff00', fontFamily: 'monospace' },
+            axisLine: { lineStyle: { color: '#00ff00' } },
+            splitLine: { lineStyle: { color: '#333333', type: 'dashed' } }
           },
           series: [
             {
@@ -449,10 +449,11 @@ export default {
               smooth: true,
               lineStyle: {
                 width: 2,
-                color: '#3b82f6'
+                color: '#00ff00',
+                type: 'dashed'
               },
               itemStyle: {
-                color: '#3b82f6'
+                color: '#00ff00'
               },
               symbol: 'none'
             },
@@ -464,10 +465,10 @@ export default {
               smooth: true,
               lineStyle: {
                 width: 3,
-                color: '#facc15'
+                color: '#00f3ff'
               },
               itemStyle: {
-                color: '#facc15'
+                color: '#00f3ff'
               },
               symbol: 'circle',
               symbolSize: 4
@@ -531,7 +532,7 @@ export default {
       })
 
       const option = {
-        backgroundColor: '#1e293b',
+        backgroundColor: 'transparent',
         animation: true,
         animationDuration: 1000,
         animationEasing: 'cubicOut',
@@ -541,13 +542,15 @@ export default {
           left: 'center',
           top: 10,
           textStyle: {
-            color: '#e2e8f0',
+            color: '#00ff00',
             fontSize: 18,
-            fontWeight: 'bold'
+            fontWeight: 'bold',
+            fontFamily: 'monospace'
           },
           subtextStyle: {
-            color: '#94a3b8',
-            fontSize: 12
+            color: '#00f3ff',
+            fontSize: 12,
+            fontFamily: 'monospace'
           }
         },
         tooltip: {
@@ -555,13 +558,13 @@ export default {
           axisPointer: {
             type: 'shadow'
           },
-          backgroundColor: 'rgba(15, 23, 42, 0.9)',
-          borderColor: '#3b82f6',
-          textStyle: { color: '#fff' },
+          backgroundColor: 'rgba(0, 0, 0, 0.9)',
+          borderColor: '#00ff00',
+          textStyle: { color: '#00ff00', fontFamily: 'monospace' },
           formatter: (params) => {
             const param = params[0]
-            return `<div style="font-weight: bold; margin-bottom: 4px;">${param.name}</div>
-                    <div>ADP Differential: ${param.value.toFixed(1)}</div>`
+            return `<div style="font-weight: bold; margin-bottom: 4px; color: #00ff00;">${param.name}</div>
+                    <div style="color: #00f3ff;">ADP Differential: ${param.value.toFixed(1)}</div>`
           }
         },
         grid: {
@@ -575,19 +578,20 @@ export default {
           name: 'ADP Differential',
           nameLocation: 'middle',
           nameGap: 25,
-          nameTextStyle: { color: '#e2e8f0', fontSize: 14 },
-          axisLabel: { color: '#94a3b8' },
-          axisLine: { lineStyle: { color: '#475569' } },
-          splitLine: { lineStyle: { color: '#334155', type: 'dashed' } }
+          nameTextStyle: { color: '#00ff00', fontSize: 14, fontFamily: 'monospace' },
+          axisLabel: { color: '#00ff00', fontFamily: 'monospace' },
+          axisLine: { lineStyle: { color: '#00ff00' } },
+          splitLine: { lineStyle: { color: '#333333', type: 'dashed' } }
         },
         yAxis: {
           type: 'category',
           data: teams.map(t => t.name),
           axisLabel: {
-            color: '#94a3b8',
-            fontSize: 12
+            color: '#00ff00',
+            fontSize: 12,
+            fontFamily: 'monospace'
           },
-          axisLine: { lineStyle: { color: '#475569' } }
+          axisLine: { lineStyle: { color: '#00ff00' } }
         },
         series: [
           {
@@ -596,17 +600,18 @@ export default {
               value: t.value,
               itemStyle: {
                 color: new echarts.graphic.LinearGradient(0, 0, 1, 0, [
-                  { offset: 0, color: '#3b82f6' },
-                  { offset: 1, color: '#8b5cf6' }
+                  { offset: 0, color: '#00ff00' },
+                  { offset: 1, color: '#00f3ff' }
                 ]),
-                borderRadius: [0, 4, 4, 0]
+                borderRadius: [0, 0, 0, 0]
               }
             })),
             label: {
               show: true,
               position: 'right',
-              color: '#e2e8f0',
+              color: '#00ff00',
               fontSize: 11,
+              fontFamily: 'monospace',
               formatter: (params) => {
                 const team = teams[params.dataIndex]
                 return `{logo${params.dataIndex}|} ${params.value.toFixed(1)}`

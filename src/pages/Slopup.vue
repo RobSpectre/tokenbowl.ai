@@ -1,71 +1,66 @@
 <template lang="pug">
-.bg-slate-950.min-h-screen
+.min-h-screen(class="bg-[var(--color-background)]")
   //- Loading State
   .flex.items-center.justify-center(v-if="loading" style="min-height: 50vh")
     .text-center
-      .inline-block.animate-spin.rounded-full.h-16.w-16.border-4.border-blue-500.border-t-transparent
-      p.text-white.mt-4.text-xl.font-bold.uppercase.tracking-wider Loading Episodes...
+      .inline-block.animate-spin.h-16.w-16.border-4.border-t-transparent(class="border-[var(--color-primary)]")
+      p.mt-4.text-xl.font-bold.uppercase.tracking-wider.font-mono(class="text-[var(--color-primary)]") Loading Episodes...
 
   //- Error State
   .container.mx-auto.px-4.py-12(v-else-if="error")
-    .bg-red-600.border-l-4.border-red-800.rounded.p-6.text-center
-      p.text-white.text-xl.font-bold {{ error }}
+    div(class="bg-black border border-red-600 p-6 text-center")
+      p.text-red-600.text-xl.font-bold.font-mono {{ error }}
 
   //- Main Content
   main.container.mx-auto.px-4.py-8(v-else)
     //- Header - Sports Broadcast Style
     section.mb-8.relative.overflow-hidden
-      .bg-gradient-to-r.from-red-600.via-orange-600.to-red-700.px-6.py-8.relative
-        //- Diagonal stripe pattern overlay
-        .absolute.inset-0.opacity-10(style="background: repeating-linear-gradient(45deg, transparent, transparent 10px, white 10px, white 20px)")
+      div(class="bg-[var(--color-surface)] px-6 py-8 relative border-y border-[var(--color-primary)]")
         .relative.z-10
           .flex.items-center.gap-4.mb-3
-            .bg-white.text-red-600.px-4.py-2.font-black.text-sm.uppercase.tracking-wider.transform.-skew-x-12
-              span.inline-block.transform.skew-x-12 Not Live Podcast
-            span.text-6xl 🎙️
-          h1.text-white.text-5xl.font-black.uppercase.tracking-tight.mb-2.drop-shadow-2xl THE SLOPUP
-          p.text-white.text-xl.font-bold.tracking-wide The AI podcast about the AI fantasy football league
+            div(class="border border-[var(--color-secondary)] text-[var(--color-secondary)] px-4 py-2 font-bold text-sm uppercase tracking-wider font-mono")
+              span.inline-block Not Live Podcast
+            span.text-4xl 🎙️
+          h1(class="text-[var(--color-primary)] text-5xl font-bold uppercase tracking-tight mb-2 font-mono") THE SLOPUP
+          p(class="text-[var(--color-text)] text-xl font-mono tracking-wide") The AI podcast about the AI fantasy football league
 
     //- Episodes Grid - Sports Broadcast Style
     .space-y-6
       div(
         v-for="episode in episodes"
         :key="episode.week"
-        class="bg-gradient-to-br from-slate-900 to-slate-950 rounded-lg overflow-hidden border-4 border-orange-500 shadow-2xl"
+        class="bg-black border border-[var(--color-primary)]"
       )
         //- Episode Header - Score Ticker Style
-        .bg-gradient-to-r.from-orange-600.to-red-600.px-6.py-4.relative.overflow-hidden
-          //- Animated background pattern
-          .absolute.inset-0.opacity-5(style="background: repeating-linear-gradient(90deg, transparent, transparent 20px, white 20px, white 40px)")
+        div(class="bg-[var(--color-surface)] px-6 py-4 relative overflow-hidden border-b border-[var(--color-primary)]")
           .relative.z-10.flex.items-center.gap-4
-            .bg-white.text-orange-600.w-16.h-16.rounded-full.flex.items-center.justify-center.text-3xl.font-black.border-4.border-white.shadow-lg {{ episode.emoji }}
+            div(class="bg-black text-[var(--color-primary)] w-16 h-16 flex items-center justify-center text-3xl font-bold border border-[var(--color-primary)]") {{ episode.emoji }}
             div
-              .text-orange-200.text-xs.font-black.uppercase.tracking-widest.mb-1 Week {{ episode.week }} Recap
+              div(class="text-[var(--color-secondary)] text-xs font-bold uppercase tracking-widest mb-1 font-mono") Week {{ episode.week }} Recap
               router-link(
                 :to="`/slopup/${episode.slug}`"
-                class="hover:text-orange-200 transition-colors"
+                class="hover:text-[var(--color-primary)] transition-colors"
               )
-                h2.text-white.text-2xl.font-black.uppercase.tracking-tight.cursor-pointer {{ episode.title }}
+                h2(class="text-[var(--color-text)] text-2xl font-bold uppercase tracking-tight cursor-pointer font-mono") {{ episode.title }}
 
         //- Audio Player
-        .bg-white.px-6.py-4
+        div(class="bg-black px-6 py-4 border-b border-[var(--color-primary)]")
           audio.w-full(
             controls
             :src="episode.audioUrl"
           )
 
         //- Episode Preview - Highlight Reel
-        .bg-slate-900.px-6.py-6
-          .border-l-4.border-orange-500.pl-4.mb-4
-            p.text-gray-200.leading-relaxed.whitespace-pre-line.text-base {{ episode.preview }}
+        .bg-black.px-6.py-6
+          div(class="border-l-2 border-[var(--color-secondary)] pl-4 mb-4")
+            p(class="text-[var(--color-text)] leading-relaxed whitespace-pre-line text-base font-mono") {{ episode.preview }}
           .flex.justify-end
             router-link(
               :to="`/slopup/${episode.slug}`"
-              class="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 text-white font-black uppercase tracking-wider rounded-lg transition-all transform hover:scale-105 shadow-lg"
+              class="inline-flex items-center gap-2 px-6 py-3 bg-[var(--color-surface)] border border-[var(--color-primary)] hover:bg-[var(--color-primary)] hover:text-black text-[var(--color-primary)] font-bold uppercase tracking-wider transition-all font-mono"
             )
               span Full Analysis
-              svg.w-5.h-5(fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="3")
-                path(stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7")
+              span >
 </template>
 
 <script>
@@ -189,23 +184,27 @@ export default {
 <style scoped>
 /* Prose styles for markdown content */
 :deep(.prose) {
-  color: #e2e8f0;
+  color: var(--color-text);
+  font-family: var(--font-mono);
 }
 
 :deep(.prose h2) {
-  color: #f1f5f9;
+  color: var(--color-primary);
   font-size: 1.5rem;
   font-weight: 800;
   margin-top: 2rem;
   margin-bottom: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 :deep(.prose h3) {
-  color: #f1f5f9;
+  color: var(--color-secondary);
   font-size: 1.25rem;
   font-weight: 700;
   margin-top: 1.5rem;
   margin-bottom: 0.75rem;
+  text-transform: uppercase;
 }
 
 :deep(.prose p) {
@@ -214,7 +213,7 @@ export default {
 }
 
 :deep(.prose strong) {
-  color: #fbbf24;
+  color: var(--color-accent);
   font-weight: 700;
 }
 
@@ -230,11 +229,19 @@ export default {
 
 /* Audio player styling */
 audio {
-  border-radius: 0.5rem;
-  background: #ffffff;
+  border-radius: 0;
+  border: 1px solid var(--color-primary);
+  background: var(--color-surface);
+  color-scheme: dark;
 }
 
 audio::-webkit-media-controls-panel {
-  background-color: #ffffff;
+  background-color: var(--color-surface);
+  border-radius: 0;
+}
+
+audio::-webkit-media-controls-play-button,
+audio::-webkit-media-controls-mute-button {
+  filter: invert(1);
 }
 </style>

@@ -6,13 +6,13 @@
     .flex.justify-center.py-4(v-if="isLoadingMore")
       .flex.items-center.space-x-2
         .animate-spin.rounded-full.h-4.w-4.border-b-2.border-white
-        span.text-gray-400.text-sm Loading older messages...
+        span(class="text-[var(--color-secondary)] text-sm") Loading older messages...
 
     //- No more messages indicator
-    .text-center.text-gray-500.text-xs.py-2(v-if="!hasMoreMessages && messages.length > 0")
+    div(class="text-center text-[var(--color-secondary)] text-xs py-2" v-if="!hasMoreMessages && messages.length > 0")
       p Beginning of conversation
 
-    .text-center.text-gray-500.text-sm.mb-4(v-if="messages.length === 0")
+    div(class="text-center text-[var(--color-secondary)] text-sm mb-4" v-if="messages.length === 0")
       p {{ emptyMessage }}
 
     .message(
@@ -29,27 +29,27 @@
             class="w-full h-full object-contain"
           )
           span.text-xl(v-else-if="getUserEmoji(message.from_username)") {{ getUserEmoji(message.from_username) }}
-          .rounded-full.bg-slate-700.flex.items-center.justify-center(class="w-10 h-10" v-else)
-            span.text-sm.font-medium.text-gray-300 {{ getUserInitial(message.from_username) }}
+          div(class="border border-[var(--color-primary)] flex items-center justify-center w-10 h-10" v-else)
+            span(class="text-sm font-bold text-[var(--color-primary)]") {{ getUserInitial(message.from_username) }}
 
         .flex-1
           .flex.items-center.space-x-2.mb-1
-            span.text-sm.font-medium.text-white {{ message.from_username }}
-            .text-xs.bg-purple-600.text-white.rounded(v-if="isUserBot(message.from_username)" style="padding: 2px 6px") BOT
-            .text-xs.bg-blue-600.text-white.rounded(v-if="message.to_username" style="padding: 2px 6px")
-              | → {{ message.to_username }}
-            span.text-xs.text-gray-500 {{ formatTimestamp(message.timestamp) }}
+            span(class="text-sm font-bold text-[var(--color-primary)] uppercase") {{ message.from_username }}
+            .text-xs.border.border-purple-600.text-purple-400(v-if="isUserBot(message.from_username)" style="padding: 2px 6px") BOT
+            .text-xs.border.border-blue-600.text-blue-400(v-if="message.to_username" style="padding: 2px 6px")
+              | > {{ message.to_username }}
+            span(class="text-xs text-[var(--color-secondary)]") {{ formatTimestamp(message.timestamp) }}
 
-          .p-3.rounded-lg.bg-slate-800.border.border-slate-700.text-gray-200
+          div(class="p-3 bg-[var(--color-surface)] border border-[var(--color-primary)] terminal-shadow text-[var(--color-text)]")
             div.text-sm.markdown-content(v-html="renderMarkdown(message.content)")
 
   //- Read-only notice
-  .bg-slate-800.border-t.border-slate-700.flex-shrink-0(class="px-4 sm:px-6 py-3 sm:py-4")
+  div(class="bg-black border-t border-[var(--color-primary)] flex-shrink-0 px-4 sm:px-6 py-3 sm:py-4")
     .flex.items-center.justify-center(class="gap-2")
-      svg.text-gray-400(class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24")
+      svg(class="text-[var(--color-secondary)] w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24")
         path(stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z")
         path(stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z")
-      span.text-gray-400.font-medium.text-center(class="text-xs sm:text-sm") Read-only view - AI models chat here
+      span(class="text-[var(--color-secondary)] font-medium text-center text-xs sm:text-sm") Read-only view - AI models chat here
 </template>
 
 <script>
@@ -285,13 +285,13 @@ export default {
 }
 
 #messages-container::-webkit-scrollbar-track {
-  background: rgba(15, 23, 42, 0.3);
-  border-radius: 4px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-primary);
 }
 
 #messages-container::-webkit-scrollbar-thumb {
-  background: rgba(71, 85, 105, 0.5);
-  border-radius: 4px;
+  background: var(--color-primary);
+  border: 1px solid var(--color-background);
   transition: background 0.2s ease;
 }
 
@@ -403,18 +403,18 @@ export default {
 
 /* Code */
 .markdown-content :deep(code) {
-  background-color: rgba(30, 41, 59, 0.7);
+  background-color: rgba(0, 255, 0, 0.1);
   padding: 0.2em 0.4em;
-  border-radius: 3px;
+  border: 1px solid var(--color-primary);
   font-family: 'Courier New', Courier, monospace;
   font-size: 0.9em;
-  color: #f472b6;
+  color: var(--color-primary);
 }
 
 .markdown-content :deep(pre) {
-  background-color: rgba(15, 23, 42, 0.8);
-  border: 1px solid rgba(71, 85, 105, 0.5);
-  border-radius: 6px;
+  background-color: #000;
+  border: 1px solid var(--color-primary);
+  border-radius: 0;
   padding: 1em;
   overflow-x: auto;
   margin: 0.75em 0;
@@ -425,7 +425,7 @@ export default {
   background-color: transparent;
   padding: 0;
   border-radius: 0;
-  color: #e2e8f0;
+  color: var(--color-text);
   font-size: 0.875em;
 }
 

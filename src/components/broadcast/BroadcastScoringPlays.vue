@@ -1,5 +1,5 @@
 <template>
-  <div class="scoring-plays">
+  <div class="scoring-plays font-mono">
     <div class="panel-header">
       <h2>SCORING PLAYS</h2>
       <div class="play-count">{{ recentScoringPlays.length }} PLAYS</div>
@@ -145,23 +145,19 @@ export default {
 .panel-header h2 {
   font-size: 42px;
   font-weight: 800;
-  color: #ffffff;
+  color: var(--color-primary);
   margin: 0;
   letter-spacing: 2px;
   text-transform: uppercase;
-  background: linear-gradient(135deg, #00d4ff, #7b2ff7);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
 }
 
 .play-count {
   font-size: 20px;
   font-weight: 700;
-  color: #00d4ff;
-  background: rgba(0, 212, 255, 0.1);
-  border: 2px solid rgba(0, 212, 255, 0.3);
-  border-radius: 12px;
+  color: var(--color-secondary);
+  background: #000000;
+  border: 2px solid var(--color-secondary);
+  border-radius: 0;
   padding: 8px 16px;
 }
 
@@ -177,9 +173,9 @@ export default {
   display: flex;
   align-items: center;
   gap: 20px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 2px solid rgba(255, 255, 255, 0.1);
-  border-radius: 16px;
+  background: #000000;
+  border: 1px solid var(--color-primary);
+  border-radius: 0;
   padding: 20px;
   position: relative;
   transition: all 0.3s ease;
@@ -187,15 +183,15 @@ export default {
 }
 
 .play-item:hover {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(0, 255, 136, 0.4);
+  background: var(--color-surface);
+  border-color: var(--color-secondary);
   transform: translateX(8px);
 }
 
 .play-time {
   font-size: 20px;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--color-secondary);
   font-variant-numeric: tabular-nums;
   min-width: 100px;
 }
@@ -203,18 +199,18 @@ export default {
 .play-team-indicator {
   width: 8px;
   height: 120px;
-  border-radius: 4px;
-  box-shadow: 0 0 20px currentColor;
+  border-radius: 0;
+  box-shadow: none;
 }
 
 .play-player-image {
   width: 120px;
   height: 120px;
   flex-shrink: 0;
-  border-radius: 16px;
+  border-radius: 0;
   overflow: hidden;
-  background: rgba(255, 255, 255, 0.05);
-  border: 3px solid rgba(255, 255, 255, 0.1);
+  background: #000000;
+  border: 1px solid var(--color-secondary);
 }
 
 .play-player-image img {
@@ -252,7 +248,7 @@ export default {
 .play-team {
   font-size: 32px;
   font-weight: 700;
-  color: #00d4ff;
+  color: var(--color-primary);
 }
 
 .play-points {
@@ -262,19 +258,19 @@ export default {
 }
 
 .play-points.small {
-  color: #ffffff;
+  color: var(--color-text);
 }
 
 .play-points.medium {
-  color: #ffffff;
+  color: var(--color-text);
 }
 
 .play-points.big {
-  color: #ffffff;
+  color: var(--color-text);
 }
 
 .play-points.huge {
-  color: #ffffff;
+  color: var(--color-text);
 }
 
 @keyframes pointsPulse {
@@ -294,11 +290,12 @@ export default {
 
 .play-player-name {
   font-size: 28px;
-  color: #ffffff;
+  color: var(--color-text);
   font-weight: 600;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  text-transform: uppercase;
 }
 
 .play-player-meta {
@@ -309,17 +306,17 @@ export default {
 }
 
 .play-player-position {
-  color: #00d4ff;
+  color: var(--color-primary);
   font-weight: 700;
   text-transform: uppercase;
 }
 
 .play-player-separator {
-  color: rgba(255, 255, 255, 0.3);
+  color: var(--color-secondary);
 }
 
 .play-player-team {
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--color-secondary);
   font-weight: 600;
 }
 
@@ -354,8 +351,8 @@ export default {
 .points-flash {
   font-size: 60px;
   font-weight: 900;
-  color: #00d4ff;
-  text-shadow: 0 0 40px rgba(0, 212, 255, 0.8);
+  color: var(--color-primary);
+  text-shadow: none;
 }
 
 .no-plays {
@@ -364,13 +361,14 @@ export default {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--color-secondary);
   gap: 20px;
 }
 
 .ticker-icon {
   font-size: 80px;
-  opacity: 0.3;
+  opacity: 0.5;
+  color: var(--color-primary);
 }
 
 .no-plays p {
@@ -386,8 +384,8 @@ export default {
 .loading-dots span {
   width: 12px;
   height: 12px;
-  background: rgba(255, 255, 255, 0.3);
-  border-radius: 50%;
+  background: var(--color-primary);
+  border-radius: 0;
   animation: dotPulse 1.5s ease-in-out infinite;
 }
 

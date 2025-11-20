@@ -1,5 +1,5 @@
 <template>
-  <div class="injury-alerts">
+  <div class="injury-alerts font-mono">
     <div class="panel-header">
       <h2>INJURY ALERTS</h2>
       <div class="alert-count" :class="{ critical: hasCriticalInjuries }">
@@ -143,31 +143,27 @@ export default {
 .panel-header h2 {
   font-size: 42px;
   font-weight: 800;
-  color: #ffffff;
+  color: var(--color-primary);
   margin: 0;
   letter-spacing: 2px;
   text-transform: uppercase;
-  background: linear-gradient(135deg, #ff6b6b, #feca57);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
 }
 
 .alert-count {
   font-size: 20px;
   font-weight: 700;
-  color: #feca57;
-  background: rgba(254, 202, 87, 0.1);
-  border: 2px solid rgba(254, 202, 87, 0.3);
-  border-radius: 12px;
+  color: var(--color-secondary);
+  background: #000000;
+  border: 2px solid var(--color-secondary);
+  border-radius: 0;
   padding: 8px 16px;
   transition: all 0.3s ease;
 }
 
 .alert-count.critical {
-  color: #ff6b6b;
-  background: rgba(255, 107, 107, 0.15);
-  border-color: rgba(255, 107, 107, 0.5);
+  color: #ff0000;
+  background: #000000;
+  border-color: #ff0000;
   animation: criticalPulse 2s ease-in-out infinite;
 }
 
@@ -192,33 +188,33 @@ export default {
   display: flex;
   align-items: stretch;
   gap: 16px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 2px solid rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
+  background: #000000;
+  border: 2px solid var(--color-primary);
+  border-radius: 0;
   padding: 16px;
   position: relative;
   transition: all 0.3s ease;
 }
 
 .alert-item:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--color-surface);
   transform: translateY(-4px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  box-shadow: none;
 }
 
 .alert-item.severity-out {
-  border-color: rgba(255, 107, 107, 0.5);
-  background: rgba(255, 107, 107, 0.05);
+  border-color: #ff0000;
+  background: #000000;
 }
 
 .alert-item.severity-doubtful {
-  border-color: rgba(255, 140, 0, 0.5);
-  background: rgba(255, 140, 0, 0.05);
+  border-color: #ff8c00;
+  background: #000000;
 }
 
 .alert-item.severity-questionable {
-  border-color: rgba(254, 202, 87, 0.5);
-  background: rgba(254, 202, 87, 0.05);
+  border-color: var(--color-secondary);
+  background: #000000;
 }
 
 .alert-item.starter {
@@ -230,24 +226,28 @@ export default {
   align-items: center;
   justify-content: center;
   min-width: 60px;
-  border-radius: 8px;
+  border-radius: 0;
   position: relative;
 }
 
 .alert-severity-indicator.severity-out {
-  background: rgba(255, 107, 107, 0.2);
+  background: #ff0000;
+  color: #000000;
 }
 
 .alert-severity-indicator.severity-doubtful {
-  background: rgba(255, 140, 0, 0.2);
+  background: #ff8c00;
+  color: #000000;
 }
 
 .alert-severity-indicator.severity-questionable {
-  background: rgba(254, 202, 87, 0.2);
+  background: var(--color-secondary);
+  color: #000000;
 }
 
 .alert-severity-indicator.severity-probable {
-  background: rgba(78, 205, 196, 0.2);
+  background: var(--color-primary);
+  color: #000000;
 }
 
 .severity-icon {
@@ -288,21 +288,22 @@ export default {
 .player-name {
   font-size: 24px;
   font-weight: 700;
-  color: #ffffff;
+  color: var(--color-text);
+  text-transform: uppercase;
 }
 
 .player-position {
   font-size: 16px;
   font-weight: 600;
-  color: #ffffff;
-  background: rgba(255, 255, 255, 0.1);
+  color: #000000;
+  background: var(--color-primary);
   padding: 4px 12px;
-  border-radius: 6px;
+  border-radius: 0;
 }
 
 .player-team {
   font-size: 16px;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--color-secondary);
   font-weight: 600;
 }
 
@@ -311,10 +312,11 @@ export default {
   font-weight: 700;
   color: #ffffff;
   padding: 6px 14px;
-  border-radius: 8px;
+  border-radius: 0;
   text-transform: uppercase;
   letter-spacing: 1px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  box-shadow: none;
+  border: 1px solid #ffffff;
 }
 
 .injury-details {
@@ -328,40 +330,44 @@ export default {
   font-size: 18px;
   font-weight: 700;
   padding: 6px 14px;
-  border-radius: 6px;
+  border-radius: 0;
   text-transform: uppercase;
   letter-spacing: 1px;
 }
 
 .injury-status.severity-out {
-  background: rgba(255, 107, 107, 0.3);
-  color: #ff6b6b;
+  background: #000000;
+  color: #ff0000;
+  border: 1px solid #ff0000;
 }
 
 .injury-status.severity-doubtful {
-  background: rgba(255, 140, 0, 0.3);
+  background: #000000;
   color: #ff8c00;
+  border: 1px solid #ff8c00;
 }
 
 .injury-status.severity-questionable {
-  background: rgba(254, 202, 87, 0.3);
-  color: #feca57;
+  background: #000000;
+  color: var(--color-secondary);
+  border: 1px solid var(--color-secondary);
 }
 
 .injury-status.severity-probable {
-  background: rgba(78, 205, 196, 0.3);
-  color: #4ecdc4;
+  background: #000000;
+  color: var(--color-primary);
+  border: 1px solid var(--color-primary);
 }
 
 .injury-type {
   font-size: 16px;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--color-text);
   font-weight: 500;
 }
 
 .injury-notes {
   font-size: 15px;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--color-secondary);
   line-height: 1.5;
   font-style: italic;
 }
@@ -370,11 +376,11 @@ export default {
   display: inline-block;
   font-size: 14px;
   font-weight: 700;
-  color: #ff6b6b;
-  background: rgba(255, 107, 107, 0.15);
-  border: 2px solid rgba(255, 107, 107, 0.4);
+  color: #ff0000;
+  background: #000000;
+  border: 2px solid #ff0000;
   padding: 4px 12px;
-  border-radius: 6px;
+  border-radius: 0;
   animation: starterPulse 2s ease-in-out infinite;
 }
 
@@ -402,13 +408,13 @@ export default {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--color-secondary);
   gap: 20px;
 }
 
 .checkmark-icon {
   font-size: 100px;
-  color: #00d4ff;
+  color: var(--color-primary);
   opacity: 0.5;
   animation: checkmarkPulse 3s ease-in-out infinite;
 }
@@ -431,7 +437,7 @@ export default {
 
 .status-message {
   font-size: 18px;
-  color: #00d4ff;
+  color: var(--color-primary);
   font-weight: 600;
 }
 </style>

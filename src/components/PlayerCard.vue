@@ -1,18 +1,18 @@
 <template lang="pug">
-.bg-slate-800.rounded(:class="{ 'matchup-highlight': isAnimating }")
+.bg-black.border.border-[var(--color-primary)].terminal-shadow(:class="{ 'matchup-highlight': isAnimating }")
   .p-3.cursor-pointer(@click="toggleExpanded")
     .flex.items-center.gap-3(:class="reversed ? 'flex-row-reverse' : ''")
       //- Position Label with Color
       div(
         v-if="slotName"
-        class="w-16 h-16 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0"
+        class="w-16 h-16 border border-white flex items-center justify-center text-xs font-bold flex-shrink-0"
         :class="getSlotColor(slotName)"
       )
         .text-center
           div {{ slotName }}
 
       //- Player Portrait
-      img.h-12.w-12.rounded-full.object-cover(
+      img.h-12.w-12.border.border-[var(--color-secondary)].object-cover(
         v-if="player && player.portrait_url"
         :src="player.portrait_url"
         :alt="playerName"
@@ -23,33 +23,33 @@
       .flex-1(:class="reversed ? 'text-right' : ''")
         .flex.items-center.gap-2(:class="reversed ? 'justify-end' : ''")
           //- Player name first
-          .text-white.font-semibold.text-sm {{ playerName }}
+          .text-[var(--color-text)].font-bold.text-sm.uppercase {{ playerName }}
           //- EMPTY badge
           div(
             v-if="isEmpty"
-            class="px-2 py-0.5 rounded text-xs font-bold bg-red-600 text-white"
+            class="px-2 py-0.5 border border-red-600 text-xs font-bold text-red-600"
           ) EMPTY
           //- BYE badge
           div(
             v-if="byeWeek && !isEmpty"
-            class="px-2 py-0.5 rounded text-xs font-bold bg-gray-600 text-white"
+            class="px-2 py-0.5 border border-gray-600 text-xs font-bold text-gray-400"
           ) BYE
           //- SUSP badge
           div(
             v-if="isSuspended && !isEmpty"
-            class="px-2 py-0.5 rounded text-xs font-bold bg-purple-600 text-white"
+            class="px-2 py-0.5 border border-purple-600 text-xs font-bold text-purple-400"
           ) SUSP
           //- Injury badges (O, IR, D, Q)
           div(
             v-if="injuryStatus && !isEmpty"
-            class="px-2 py-0.5 rounded text-xs font-bold"
+            class="px-2 py-0.5 border text-xs font-bold"
             :class="getInjuryColorClass(injuryStatus)"
           ) {{ injuryStatus }}
-        .text-gray-500.text-xs {{ playerTeam }} • {{ playerPosition }}
+        .text-[var(--color-primary)].text-xs.font-mono {{ playerTeam }} • {{ playerPosition }}
 
         //- Game time and status
         .text-xs.mt-1(v-if="gameTimeDisplay && !isEmpty" :class="reversed ? 'text-right' : ''")
-          div(class="text-blue-400") {{ gameTimeDisplay }}
+          div(class="text-[var(--color-secondary)]") {{ gameTimeDisplay }}
           div(
             class="mt-0.5"
             :class="gameInfo?.status === 'in_progress' ? 'text-green-400 font-semibold' : gameInfo?.status === 'final' ? 'text-gray-400' : 'text-blue-300'"
@@ -77,11 +77,11 @@
 
   //- Expanded Details Section
   .px-3.pb-3(v-if="isExpanded && enrichedPlayer && !isEmpty")
-    .border-t.border-slate-700.pt-3.mt-2.space-y-3
+    .border-t.border-[var(--color-primary)].pt-3.mt-2.space-y-3
 
       //- Physical Attributes Section
       .grid.grid-cols-2.gap-2.text-xs(v-if="hasPhysicalData")
-        .bg-slate-900.rounded.p-2
+        .bg-[var(--color-surface)].border.border-[var(--color-primary)].p-2
           .text-gray-500.uppercase.text-[10px].font-semibold.mb-1 Physical
           .space-y-1
             div(v-if="enrichedPlayer.height")
@@ -94,7 +94,7 @@
               span.text-gray-400 Age:
               span.text-white.ml-1.font-semibold {{ enrichedPlayer.age }}
 
-        .bg-slate-900.rounded.p-2
+        .bg-[var(--color-surface)].border.border-[var(--color-primary)].p-2
           .text-gray-500.uppercase.text-[10px].font-semibold.mb-1 Background
           .space-y-1
             div(v-if="enrichedPlayer.college")
@@ -105,7 +105,7 @@
               span.text-white.ml-1.font-semibold {{ enrichedPlayer.years_exp }} yrs
 
       //- Fantasy Metrics Section
-      .bg-slate-900.rounded.p-2
+      .bg-[var(--color-surface)].border.border-[var(--color-primary)].p-2
         .text-gray-500.uppercase.text-[10px].font-semibold.mb-2 Fantasy Metrics
         .grid.grid-cols-3.gap-2.text-xs
           div(v-if="enrichedPlayer.ros")
@@ -130,7 +130,7 @@
               span.text-cyan-400.font-bold.text-sm {{ enrichedPlayer.projected_points_2025?.toFixed(1) }}
 
       //- Season Stats (if available)
-      .bg-slate-900.rounded.p-2(v-if="seasonStats && seasonStats.totalGames > 0")
+      .bg-[var(--color-surface)].border.border-[var(--color-primary)].p-2(v-if="seasonStats && seasonStats.totalGames > 0")
         .text-gray-500.uppercase.text-[10px].font-semibold.mb-2 Season Performance
         .grid.grid-cols-3.gap-2.text-xs
           div
@@ -155,7 +155,7 @@
               span.text-gray-500.font-bold.text-sm {{ seasonStats.gamesBenched }}
 
       //- Game Stats Breakdown (if provided via slot)
-      .bg-slate-900.rounded.p-2(v-if="gameStats && gameStats.length > 0")
+      .bg-[var(--color-surface)].border.border-[var(--color-primary)].p-2(v-if="gameStats && gameStats.length > 0")
         .text-gray-500.uppercase.text-[10px].font-semibold.mb-2 Week {{ currentWeek }} Stats
         .grid.grid-cols-2.gap-2.text-xs
           div(v-for="stat in gameStats" :key="stat.label")
@@ -164,7 +164,7 @@
               span.text-white.font-semibold {{ stat.value }}
 
       //- Injury Details (if available)
-      .bg-red-900.bg-opacity-20.rounded.p-2(v-if="enrichedPlayer.injury_notes")
+      .bg-red-900.bg-opacity-20.border.border-red-600.p-2(v-if="enrichedPlayer.injury_notes")
         .text-red-400.uppercase.text-[10px].font-semibold.mb-1 Injury Report
         .text-gray-300.text-xs {{ enrichedPlayer.injury_notes }}
 </template>
@@ -394,9 +394,9 @@ export default {
     // Get injury color class
     const getInjuryColorClass = (status) => {
       if (!status) return ''
-      if (status === 'O' || status === 'IR') return 'bg-red-600 text-white'
-      if (status === 'D') return 'bg-orange-500 text-white'
-      return 'bg-yellow-500 text-black' // Q, PUP
+      if (status === 'O' || status === 'IR') return 'border-red-600 text-red-600'
+      if (status === 'D') return 'border-orange-500 text-orange-500'
+      return 'border-yellow-500 text-yellow-500' // Q, PUP
     }
 
     // Toggle expanded state

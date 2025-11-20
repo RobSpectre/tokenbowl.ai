@@ -1,46 +1,52 @@
+```
 <template>
   <div class="box-score-container">
     <!-- Main box score - horizontal layout -->
-    <div class="box-score">
-      <!-- Away Team -->
-      <div class="team" :class="{ 'has-possession': hasPossession(game.awayTeam.abbreviation) }">
-        <div class="team-section">
-          <div class="team-name">
-            {{ game.awayTeam.abbreviation }}
-            <span v-if="hasPossession(game.awayTeam.abbreviation)" class="possession-indicator">🏈</span>
+    <div class="box-score font-mono">
+      <div class="header bg-[var(--color-surface)] border-b border-[var(--color-primary)]">
+        <h2 class="text-[var(--color-primary)] uppercase tracking-widest">Box Score</h2>
+      </div>
+      <div class="content">
+        <!-- Away Team -->
+        <div class="team" :class="{ 'has-possession': hasPossession(game.awayTeam.abbreviation) }">
+          <div class="team-section">
+            <div class="team-name">
+              {{ game.awayTeam.abbreviation }}
+              <span v-if="hasPossession(game.awayTeam.abbreviation)" class="possession-indicator">🏈</span>
+            </div>
+            <div class="team-logo">
+              <img :src="game.awayTeam.logo" :alt="game.awayTeam.abbreviation" />
+            </div>
+            <div class="timeouts">
+              <span v-for="i in 3" :key="i" class="timeout-dot" :class="{ 'used': i > game.awayTeam.timeoutsRemaining }"></span>
+            </div>
           </div>
-          <div class="team-logo">
-            <img :src="game.awayTeam.logo" :alt="game.awayTeam.abbreviation" />
-          </div>
-          <div class="timeouts">
-            <span v-for="i in 3" :key="i" class="timeout-dot" :class="{ 'used': i > game.awayTeam.timeoutsRemaining }"></span>
+          <div class="team-score">{{ game.awayTeam.score }}</div>
+        </div>
+
+        <!-- Center - Quarter, Clock, and Down & Distance -->
+        <div class="game-status-center">
+          <div class="quarter">{{ quarterText }}</div>
+          <div class="clock">{{ displayClock }}</div>
+          <div v-if="game.situation && game.situation.down" class="down-distance">
+            {{ game.situation.downDistanceText }}
           </div>
         </div>
-        <div class="team-score">{{ game.awayTeam.score }}</div>
-      </div>
 
-      <!-- Center - Quarter, Clock, and Down & Distance -->
-      <div class="game-status-center">
-        <div class="quarter">{{ quarterText }}</div>
-        <div class="clock">{{ displayClock }}</div>
-        <div v-if="game.situation && game.situation.down" class="down-distance">
-          {{ game.situation.downDistanceText }}
-        </div>
-      </div>
-
-      <!-- Home Team -->
-      <div class="team" :class="{ 'has-possession': hasPossession(game.homeTeam.abbreviation) }">
-        <div class="team-score">{{ game.homeTeam.score }}</div>
-        <div class="team-section">
-          <div class="team-name">
-            {{ game.homeTeam.abbreviation }}
-            <span v-if="hasPossession(game.homeTeam.abbreviation)" class="possession-indicator">🏈</span>
-          </div>
-          <div class="team-logo">
-            <img :src="game.homeTeam.logo" :alt="game.homeTeam.abbreviation" />
-          </div>
-          <div class="timeouts">
-            <span v-for="i in 3" :key="i" class="timeout-dot" :class="{ 'used': i > game.homeTeam.timeoutsRemaining }"></span>
+        <!-- Home Team -->
+        <div class="team" :class="{ 'has-possession': hasPossession(game.homeTeam.abbreviation) }">
+          <div class="team-score">{{ game.homeTeam.score }}</div>
+          <div class="team-section">
+            <div class="team-name">
+              {{ game.homeTeam.abbreviation }}
+              <span v-if="hasPossession(game.homeTeam.abbreviation)" class="possession-indicator">🏈</span>
+            </div>
+            <div class="team-logo">
+              <img :src="game.homeTeam.logo" :alt="game.homeTeam.abbreviation" />
+            </div>
+            <div class="timeouts">
+              <span v-for="i in 3" :key="i" class="timeout-dot" :class="{ 'used': i > game.homeTeam.timeoutsRemaining }"></span>
+            </div>
           </div>
         </div>
       </div>
@@ -181,16 +187,50 @@ export default {
 
 /* Main Box Score - Horizontal Layout */
 .box-score {
-  background: rgba(26, 26, 46, 0.95);
-  border: 2px solid rgba(255, 255, 255, 0.1);
-  border-radius: 16px;
+  background: #000000;
+  border: 1px solid var(--color-primary);
+  border-radius: 0;
   overflow: hidden;
-  backdrop-filter: blur(10px);
+  height: 100%;
   display: flex;
+  flex-direction: column;
+}
+
+.header {
+  padding: 12px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.header h2 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 800;
+}
+
+.content {
+  flex: 1;
+  overflow-y: auto;
+  display: flex; /* Added to maintain horizontal layout for teams */
   align-items: center;
   justify-content: space-between;
   padding: 18px 24px;
   gap: 24px;
+}
+
+/* Custom Scrollbar */
+.content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.content::-webkit-scrollbar-track {
+  background: #000000;
+}
+
+.content::-webkit-scrollbar-thumb {
+  background: var(--color-primary);
+  border-radius: 0;
 }
 
 /* Teams */

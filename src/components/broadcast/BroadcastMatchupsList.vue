@@ -1,5 +1,5 @@
 <template>
-  <div class="matchups-list">
+  <div class="matchups-list font-mono">
     <div class="panel-header">
       <h2>TOKEN BOWL</h2>
       <div class="week-controls">
@@ -310,15 +310,10 @@ export default {
 .panel-header h2 {
   font-size: 36px;
   font-weight: 900;
-  color: #ffffff;
+  color: var(--color-primary);
   margin: 0;
   letter-spacing: 2px;
   text-transform: uppercase;
-  background: linear-gradient(135deg, #00d4ff, #7b2ff7);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  text-shadow: 0 0 25px rgba(0, 212, 255, 0.5);
 }
 
 .week-controls {
@@ -330,20 +325,15 @@ export default {
 .week-indicator {
   font-size: 28px;
   font-weight: 900;
-  color: #ffffff;
+  color: var(--color-secondary);
   letter-spacing: 1px;
-  background: linear-gradient(135deg, #7b2ff7, #f107a3);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  text-shadow: 0 0 20px rgba(123, 47, 247, 0.5);
 }
 
 .week-arrow {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 5px;
-  color: rgba(255, 255, 255, 0.6);
+  background: #000000;
+  border: 1px solid var(--color-primary);
+  border-radius: 0;
+  color: var(--color-primary);
   font-size: 24px;
   width: 38px;
   height: 38px;
@@ -357,10 +347,9 @@ export default {
 }
 
 .week-arrow:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.3);
-  color: rgba(255, 255, 255, 0.9);
-  transform: scale(1.05);
+  background: var(--color-primary);
+  color: #000000;
+  transform: none;
 }
 
 .week-arrow:active:not(:disabled) {
@@ -381,9 +370,9 @@ export default {
 }
 
 .matchup-card {
-  background: rgba(30, 41, 59, 0.8);
-  border: 2px solid rgba(255, 255, 255, 0.1);
-  border-radius: 14px;
+  background: #000000;
+  border: 1px solid var(--color-primary);
+  border-radius: 0;
   padding: 16px;
   cursor: pointer;
   transition: all 0.3s ease;
@@ -395,9 +384,9 @@ export default {
 }
 
 .matchup-card:hover {
-  background: rgba(30, 41, 59, 0.95);
-  border-color: rgba(0, 212, 255, 0.5);
-  transform: scale(1.01);
+  background: var(--color-surface);
+  border-color: var(--color-secondary);
+  transform: none;
 }
 
 .matchup-inner {
@@ -413,27 +402,27 @@ export default {
   align-items: center;
   justify-content: space-between;
   background: transparent;
-  border-radius: 10px;
+  border-radius: 0;
   padding: 14px 16px;
   min-width: 0;
   transition: all 0.3s ease;
 }
 
 .team-side.scoring {
-  background: linear-gradient(135deg, rgba(0, 212, 255, 0.3), rgba(123, 47, 247, 0.3));
-  border: 2px solid #00d4ff;
-  box-shadow: 0 0 40px rgba(0, 212, 255, 0.6), 0 0 80px rgba(123, 47, 247, 0.4);
+  background: #000000;
+  border: 2px solid var(--color-primary);
+  box-shadow: none;
   animation: scoreFlash 0.5s ease-in-out 3;
 }
 
 @keyframes scoreFlash {
   0%, 100% {
     transform: scale(1);
-    box-shadow: 0 0 40px rgba(0, 212, 255, 0.6), 0 0 80px rgba(123, 47, 247, 0.4);
+    border-color: var(--color-primary);
   }
   50% {
     transform: scale(1.02);
-    box-shadow: 0 0 60px rgba(0, 212, 255, 0.9), 0 0 120px rgba(123, 47, 247, 0.6);
+    border-color: var(--color-accent);
   }
 }
 
@@ -481,10 +470,11 @@ export default {
 .team-name {
   font-size: 40px;
   font-weight: 800;
-  color: #ffffff;
+  color: var(--color-text);
   line-height: 1;
   overflow: hidden;
   text-overflow: ellipsis;
+  text-transform: uppercase;
 }
 
 .team-record {
@@ -504,9 +494,9 @@ export default {
 .team-score {
   font-size: 70px;
   font-weight: 900;
-  color: #ffffff;
+  color: var(--color-primary);
   font-variant-numeric: tabular-nums;
-  text-shadow: 0 3px 12px rgba(0, 0, 0, 0.5);
+  text-shadow: none;
   min-width: 175px;
   text-align: center;
   line-height: 1;
@@ -532,7 +522,7 @@ export default {
 
 .yet-to-play-count {
   margin-top: 10px;
-  color: #00d4ff;
+  color: var(--color-secondary);
   font-size: 16px;
   font-weight: 600;
   text-align: center;
@@ -544,27 +534,27 @@ export default {
 }
 
 .vs-badge {
-  background: rgba(71, 85, 105, 0.8);
+  background: #000000;
   border-radius: 50%;
   width: 70px;
   height: 70px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 3px solid rgba(255, 255, 255, 0.2);
+  border: 3px solid var(--color-secondary);
 }
 
 .vs-text {
   font-size: 28px;
   font-weight: 900;
-  color: #ffffff;
+  color: var(--color-secondary);
   letter-spacing: 1px;
 }
 
 .point-differential {
   margin-top: 14px;
   padding-top: 14px;
-  border-top: 3px solid rgba(71, 85, 105, 0.5);
+  border-top: 3px solid var(--color-primary);
 }
 
 .differential-container {
@@ -580,14 +570,14 @@ export default {
   transform: translateX(-50%);
   width: 3px;
   height: 100%;
-  background: rgba(148, 163, 184, 0.5);
+  background: var(--color-secondary);
   z-index: 0;
 }
 
 .differential-bar {
   position: absolute;
   height: 34px;
-  border-radius: 8px;
+  border-radius: 0;
   display: flex;
   align-items: center;
   z-index: 1;
@@ -595,22 +585,22 @@ export default {
 
 .left-bar {
   right: 50%;
-  background: linear-gradient(to left, #00d4ff, #0ea5e9);
+  background: var(--color-primary);
   justify-content: flex-start;
   padding-left: 14px;
-  border-radius: 8px 0 0 8px;
+  border-radius: 0;
 }
 
 .right-bar {
   left: 50%;
-  background: linear-gradient(to right, #00d4ff, #0ea5e9);
+  background: var(--color-primary);
   justify-content: flex-end;
   padding-right: 14px;
-  border-radius: 0 8px 8px 0;
+  border-radius: 0;
 }
 
 .differential-value {
-  color: #ffffff;
+  color: #000000;
   font-size: 20px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
@@ -620,13 +610,13 @@ export default {
   position: absolute;
   left: 50%;
   transform: translateX(-50%);
-  background: #eab308;
-  border-radius: 8px;
+  background: var(--color-secondary);
+  border-radius: 0;
   padding: 6px 16px;
 }
 
 .tie-text {
-  color: #ffffff;
+  color: #000000;
   font-size: 20px;
   font-weight: 700;
 }
@@ -637,7 +627,7 @@ export default {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--color-secondary);
   gap: 16px;
 }
 
@@ -649,9 +639,9 @@ export default {
 .loading-spinner {
   width: 46px;
   height: 46px;
-  border: 4px solid rgba(255, 255, 255, 0.1);
-  border-top-color: #00d4ff;
-  border-radius: 50%;
+  border: 4px solid var(--color-surface);
+  border-top-color: var(--color-primary);
+  border-radius: 0;
   animation: spin 1s linear infinite;
 }
 

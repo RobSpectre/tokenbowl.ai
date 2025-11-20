@@ -1,5 +1,5 @@
 <template>
-  <div class="broadcast-extra-container">
+  <div class="broadcast-extra-container font-mono">
     <div class="box-scores-grid">
       <BoxScore
         v-for="game in liveGames"
@@ -98,7 +98,7 @@ export default {
 .broadcast-extra-container {
   width: 100vw;
   height: 100vh;
-  background: #00b23e; /* Chroma key green */
+  background: #000000;
   overflow: hidden;
   position: fixed;
   top: 0;
@@ -119,25 +119,28 @@ export default {
   grid-column: 1 / -1;
   text-align: center;
   padding: 80px 20px;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--color-secondary);
 }
 
 .no-games-message .icon {
   font-size: 64px;
   margin-bottom: 20px;
   opacity: 0.5;
+  color: var(--color-primary);
 }
 
 .no-games-message .title {
   font-size: 28px;
   font-weight: 700;
   margin-bottom: 8px;
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--color-text);
+  text-transform: uppercase;
+  letter-spacing: 1px;
 }
 
 .no-games-message .subtitle {
   font-size: 16px;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--color-secondary);
 }
 
 @media (max-width: 768px) {

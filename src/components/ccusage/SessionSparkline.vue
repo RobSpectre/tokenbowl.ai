@@ -68,8 +68,9 @@ export default {
             smooth: true,
             symbol: 'none',
             lineStyle: {
-              color: '#00ff88',
-              width: 3
+              color: '#00ff00',
+              width: 2,
+              type: 'solid'
             },
             areaStyle: {
               color: {
@@ -79,8 +80,8 @@ export default {
                 x2: 0,
                 y2: 1,
                 colorStops: [
-                  { offset: 0, color: 'rgba(0, 255, 136, 0.4)' },
-                  { offset: 1, color: 'rgba(0, 255, 136, 0.05)' }
+                  { offset: 0, color: 'rgba(0, 255, 0, 0.4)' },
+                  { offset: 1, color: 'rgba(0, 255, 0, 0.05)' }
                 ]
               }
             },

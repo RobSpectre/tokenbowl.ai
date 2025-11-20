@@ -1,5 +1,5 @@
 <template>
-  <div class="matchup-detail">
+  <div class="matchup-detail font-mono">
     <div class="panel-header">
       <h2>HEAD TO HEAD MATCHUP</h2>
     </div>
@@ -30,7 +30,7 @@
           <div
             class="team-header"
             :style="{
-              background: `linear-gradient(135deg, ${selectedMatchup.teams[0].teamInfo?.colors?.from}, ${selectedMatchup.teams[0].teamInfo?.colors?.to})`
+              borderColor: selectedMatchup.teams[0].teamInfo?.colors?.primary || 'var(--color-primary)'
             }"
           >
             <img
@@ -124,7 +124,7 @@
           <div
             class="team-header"
             :style="{
-              background: `linear-gradient(135deg, ${selectedMatchup.teams[1].teamInfo?.colors?.from}, ${selectedMatchup.teams[1].teamInfo?.colors?.to})`
+              borderColor: selectedMatchup.teams[1].teamInfo?.colors?.primary || 'var(--color-primary)'
             }"
           >
             <img
@@ -235,7 +235,7 @@
               class="score-bar team1-bar"
               :style="{
                 width: getBarWidth(selectedMatchup.teams[0].points) + '%',
-                background: `linear-gradient(90deg, ${selectedMatchup.teams[0].teamInfo?.colors?.from}, ${selectedMatchup.teams[0].teamInfo?.colors?.to})`
+                background: selectedMatchup.teams[0].teamInfo?.colors?.primary || 'var(--color-primary)'
               }"
             >
               <span class="bar-label">{{ formatPoints(selectedMatchup.teams[0].points) }}</span>
@@ -246,7 +246,7 @@
               class="score-bar team2-bar"
               :style="{
                 width: getBarWidth(selectedMatchup.teams[1].points) + '%',
-                background: `linear-gradient(90deg, ${selectedMatchup.teams[1].teamInfo?.colors?.from}, ${selectedMatchup.teams[1].teamInfo?.colors?.to})`
+                background: selectedMatchup.teams[1].teamInfo?.colors?.primary || 'var(--color-primary)'
               }"
             >
               <span class="bar-label">{{ formatPoints(selectedMatchup.teams[1].points) }}</span>
@@ -566,14 +566,10 @@ export default {
 .panel-header h2 {
   font-size: 38px;
   font-weight: 800;
-  color: #ffffff;
+  color: var(--color-primary);
   margin: 0;
   letter-spacing: 2px;
   text-transform: uppercase;
-  background: linear-gradient(135deg, #f107a3, #7b2ff7);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
 }
 
 .matchup-content {
@@ -585,9 +581,9 @@ export default {
 }
 
 .positions-yet-to-start {
-  background: rgba(30, 41, 59, 0.8);
-  border: 2px solid rgba(0, 212, 255, 0.3);
-  border-radius: 12px;
+  background: #000000;
+  border: 2px solid var(--color-primary);
+  border-radius: 0;
   padding: 14px 20px;
   flex-shrink: 0;
 }
@@ -595,16 +591,17 @@ export default {
 .yet-label {
   font-size: 16px;
   font-weight: 700;
-  color: #00d4ff;
+  color: var(--color-primary);
   text-transform: uppercase;
   letter-spacing: 1px;
 }
 
 .position-tag {
   padding: 6px 12px;
-  background: rgb(37, 99, 235);
-  color: #ffffff;
-  border-radius: 6px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  border: 1px solid var(--color-secondary);
+  border-radius: 0;
   font-size: 14px;
   font-weight: 700;
 }
@@ -651,9 +648,11 @@ export default {
   align-items: center;
   gap: 20px;
   padding: 20px;
-  border-radius: 14px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  border-radius: 0;
+  box-shadow: none;
   flex-shrink: 0;
+  background: #000000;
+  border: 2px solid var(--color-primary);
 }
 
 .team-logo {
@@ -672,17 +671,18 @@ export default {
 .team-name {
   font-size: 30px;
   font-weight: 800;
-  color: #ffffff;
+  color: var(--color-text);
   margin-bottom: 3px;
-  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+  text-shadow: none;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  text-transform: uppercase;
 }
 
 .team-owner {
   font-size: 18px;
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--color-secondary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -691,10 +691,10 @@ export default {
 .team-score {
   font-size: 64px;
   font-weight: 900;
-  color: #ffffff;
+  color: var(--color-primary);
   text-align: center;
   font-variant-numeric: tabular-nums;
-  text-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+  text-shadow: none;
   flex-shrink: 0;
 }
 
@@ -707,7 +707,7 @@ export default {
 .section-title {
   font-size: 20px;
   font-weight: 700;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--color-secondary);
   letter-spacing: 1.5px;
   margin-bottom: 6px;
 }
@@ -716,46 +716,47 @@ export default {
   display: flex;
   align-items: center;
   gap: 14px;
-  background: rgba(30, 41, 59, 0.6);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
+  background: #000000;
+  border: 1px solid var(--color-primary);
+  border-radius: 0;
   padding: 14px;
   transition: all 0.2s ease;
   min-height: 100px;
 }
 
 .player-card:hover {
-  background: rgba(30, 41, 59, 0.8);
-  border-color: rgba(255, 255, 255, 0.2);
+  background: var(--color-surface);
+  border-color: var(--color-secondary);
 }
 
 .player-card.scoring-player {
-  background: linear-gradient(135deg, rgba(0, 212, 255, 0.4), rgba(123, 47, 247, 0.4));
-  border: 2px solid #00d4ff;
-  box-shadow: 0 0 30px rgba(0, 212, 255, 0.8), 0 0 60px rgba(123, 47, 247, 0.5);
+  background: #000000;
+  border: 2px solid var(--color-primary);
+  box-shadow: none;
   animation: playerScoreFlash 0.4s ease-in-out 4;
 }
 
 @keyframes playerScoreFlash {
   0%, 100% {
     transform: scale(1) translateY(0);
-    box-shadow: 0 0 30px rgba(0, 212, 255, 0.8), 0 0 60px rgba(123, 47, 247, 0.5);
+    border-color: var(--color-primary);
   }
   50% {
     transform: scale(1.03) translateY(-2px);
-    box-shadow: 0 0 50px rgba(0, 212, 255, 1), 0 0 100px rgba(123, 47, 247, 0.7);
+    border-color: var(--color-accent);
   }
 }
 
 .bench-card {
-  background: rgba(30, 41, 59, 0.4);
-  opacity: 0.9;
+  background: #000000;
+  opacity: 0.7;
+  border-style: dashed;
 }
 
 .position-badge {
   width: 68px;
   height: 68px;
-  border-radius: 10px;
+  border-radius: 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -767,28 +768,29 @@ export default {
 .player-portrait {
   width: 68px;
   height: 68px;
-  border-radius: 10px;
+  border-radius: 0;
   object-fit: cover;
   flex-shrink: 0;
-  border: 2px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid var(--color-secondary);
 }
 
 .bench-badge {
-  background: rgba(100, 116, 139, 0.6);
-  color: #ffffff;
+  background: var(--color-surface);
+  color: var(--color-secondary);
+  border: 1px solid var(--color-secondary);
 }
 
-.pos-qb { background: rgb(239, 68, 68); color: #ffffff; }
-.pos-rb1 { background: rgb(34, 197, 94); color: #ffffff; }
-.pos-rb2 { background: rgb(21, 128, 61); color: #ffffff; }
-.pos-wr1 { background: rgb(59, 130, 246); color: #ffffff; }
-.pos-wr2 { background: rgb(29, 78, 216); color: #ffffff; }
-.pos-te { background: rgb(234, 179, 8); color: #000000; }
-.pos-flex1 { background: rgb(20, 184, 166); color: #ffffff; }
-.pos-flex2 { background: rgb(6, 182, 212); color: #ffffff; }
-.pos-k { background: rgb(168, 85, 247); color: #ffffff; }
-.pos-def { background: rgb(249, 115, 22); color: #ffffff; }
-.pos-default { background: rgb(100, 116, 139); color: #ffffff; }
+.pos-qb { background: #000000; color: #ef4444; border: 1px solid #ef4444; }
+.pos-rb1 { background: #000000; color: #22c55e; border: 1px solid #22c55e; }
+.pos-rb2 { background: #000000; color: #16a34a; border: 1px solid #16a34a; }
+.pos-wr1 { background: #000000; color: #3b82f6; border: 1px solid #3b82f6; }
+.pos-wr2 { background: #000000; color: #1d4ed8; border: 1px solid #1d4ed8; }
+.pos-te { background: #000000; color: #eab308; border: 1px solid #eab308; }
+.pos-flex1 { background: #000000; color: #14b8a6; border: 1px solid #14b8a6; }
+.pos-flex2 { background: #000000; color: #06b6d4; border: 1px solid #06b6d4; }
+.pos-k { background: #000000; color: #a855f7; border: 1px solid #a855f7; }
+.pos-def { background: #000000; color: #f97316; border: 1px solid #f97316; }
+.pos-default { background: #000000; color: #64748b; border: 1px solid #64748b; }
 
 .player-info {
   flex: 1;

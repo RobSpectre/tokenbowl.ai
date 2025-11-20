@@ -1,43 +1,40 @@
 <template lang="pug">
-.bg-slate-950.min-h-screen
+.min-h-screen(class="bg-[var(--color-background)]")
   //- Loading State
   .flex.items-center.justify-center(v-if="loading" style="min-height: 50vh")
     .text-center
-      .inline-block.animate-spin.rounded-full.h-16.w-16.border-4.border-blue-500.border-t-transparent
-      p.text-white.mt-4.text-xl.font-bold.uppercase.tracking-wider Loading Episode...
+      .inline-block.animate-spin.h-16.w-16.border-4.border-t-transparent(class="border-[var(--color-primary)]")
+      p.mt-4.text-xl.font-bold.uppercase.tracking-wider.font-mono(class="text-[var(--color-primary)]") Loading Episode...
 
   //- Error State
   .container.mx-auto.px-4.py-12(v-else-if="error")
-    .bg-red-600.border-l-4.border-red-800.rounded.p-6.text-center
-      p.text-white.text-xl.font-bold {{ error }}
+    div(class="bg-black border border-red-600 p-6 text-center")
+      p.text-red-600.text-xl.font-bold.font-mono {{ error }}
 
   //- Main Content - Sports Broadcast Style
   main.container.mx-auto.px-4.py-8(v-else-if="episode")
     //- Back Button
     router-link(
       to="/slopup"
-      class="inline-flex items-center gap-2 px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white font-bold uppercase tracking-wider rounded-lg transition-all mb-6 shadow-lg"
+      class="inline-flex items-center gap-2 px-4 py-2 bg-[var(--color-surface)] border border-[var(--color-primary)] hover:bg-[var(--color-primary)] hover:text-black text-[var(--color-primary)] font-bold uppercase tracking-wider transition-all mb-6 font-mono"
     )
-      svg.w-5.h-5(fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="3")
-        path(stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7")
+      span <
       span Back to All Episodes
 
     //- Episode Header - Game Recap Style
     section.mb-8.relative.overflow-hidden
-      .bg-gradient-to-r.from-orange-600.to-red-600.rounded-lg.px-8.py-8.relative
-        //- Background pattern
-        .absolute.inset-0.opacity-5(style="background: repeating-linear-gradient(45deg, transparent, transparent 15px, white 15px, white 30px)")
+      div(class="bg-[var(--color-surface)] border-y border-[var(--color-primary)] px-8 py-8 relative")
         .relative.z-10
           .flex.items-center.gap-4.mb-4
-            .bg-white.text-orange-600.w-20.h-20.rounded-full.flex.items-center.justify-center.text-4xl.border-4.border-white.shadow-2xl {{ episode.emoji }}
+            div(class="bg-black text-[var(--color-primary)] w-20 h-20 flex items-center justify-center text-4xl border border-[var(--color-primary)]") {{ episode.emoji }}
             div
-              .bg-black.bg-opacity-30.inline-block.px-3.py-1.rounded.mb-2.backdrop-blur-sm
-                .text-orange-200.text-xs.font-black.uppercase.tracking-widest Week {{ episode.week }} Full Breakdown
-              h1(class="text-white text-3xl sm:text-5xl font-black uppercase tracking-tight drop-shadow-2xl") {{ episode.title }}
+              div(class="border border-[var(--color-secondary)] bg-black inline-block px-3 py-1 mb-2")
+                div(class="text-[var(--color-secondary)] text-xs font-bold uppercase tracking-widest font-mono") Week {{ episode.week }} Full Breakdown
+              h1(class="text-[var(--color-primary)] text-3xl sm:text-5xl font-bold uppercase tracking-tight font-mono") {{ episode.title }}
 
     //- Audio Player
     section.mb-8
-      .bg-white.rounded-lg.p-6
+      div(class="bg-black border border-[var(--color-primary)] p-6")
         audio.w-full(
           controls
           :src="episode.audioUrl"
@@ -45,9 +42,9 @@
 
     //- Full Transcript - Analysis Style
     section.mb-8
-      .bg-gradient-to-br.from-slate-900.to-black.rounded-lg.p-8.border-2.border-orange-500
-        .border-l-4.border-orange-500.pl-6.mb-4
-          .text-orange-400.text-sm.font-black.uppercase.tracking-widest.mb-2 Complete Transcript
+      div(class="bg-black p-8 border border-[var(--color-primary)]")
+        div(class="border-l-2 border-[var(--color-secondary)] pl-6 mb-4")
+          div(class="text-[var(--color-secondary)] text-sm font-bold uppercase tracking-widest mb-2 font-mono") Complete Transcript
         .prose.prose-invert.max-w-none(v-html="episode.content")
 </template>
 
@@ -128,26 +125,27 @@ export default {
 </script>
 
 <style scoped>
-/* Prose styles for markdown content - Sports Broadcast Theme */
+/* Prose styles for markdown content - Terminal Theme */
 :deep(.prose) {
-  color: #f1f5f9;
+  color: var(--color-text);
   font-size: 1.0625rem;
+  font-family: var(--font-mono);
 }
 
 :deep(.prose h2) {
-  color: #fb923c;
+  color: var(--color-primary);
   font-size: 2rem;
   font-weight: 900;
   margin-top: 2.5rem;
   margin-bottom: 1rem;
-  border-left: 4px solid #fb923c;
+  border-left: 4px solid var(--color-primary);
   padding-left: 1rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
 
 :deep(.prose h3) {
-  color: #fdba74;
+  color: var(--color-secondary);
   font-size: 1.5rem;
   font-weight: 800;
   margin-top: 2rem;
@@ -159,11 +157,11 @@ export default {
 :deep(.prose p) {
   margin-bottom: 1.25rem;
   line-height: 1.8;
-  color: #e2e8f0;
+  color: var(--color-text);
 }
 
 :deep(.prose strong) {
-  color: #fbbf24;
+  color: var(--color-accent);
   font-weight: 800;
 }
 
@@ -177,24 +175,32 @@ export default {
   margin-bottom: 0.75rem;
   padding-left: 1.5rem;
   position: relative;
-  color: #e2e8f0;
+  color: var(--color-text);
 }
 
 :deep(.prose li::before) {
-  content: "▸";
+  content: ">";
   position: absolute;
   left: 0;
-  color: #fb923c;
+  color: var(--color-primary);
   font-weight: bold;
 }
 
 /* Audio player styling */
 audio {
-  border-radius: 0.5rem;
-  background: #ffffff;
+  border-radius: 0;
+  border: 1px solid var(--color-primary);
+  background: var(--color-surface);
+  color-scheme: dark;
 }
 
 audio::-webkit-media-controls-panel {
-  background-color: #ffffff;
+  background-color: var(--color-surface);
+  border-radius: 0;
+}
+
+audio::-webkit-media-controls-play-button,
+audio::-webkit-media-controls-mute-button {
+  filter: invert(1);
 }
 </style>

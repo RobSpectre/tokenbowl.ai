@@ -1,5 +1,5 @@
 <template>
-  <div class="broadcast-container">
+  <div class="broadcast-container font-mono">
     <!-- 4K Grid Layout: 2 columns - Head to Head on left, rest on right -->
     <div class="broadcast-grid">
       <!-- Left: Matchup Detail (full height) -->
@@ -101,12 +101,12 @@ export default {
 .broadcast-container {
   width: 3840px;
   height: 2160px;
-  background: #00B140; /* Darker chroma key green - easier to key */
+  background: #000000;
   overflow: hidden;
   position: fixed;
   top: 0;
   left: 0;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family: var(--font-mono);
 }
 
 .broadcast-grid {
@@ -149,9 +149,9 @@ export default {
 }
 
 .broadcast-panel {
-  background: #1a1a2e;
-  border: 2px solid rgba(255, 255, 255, 0.1);
-  border-radius: 24px;
+  background: #000000;
+  border: 1px solid var(--color-primary);
+  border-radius: 0;
   overflow: hidden;
   position: relative;
   box-sizing: border-box;
@@ -163,9 +163,9 @@ export default {
   top: 0;
   left: 0;
   right: 0;
-  height: 4px;
-  background: linear-gradient(90deg, #00d4ff, #7b2ff7, #f107a3);
-  opacity: 0.6;
+  height: 2px;
+  background: var(--color-primary);
+  opacity: 1;
 }
 
 /* Chromakey friendly - blue background alternative */

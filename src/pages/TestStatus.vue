@@ -276,7 +276,7 @@ export default {
 .test-status-container {
   width: 100vw;
   height: 100vh;
-  background: #0000FF; /* Pure blue chroma key background */
+  background: var(--color-background);
   overflow: hidden;
   position: fixed;
   top: 0;
@@ -284,15 +284,15 @@ export default {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family: var(--font-mono);
 }
 
 .test-status-content {
   min-height: 100px;
-  background: linear-gradient(135deg, #1a1a2e 0%, #2d2d44 100%);
-  border-radius: 8px;
+  background: #000000;
+  border: 1px solid var(--color-primary);
+  border-radius: 0;
   padding: 8px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -305,7 +305,7 @@ export default {
   align-items: center;
   justify-content: center;
   gap: 4px;
-  color: #ffffff;
+  color: var(--color-text);
   font-size: 8px;
   width: 100%;
   height: 100%;
@@ -321,9 +321,9 @@ export default {
 .loading-spinner {
   width: 20px;
   height: 20px;
-  border: 2px solid rgba(255, 255, 255, 0.1);
-  border-top-color: #00d4ff;
-  border-radius: 50%;
+  border: 2px solid var(--color-primary);
+  border-top-color: transparent;
+  border-radius: 0;
   animation: spin 1s linear infinite;
 }
 
@@ -351,7 +351,7 @@ export default {
   flex-direction: column;
   gap: 4px;
   padding: 4px 0;
-  border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+  border-bottom: 2px solid var(--color-primary);
 }
 
 .status-icon {
@@ -362,7 +362,7 @@ export default {
 .status-label {
   font-size: 10px;
   font-weight: 900;
-  color: #ffffff;
+  color: var(--color-primary);
   margin: 0;
   line-height: 1.1;
   white-space: nowrap;
@@ -404,22 +404,22 @@ export default {
 .repo-status {
   width: 28px;
   height: 28px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #00ff88, #00d4ff);
+  border-radius: 0;
+  background: #000000;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  border: 2px solid rgba(255, 255, 255, 0.2);
+  border: 2px solid var(--color-primary);
 }
 
 .repo-status.status-failed {
-  background: linear-gradient(135deg, #ff0066, #ff4444);
-  border-color: rgba(255, 0, 0, 0.4);
+  background: #000000;
+  border-color: #ff0000;
 }
 
 .check-icon {
-  color: #1a1a2e;
+  color: var(--color-primary);
   font-size: 16px;
   font-weight: 900;
   line-height: 1;
@@ -430,12 +430,13 @@ export default {
 }
 
 .rate-limit-warning {
-  background: linear-gradient(135deg, #ffaa00, #ff6600);
-  color: #1a1a2e;
+  background: #000000;
+  color: #ffaa00;
+  border: 1px solid #ffaa00;
   font-size: 8px;
   font-weight: 700;
   padding: 4px 8px;
-  border-radius: 4px;
+  border-radius: 0;
   text-align: center;
   margin-bottom: 4px;
   animation: pulse 2s ease-in-out infinite;

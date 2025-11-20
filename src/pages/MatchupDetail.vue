@@ -1,88 +1,89 @@
 <template lang="pug">
-.container.mx-auto.px-4.py-6.max-w-7xl.bg-slate-950
+div(class="container mx-auto px-4 py-6 max-w-7xl bg-[var(--color-background)]")
   //- Loading State
   .flex.items-center.justify-center(v-if="loading" style="min-height: 50vh")
     .text-center
-      .inline-block.animate-spin.rounded-full.h-16.w-16.border-4.border-blue-500.border-t-transparent
-      p.text-white.mt-4.text-xl.font-bold.uppercase.tracking-wider Loading matchup...
+      div(class="inline-block animate-spin h-16 w-16 border-4 border-[var(--color-primary)] border-t-transparent")
+      p(class="text-[var(--color-primary)] mt-4 text-xl font-bold uppercase tracking-wider font-mono") Loading matchup...
 
   //- Error State
   .py-12(v-else-if="error")
-    .bg-red-600.border-l-4.border-red-800.rounded.p-6.text-center
-      p.text-white.text-xl.font-bold {{ error }}
+    .bg-black.border.border-red-600.p-6.text-center
+      p.text-red-600.text-xl.font-bold.font-mono {{ error }}
 
   //- Main Content
   main(v-else-if="matchup")
     //- Back Button
     .mb-6
-      router-link(to="/" class="inline-flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-lg transition-all duration-200")
-        span ←
+      router-link(to="/" class="inline-flex items-center gap-2 px-4 py-2 bg-[var(--color-surface)] border border-[var(--color-primary)] hover:bg-[var(--color-primary)] hover:text-black text-[var(--color-primary)] font-bold transition-all duration-200 font-mono uppercase tracking-wider")
+        span <
         |  Back to Matchups
 
     //- Matchup Header with Auto-refresh Status
     section.mb-8
-      div(class="bg-gradient-to-r from-blue-600 to-blue-800 rounded-t-lg px-4 sm:px-6 py-3 sm:py-4 border-b-4 border-yellow-400")
+      div(class="bg-[var(--color-surface)] px-4 sm:px-6 py-3 sm:py-4 border-t border-x border-[var(--color-primary)]")
         .flex.items-center.justify-between.flex-wrap.gap-3
           .flex.items-center.gap-3
-            h1(class="text-white text-xl sm:text-3xl font-black uppercase tracking-wide")
+            h1(class="text-[var(--color-primary)] text-xl sm:text-3xl font-bold uppercase tracking-widest font-mono")
+              span(class="text-[var(--color-secondary)] mr-2") >
               | Week {{ week }} Matchup
             //- Game Status Badge
             div(
-              class="px-3 py-1 rounded-full text-xs font-bold uppercase"
-              :class="gameStatus === 'Final' ? 'bg-gray-600 text-white' : gameStatus === 'In Progress' ? 'bg-green-500 text-white animate-pulse' : 'bg-blue-500 text-white'"
+              class="px-3 py-1 border text-xs font-bold uppercase font-mono"
+              :class="gameStatus === 'Final' ? 'border-gray-600 text-gray-600' : gameStatus === 'In Progress' ? 'border-[var(--color-primary)] text-[var(--color-primary)] animate-pulse' : 'border-[var(--color-secondary)] text-[var(--color-secondary)]'"
             ) {{ gameStatus }}
           //- Auto-refresh indicator
-          div(v-if="isAutoRefreshActive" class="flex items-center gap-2 text-xs")
-            div(class="w-2 h-2 rounded-full bg-green-500 animate-pulse")
-            span(class="text-green-400") Live
-            span(class="text-gray-300") • {{ lastUpdated?.toLocaleTimeString() || 'Updating...' }}
+          div(v-if="isAutoRefreshActive" class="flex items-center gap-2 text-xs font-mono")
+            div(class="w-2 h-2 bg-[var(--color-primary)] animate-pulse")
+            span(class="text-[var(--color-primary)]") LIVE
+            span(class="text-[var(--color-secondary)]") :: {{ lastUpdated?.toLocaleTimeString() || 'Updating...' }}
 
         //- Positions Yet to Start
-        div(v-if="gameStatus !== 'Final' && getPositionsYetToStart().length > 0" class="bg-slate-800 px-4 sm:px-6 py-3 border-t border-slate-700")
-          .flex.items-center.justify-center.gap-2.flex-wrap
-            span.text-blue-400.text-sm.font-semibold.uppercase Yet to play: {{ getPlayersYetToPlayCount() }} {{ getPlayersYetToPlayCount() === 1 ? 'player' : 'players' }}
-            span.text-blue-400.text-sm.font-semibold.uppercase •
+        div(v-if="gameStatus !== 'Final' && getPositionsYetToStart().length > 0" class="bg-black px-4 sm:px-6 py-3 border-x border-[var(--color-primary)]")
+          .flex.items-center.justify-center.gap-2.flex-wrap.font-mono
+            span(class="text-[var(--color-secondary)] text-sm font-semibold uppercase") PENDING: {{ getPlayersYetToPlayCount() }} {{ getPlayersYetToPlayCount() === 1 ? 'PLAYER' : 'PLAYERS' }}
+            span(class="text-[var(--color-secondary)] text-sm font-semibold uppercase") ::
             .flex.items-center.gap-2.flex-wrap
-              span.px-2.py-1.rounded.text-xs.font-bold.bg-blue-600.text-white(
+              span(class="px-2 py-1 border text-xs font-bold border-[var(--color-secondary)] text-[var(--color-secondary)]"
                 v-for="position in getPositionsYetToStart()"
                 :key="position"
               ) {{ position }}
 
       //- Score Summary with Animation
-      div(class="bg-slate-900 rounded-b-lg p-4 sm:p-6")
+      div(class="bg-black border-b border-x border-[var(--color-primary)] p-4 sm:p-6")
         //- Desktop Layout
         div(class="hidden sm:flex sm:items-center sm:gap-4")
           //- Team 1
-          div(class="flex-1 text-center bg-slate-800 rounded-lg p-6")
+          div(class="flex-1 text-center bg-[var(--color-surface)] border border-[var(--color-primary)] p-6")
             img(
               class="h-24 w-24 object-contain mx-auto mb-4"
               :src="getTeamInfo(matchup[0].roster?.user?.display_name).logo"
               :alt="getTeamInfo(matchup[0].roster?.user?.display_name).aiModel"
               :class="getTeamInfo(matchup[0].roster?.user?.display_name).invertLogo ? 'invert brightness-200' : ''"
             )
-            div(class="text-white font-bold text-2xl") {{ getTeamInfo(matchup[0].roster?.user?.display_name).aiModel }}
-            div(class="text-blue-400 text-lg font-semibold") {{ getTeamInfo(matchup[0].roster?.user?.display_name).owner }}
+            div(class="text-[var(--color-text)] font-bold text-2xl uppercase tracking-wider") {{ getTeamInfo(matchup[0].roster?.user?.display_name).aiModel }}
+            div(class="text-[var(--color-primary)] text-lg font-semibold font-mono") {{ getTeamInfo(matchup[0].roster?.user?.display_name).owner }}
             div(class="flex items-center justify-center gap-2 flex-wrap mt-2")
               div(
                 v-for="badge in getTeamBadges(matchup[0])"
                 :key="badge.type"
-                :class="[badge.color, badge.color === 'bg-yellow-500' ? 'text-black' : 'text-white']"
-                class="px-2 py-0.5 rounded text-xs font-bold"
+                class="px-2 py-0.5 border text-xs font-bold font-mono"
+                :class="[badge.type === 'hot' ? 'border-red-500 text-red-500' : badge.type === 'cold' ? 'border-blue-500 text-blue-500' : 'border-[var(--color-secondary)] text-[var(--color-secondary)]']"
               ) {{ badge.label }}
             div(
-              class="text-white font-black text-5xl mt-4 transition-all duration-300"
+              class="text-[var(--color-primary)] font-bold text-5xl mt-4 transition-all duration-300 font-mono"
               :class="{ 'score-pulse': isScoreAnimating(matchup[0].roster_id) }"
             ) {{ matchup[0].points?.toFixed(2) || '0.00' }}
 
           //- VS Separator
           div(class="flex-shrink-0 px-4")
-            div(class="bg-slate-700 rounded-full px-4 py-2")
-              span(class="text-white font-black text-lg") VS
+            div(class="bg-black border border-[var(--color-primary)] px-4 py-2")
+              span(class="text-[var(--color-primary)] font-bold text-lg font-mono") VS
 
           //- Team 2 (inverted layout - score on left, team info on right)
-          div(class="flex-1 text-center bg-slate-800 rounded-lg p-6")
+          div(class="flex-1 text-center bg-[var(--color-surface)] border border-[var(--color-primary)] p-6")
             div(
-              class="text-white font-black text-5xl mb-4 transition-all duration-300"
+              class="text-[var(--color-primary)] font-bold text-5xl mb-4 transition-all duration-300 font-mono"
               :class="{ 'score-pulse': isScoreAnimating(matchup[1].roster_id) }"
             ) {{ matchup[1].points?.toFixed(2) || '0.00' }}
             img(
@@ -91,20 +92,20 @@
               :alt="getTeamInfo(matchup[1].roster?.user?.display_name).aiModel"
               :class="getTeamInfo(matchup[1].roster?.user?.display_name).invertLogo ? 'invert brightness-200' : ''"
             )
-            div(class="text-white font-bold text-2xl") {{ getTeamInfo(matchup[1].roster?.user?.display_name).aiModel }}
-            div(class="text-blue-400 text-lg font-semibold") {{ getTeamInfo(matchup[1].roster?.user?.display_name).owner }}
+            div(class="text-[var(--color-text)] font-bold text-2xl uppercase tracking-wider") {{ getTeamInfo(matchup[1].roster?.user?.display_name).aiModel }}
+            div(class="text-[var(--color-primary)] text-lg font-semibold font-mono") {{ getTeamInfo(matchup[1].roster?.user?.display_name).owner }}
             div(class="flex items-center justify-center gap-2 flex-wrap mt-2")
               div(
                 v-for="badge in getTeamBadges(matchup[1])"
                 :key="badge.type"
-                :class="[badge.color, badge.color === 'bg-yellow-500' ? 'text-black' : 'text-white']"
-                class="px-2 py-0.5 rounded text-xs font-bold"
+                class="px-2 py-0.5 border text-xs font-bold font-mono"
+                :class="[badge.type === 'hot' ? 'border-red-500 text-red-500' : badge.type === 'cold' ? 'border-blue-500 text-blue-500' : 'border-[var(--color-secondary)] text-[var(--color-secondary)]']"
               ) {{ badge.label }}
 
         //- Mobile Layout
         div(class="flex flex-col gap-3 sm:hidden")
           //- Team 1
-          .bg-slate-800.rounded-lg.p-4
+          div(class="bg-[var(--color-surface)] border border-[var(--color-primary)] p-4")
             .flex.items-center.justify-between
               div(class="flex items-center gap-3")
                 img(
@@ -114,41 +115,41 @@
                   :class="getTeamInfo(matchup[0].roster?.user?.display_name).invertLogo ? 'invert brightness-200' : ''"
                 )
                 div
-                  div(class="text-white font-bold text-base") {{ getTeamInfo(matchup[0].roster?.user?.display_name).aiModel }}
-                  div(class="text-blue-400 text-sm font-semibold") {{ getTeamInfo(matchup[0].roster?.user?.display_name).owner }}
+                  div(class="text-[var(--color-text)] font-bold text-base uppercase tracking-wider") {{ getTeamInfo(matchup[0].roster?.user?.display_name).aiModel }}
+                  div(class="text-[var(--color-primary)] text-sm font-semibold font-mono") {{ getTeamInfo(matchup[0].roster?.user?.display_name).owner }}
                   div(class="flex items-center gap-1 flex-wrap mt-1")
                     div(
                       v-for="badge in getTeamBadges(matchup[0])"
                       :key="badge.type"
-                      :class="[badge.color, badge.color === 'bg-yellow-500' ? 'text-black' : 'text-white']"
-                      class="px-1.5 py-0.5 rounded text-[10px] font-bold"
+                      class="px-1.5 py-0.5 border text-[10px] font-bold font-mono"
+                      :class="[badge.type === 'hot' ? 'border-red-500 text-red-500' : badge.type === 'cold' ? 'border-blue-500 text-blue-500' : 'border-[var(--color-secondary)] text-[var(--color-secondary)]']"
                     ) {{ badge.label }}
               div(
-                class="text-white font-black text-2xl transition-all duration-300"
+                class="text-[var(--color-primary)] font-bold text-2xl transition-all duration-300 font-mono"
                 :class="{ 'score-pulse': isScoreAnimating(matchup[0].roster_id) }"
               ) {{ matchup[0].points?.toFixed(2) || '0.00' }}
 
           //- VS
           div(class="text-center")
-            span(class="text-gray-400 font-semibold text-xs uppercase") vs
+            span(class="text-[var(--color-secondary)] font-bold text-xs uppercase font-mono") vs
 
           //- Team 2 (inverted layout - score on left)
-          .bg-slate-800.rounded-lg.p-4
+          div(class="bg-[var(--color-surface)] border border-[var(--color-primary)] p-4")
             .flex.items-center.justify-between
               div(
-                class="text-white font-black text-2xl transition-all duration-300"
+                class="text-[var(--color-primary)] font-bold text-2xl transition-all duration-300 font-mono"
                 :class="{ 'score-pulse': isScoreAnimating(matchup[1].roster_id) }"
               ) {{ matchup[1].points?.toFixed(2) || '0.00' }}
               div(class="flex items-center gap-3")
                 div(class="text-right")
-                  div(class="text-white font-bold text-base") {{ getTeamInfo(matchup[1].roster?.user?.display_name).aiModel }}
-                  div(class="text-blue-400 text-sm font-semibold") {{ getTeamInfo(matchup[1].roster?.user?.display_name).owner }}
+                  div(class="text-[var(--color-text)] font-bold text-base uppercase tracking-wider") {{ getTeamInfo(matchup[1].roster?.user?.display_name).aiModel }}
+                  div(class="text-[var(--color-primary)] text-sm font-semibold font-mono") {{ getTeamInfo(matchup[1].roster?.user?.display_name).owner }}
                   div(class="flex items-center gap-1 flex-wrap justify-end mt-1")
                     div(
                       v-for="badge in getTeamBadges(matchup[1])"
                       :key="badge.type"
-                      :class="[badge.color, badge.color === 'bg-yellow-500' ? 'text-black' : 'text-white']"
-                      class="px-1.5 py-0.5 rounded text-[10px] font-bold"
+                      class="px-1.5 py-0.5 border text-[10px] font-bold font-mono"
+                      :class="[badge.type === 'hot' ? 'border-red-500 text-red-500' : badge.type === 'cold' ? 'border-blue-500 text-blue-500' : 'border-[var(--color-secondary)] text-[var(--color-secondary)]']"
                     ) {{ badge.label }}
                 img(
                   class="h-14 w-14 object-contain"
@@ -158,31 +159,31 @@
                 )
 
         //- Point Differential Graph (like Home page)
-        .mt-6.pt-6.border-t.border-slate-700(v-if="(matchup[0].points || 0) !== (matchup[1].points || 0)")
-          .text-center.text-gray-400.text-sm.font-semibold.mb-3 POINT DIFFERENTIAL
-          .relative.h-12.flex.items-center.bg-slate-800.rounded-lg.overflow-hidden
+        div(class="mt-6 pt-6 border-t border-[var(--color-primary)]" v-if="(matchup[0].points || 0) !== (matchup[1].points || 0)")
+          div(class="text-center text-[var(--color-secondary)] text-sm font-semibold mb-3 font-mono") POINT DIFFERENTIAL
+          div(class="relative h-12 flex items-center bg-black border border-[var(--color-primary)] overflow-hidden")
             //- Center Line
-            div(class="absolute left-1/2 transform -translate-x-1/2 w-0.5 h-full bg-slate-600 z-10")
+            div(class="absolute left-1/2 transform -translate-x-1/2 w-0.5 h-full bg-[var(--color-primary)] z-10")
 
             //- Team 1 winning bar (left side)
             div(
               v-if="matchup[0].points > matchup[1].points"
-              class="absolute right-1/2 h-8 bg-gradient-to-l from-green-500 to-green-600 flex items-center justify-start pl-3 transition-all duration-500"
+              class="absolute right-1/2 h-8 bg-[var(--color-primary)] flex items-center justify-start pl-3 transition-all duration-500"
               :style="{ width: `${Math.min(((matchup[0].points - matchup[1].points) / Math.max(matchup[0].points, matchup[1].points)) * 45, 45)}%` }"
             )
-              span.text-white.text-sm.font-bold +{{ Math.abs((matchup[0].points || 0) - (matchup[1].points || 0)).toFixed(2) }}
+              span.text-black.text-sm.font-bold.font-mono +{{ Math.abs((matchup[0].points || 0) - (matchup[1].points || 0)).toFixed(2) }}
 
             //- Team 2 winning bar (right side)
             div(
               v-else-if="matchup[1].points > matchup[0].points"
-              class="absolute left-1/2 h-8 bg-gradient-to-r from-green-500 to-green-600 flex items-center justify-end pr-3 transition-all duration-500"
+              class="absolute left-1/2 h-8 bg-[var(--color-primary)] flex items-center justify-end pr-3 transition-all duration-500"
               :style="{ width: `${Math.min(((matchup[1].points - matchup[0].points) / Math.max(matchup[0].points, matchup[1].points)) * 45, 45)}%` }"
             )
-              span.text-white.text-sm.font-bold +{{ Math.abs((matchup[0].points || 0) - (matchup[1].points || 0)).toFixed(2) }}
+              span.text-black.text-sm.font-bold.font-mono +{{ Math.abs((matchup[0].points || 0) - (matchup[1].points || 0)).toFixed(2) }}
 
             //- Tie indicator
-            div(v-else class="absolute left-1/2 transform -translate-x-1/2 bg-yellow-500 rounded px-3 py-1 z-20")
-              span.text-black.text-xs.font-bold TIE
+            div(v-else class="absolute left-1/2 transform -translate-x-1/2 bg-[var(--color-accent)] px-3 py-1 z-20")
+              span.text-black.text-xs.font-bold.font-mono TIE
 
         //- Win Probability
         WinProbabilityBar(
@@ -193,26 +194,28 @@
 
     //- Head-to-Head Player Matchups
     section.mb-8
-      .bg-gradient-to-r.from-purple-600.to-purple-800.rounded-t-lg.px-6.py-4.border-b-4.border-yellow-400
-        h2.text-white.text-2xl.font-black.uppercase.tracking-wide Head to Head
+      div(class="bg-[var(--color-surface)] px-6 py-4 border-t border-x border-[var(--color-primary)]")
+        h2(class="text-[var(--color-primary)] text-2xl font-bold uppercase tracking-widest flex items-center gap-3")
+          span(class="text-[var(--color-secondary)]") >
+          | Head to Head
 
-      div(class="bg-slate-900 rounded-b-lg p-4 sm:p-6 space-y-4")
+      div(class="bg-black border-b border-x border-[var(--color-primary)] p-4 sm:p-6 space-y-4")
         //- Roster Slots (specific positions with colors)
         div(v-for="(slot, index) in getRosterSlots()" :key="slot.name")
           div(class="space-y-2")
             div(class="grid grid-cols-1 md:grid-cols-2 gap-2")
               //- Team 1 Player
               div(v-if="slot.team1Player")
-                .bg-slate-800.rounded(:class="{ 'matchup-highlight': isPlayerScoreAnimating(slot.team1Player) }")
+                div(class="bg-[var(--color-surface)] border border-[var(--color-primary)]" :class="{ 'matchup-highlight': isPlayerScoreAnimating(slot.team1Player) }")
                   .p-3
                     .flex.items-center.gap-3
                       //- Position Label with Color
-                      div(class="w-16 h-16 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0"
+                      div(class="w-16 h-16 border flex items-center justify-center text-xs font-bold flex-shrink-0 font-mono"
                         :class="getSlotColor(slot.name)"
                       )
                         div(class="text-center")
                           div {{ slot.name }}
-                      img.h-12.w-12.rounded-full.object-cover(
+                      img(class="h-12 w-12 border border-[var(--color-secondary)] object-cover"
                         v-if="getPlayerPortrait(slot.team1Player)"
                         :src="getPlayerPortrait(slot.team1Player)"
                         :alt="getPlayerName(slot.team1Player)"
@@ -220,67 +223,67 @@
                       )
                       .flex-1
                         .flex.items-center.gap-2
-                          .text-white.font-semibold.text-sm {{ getPlayerName(slot.team1Player) }}
+                          div(class="text-[var(--color-text)] font-semibold text-sm uppercase") {{ getPlayerName(slot.team1Player) }}
                           //- EMPTY badge for player ID 0
                           div(
                             v-if="slot.team1Player === '0' || slot.team1Player === 0"
-                            class="px-2 py-0.5 rounded text-xs font-bold bg-red-600 text-white"
+                            class="px-2 py-0.5 border border-red-600 text-red-600 text-xs font-bold font-mono"
                           ) EMPTY
                           //- BYE badge
                           div(
                             v-if="getPlayerBye(slot.team1Player)"
-                            class="px-2 py-0.5 rounded text-xs font-bold bg-gray-600 text-white"
+                            class="px-2 py-0.5 border border-gray-600 text-gray-600 text-xs font-bold font-mono"
                           ) BYE
                           //- SUSP badge
                           div(
                             v-if="getPlayerSuspended(slot.team1Player)"
-                            class="px-2 py-0.5 rounded text-xs font-bold bg-purple-600 text-white"
+                            class="px-2 py-0.5 border border-purple-600 text-purple-600 text-xs font-bold font-mono"
                           ) SUSP
                           //- Injury badges
                           div(
                             v-if="getPlayerInjury(slot.team1Player)"
-                            class="px-2 py-0.5 rounded text-xs font-bold"
-                            :class="getPlayerInjury(slot.team1Player) === 'O' || getPlayerInjury(slot.team1Player) === 'IR' ? 'bg-red-600 text-white' : getPlayerInjury(slot.team1Player) === 'D' ? 'bg-orange-500 text-white' : 'bg-yellow-500 text-black'"
+                            class="px-2 py-0.5 border text-xs font-bold font-mono"
+                            :class="getPlayerInjury(slot.team1Player) === 'O' || getPlayerInjury(slot.team1Player) === 'IR' ? 'border-red-600 text-red-600' : getPlayerInjury(slot.team1Player) === 'D' ? 'border-orange-500 text-orange-500' : 'border-yellow-500 text-yellow-500'"
                           ) {{ getPlayerInjury(slot.team1Player) }}
-                        .text-gray-500.text-xs {{ getPlayerTeam(slot.team1Player) }} • {{ getPlayerPosition(slot.team1Player) }}
+                        div(class="text-[var(--color-primary)] text-xs font-mono") {{ getPlayerTeam(slot.team1Player) }} • {{ getPlayerPosition(slot.team1Player) }}
                         //- Game info (day/time)
-                        div(class="text-xs mt-0.5" v-if="!isEmpty(slot.team1Player) && getPlayerGameInfo(slot.team1Player)")
-                          span(:class="getPlayerGameInfo(slot.team1Player).status === 'in_progress' ? 'text-green-400 font-bold animate-pulse' : getPlayerGameInfo(slot.team1Player).status === 'final' ? 'text-gray-400' : 'text-blue-400'")
+                        div(class="text-xs mt-0.5 font-mono" v-if="!isEmpty(slot.team1Player) && getPlayerGameInfo(slot.team1Player)")
+                          span(:class="getPlayerGameInfo(slot.team1Player).status === 'in_progress' ? 'text-[var(--color-primary)] font-bold animate-pulse' : getPlayerGameInfo(slot.team1Player).status === 'final' ? 'text-[var(--color-secondary)]' : 'text-[var(--color-accent)]'")
                             | {{ getGameStatusText(getPlayerGameInfo(slot.team1Player)) }}
-                            span(v-if="getPlayerGameInfo(slot.team1Player).status === 'scheduled'" class="text-gray-400 ml-1")
+                            span(v-if="getPlayerGameInfo(slot.team1Player).status === 'scheduled'" class="text-[var(--color-secondary)] ml-1")
                               | {{ getPlayerGameInfo(slot.team1Player).isHome ? 'vs' : '@' }} {{ getPlayerGameInfo(slot.team1Player).opponent }}
                       .text-right.flex-shrink-0
                         //- Score colored by game status
                         div(
-                          class="font-bold text-lg transition-all duration-300"
+                          class="font-bold text-lg transition-all duration-300 font-mono"
                           :class="[{ 'score-pulse': isPlayerScoreAnimating(slot.team1Player) }, getScoreColorClass(slot.team1Player)]"
                         ) {{ getPlayerPoints(matchup[0], slot.team1Player) }}
                         //- Projected score underneath
-                        div(class="text-xs text-gray-400 mt-0.5" v-if="!isEmpty(slot.team1Player) && getPlayerProjectedPoints(slot.team1Player) && getPlayerProjectedPoints(slot.team1Player) !== '-'")
+                        div(class="text-xs text-[var(--color-secondary)] mt-0.5 font-mono" v-if="!isEmpty(slot.team1Player) && getPlayerProjectedPoints(slot.team1Player) && getPlayerProjectedPoints(slot.team1Player) !== '-'")
                           | Proj: {{ getPlayerProjectedPoints(slot.team1Player) }}
                         //- Delta (actual vs projected) for final games
-                        div(class="text-xs font-bold mt-0.5" v-if="getPlayerDelta(matchup[0], slot.team1Player)" :class="getPlayerDelta(matchup[0], slot.team1Player).colorClass")
+                        div(class="text-xs font-bold mt-0.5 font-mono" v-if="getPlayerDelta(matchup[0], slot.team1Player)" :class="getPlayerDelta(matchup[0], slot.team1Player).colorClass")
                           | {{ getPlayerDelta(matchup[0], slot.team1Player).display }}
               div(v-else)
-                .bg-slate-800.rounded.p-3.opacity-30
+                div(class="bg-black border border-[var(--color-secondary)] p-3 opacity-50 border-dashed")
                   .flex.items-center.gap-3
-                    div(class="w-16 h-16 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0 bg-gray-700 text-gray-500")
+                    div(class="w-16 h-16 border border-[var(--color-secondary)] flex items-center justify-center text-xs font-bold flex-shrink-0 text-[var(--color-secondary)] font-mono")
                       div(class="text-center")
                         div {{ slot.name }}
-                    .text-center.text-gray-600.flex-1 Empty
+                    div(class="text-center text-[var(--color-secondary)] flex-1 font-mono") Empty
 
               //- Team 2 Player
               div(v-if="slot.team2Player")
-                .bg-slate-800.rounded(:class="{ 'matchup-highlight': isPlayerScoreAnimating(slot.team2Player) }")
+                div(class="bg-[var(--color-surface)] border border-[var(--color-primary)]" :class="{ 'matchup-highlight': isPlayerScoreAnimating(slot.team2Player) }")
                   .p-3
                     .flex.items-center.gap-3.flex-row-reverse
                       //- Position Label with Color
-                      div(class="w-16 h-16 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0"
+                      div(class="w-16 h-16 border flex items-center justify-center text-xs font-bold flex-shrink-0 font-mono"
                         :class="getSlotColor(slot.name)"
                       )
                         div(class="text-center")
                           div {{ slot.name }}
-                      img.h-12.w-12.rounded-full.object-cover(
+                      img(class="h-12 w-12 border border-[var(--color-secondary)] object-cover"
                         v-if="getPlayerPortrait(slot.team2Player)"
                         :src="getPlayerPortrait(slot.team2Player)"
                         :alt="getPlayerName(slot.team2Player)"
@@ -291,96 +294,98 @@
                           //- Injury badges
                           div(
                             v-if="getPlayerInjury(slot.team2Player)"
-                            class="px-2 py-0.5 rounded text-xs font-bold"
-                            :class="getPlayerInjury(slot.team2Player) === 'O' || getPlayerInjury(slot.team2Player) === 'IR' ? 'bg-red-600 text-white' : getPlayerInjury(slot.team2Player) === 'D' ? 'bg-orange-500 text-white' : 'bg-yellow-500 text-black'"
+                            class="px-2 py-0.5 border text-xs font-bold font-mono"
+                            :class="getPlayerInjury(slot.team2Player) === 'O' || getPlayerInjury(slot.team2Player) === 'IR' ? 'border-red-600 text-red-600' : getPlayerInjury(slot.team2Player) === 'D' ? 'border-orange-500 text-orange-500' : 'border-yellow-500 text-yellow-500'"
                           ) {{ getPlayerInjury(slot.team2Player) }}
                           //- SUSP badge
                           div(
                             v-if="getPlayerSuspended(slot.team2Player)"
-                            class="px-2 py-0.5 rounded text-xs font-bold bg-purple-600 text-white"
+                            class="px-2 py-0.5 border border-purple-600 text-purple-600 text-xs font-bold font-mono"
                           ) SUSP
                           //- BYE badge
                           div(
                             v-if="getPlayerBye(slot.team2Player)"
-                            class="px-2 py-0.5 rounded text-xs font-bold bg-gray-600 text-white"
+                            class="px-2 py-0.5 border border-gray-600 text-gray-600 text-xs font-bold font-mono"
                           ) BYE
                           //- EMPTY badge for player ID 0
                           div(
                             v-if="slot.team2Player === '0' || slot.team2Player === 0"
-                            class="px-2 py-0.5 rounded text-xs font-bold bg-red-600 text-white"
+                            class="px-2 py-0.5 border border-red-600 text-red-600 text-xs font-bold font-mono"
                           ) EMPTY
-                          .text-white.font-semibold.text-sm {{ getPlayerName(slot.team2Player) }}
-                        .text-gray-500.text-xs {{ getPlayerTeam(slot.team2Player) }} • {{ getPlayerPosition(slot.team2Player) }}
+                          div(class="text-[var(--color-text)] font-semibold text-sm uppercase") {{ getPlayerName(slot.team2Player) }}
+                        div(class="text-[var(--color-primary)] text-xs font-mono") {{ getPlayerTeam(slot.team2Player) }} • {{ getPlayerPosition(slot.team2Player) }}
                         //- Game info (day/time)
-                        div(class="text-xs mt-0.5 text-right" v-if="!isEmpty(slot.team2Player) && getPlayerGameInfo(slot.team2Player)")
-                          span(:class="getPlayerGameInfo(slot.team2Player).status === 'in_progress' ? 'text-green-400 font-bold animate-pulse' : getPlayerGameInfo(slot.team2Player).status === 'final' ? 'text-gray-400' : 'text-blue-400'")
-                            span(v-if="getPlayerGameInfo(slot.team2Player).status === 'scheduled'" class="text-gray-400 mr-1")
+                        div(class="text-xs mt-0.5 text-right font-mono" v-if="!isEmpty(slot.team2Player) && getPlayerGameInfo(slot.team2Player)")
+                          span(:class="getPlayerGameInfo(slot.team2Player).status === 'in_progress' ? 'text-[var(--color-primary)] font-bold animate-pulse' : getPlayerGameInfo(slot.team2Player).status === 'final' ? 'text-[var(--color-secondary)]' : 'text-[var(--color-accent)]'")
+                            span(v-if="getPlayerGameInfo(slot.team2Player).status === 'scheduled'" class="text-[var(--color-secondary)] mr-1")
                               | {{ getPlayerGameInfo(slot.team2Player).isHome ? 'vs' : '@' }} {{ getPlayerGameInfo(slot.team2Player).opponent }}
                             | {{ getGameStatusText(getPlayerGameInfo(slot.team2Player)) }}
                       .text-left.flex-shrink-0
                         //- Score colored by game status
                         div(
-                          class="font-bold text-lg transition-all duration-300"
+                          class="font-bold text-lg transition-all duration-300 font-mono"
                           :class="[{ 'score-pulse': isPlayerScoreAnimating(slot.team2Player) }, getScoreColorClass(slot.team2Player)]"
                         ) {{ getPlayerPoints(matchup[1], slot.team2Player) }}
                         //- Projected score underneath
-                        div(class="text-xs text-gray-400 mt-0.5" v-if="!isEmpty(slot.team2Player) && getPlayerProjectedPoints(slot.team2Player) && getPlayerProjectedPoints(slot.team2Player) !== '-'")
+                        div(class="text-xs text-[var(--color-secondary)] mt-0.5 font-mono" v-if="!isEmpty(slot.team2Player) && getPlayerProjectedPoints(slot.team2Player) && getPlayerProjectedPoints(slot.team2Player) !== '-'")
                           | Proj: {{ getPlayerProjectedPoints(slot.team2Player) }}
                         //- Delta (actual vs projected) for final games
-                        div(class="text-xs font-bold mt-0.5" v-if="getPlayerDelta(matchup[1], slot.team2Player)" :class="getPlayerDelta(matchup[1], slot.team2Player).colorClass")
+                        div(class="text-xs font-bold mt-0.5 font-mono" v-if="getPlayerDelta(matchup[1], slot.team2Player)" :class="getPlayerDelta(matchup[1], slot.team2Player).colorClass")
                           | {{ getPlayerDelta(matchup[1], slot.team2Player).display }}
               div(v-else)
-                .bg-slate-800.rounded.p-3.opacity-30
+                div(class="bg-black border border-[var(--color-secondary)] p-3 opacity-50 border-dashed")
                   .flex.items-center.gap-3.flex-row-reverse
-                    div(class="w-16 h-16 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0 bg-gray-700 text-gray-500")
+                    div(class="w-16 h-16 border border-[var(--color-secondary)] flex items-center justify-center text-xs font-bold flex-shrink-0 text-[var(--color-secondary)] font-mono")
                       div(class="text-center")
                         div {{ slot.name }}
-                    .text-center.text-gray-600.flex-1 Empty
+                    div(class="text-center text-[var(--color-secondary)] flex-1 font-mono") Empty
 
             //- Position Differential Bar (only show if both players exist and scores differ)
-            .relative.h-8.flex.items-center.bg-slate-800.rounded.overflow-hidden(
+            div(class="relative h-8 flex items-center bg-black border border-[var(--color-primary)] overflow-hidden"
               v-if="slot.team1Player && slot.team2Player && getPositionDifferential(slot).team1Points !== getPositionDifferential(slot).team2Points"
             )
               //- Center Line
-              div(class="absolute left-1/2 transform -translate-x-1/2 w-0.5 h-full bg-slate-600 z-10")
+              div(class="absolute left-1/2 transform -translate-x-1/2 w-0.5 h-full bg-[var(--color-primary)] z-10")
 
               //- Team 1 winning bar (left side)
               div(
                 v-if="getPositionDifferential(slot).team1Points > getPositionDifferential(slot).team2Points"
-                class="absolute right-1/2 h-6 bg-gradient-to-l from-blue-500 to-blue-600 flex items-center justify-start pl-2 transition-all duration-500"
+                class="absolute right-1/2 h-6 bg-[var(--color-primary)] flex items-center justify-start pl-2 transition-all duration-500"
                 :style="{ width: `${Math.min((getPositionDifferential(slot).differential / 25) * 45, 45)}%` }"
               )
-                span.text-white.text-xs.font-bold +{{ getPositionDifferential(slot).differential.toFixed(1) }}
+                span(class="text-black text-xs font-bold font-mono") +{{ getPositionDifferential(slot).differential.toFixed(1) }}
 
               //- Team 2 winning bar (right side)
               div(
                 v-else-if="getPositionDifferential(slot).team2Points > getPositionDifferential(slot).team1Points"
-                class="absolute left-1/2 h-6 bg-gradient-to-r from-green-500 to-green-600 flex items-center justify-end pr-2 transition-all duration-500"
+                class="absolute left-1/2 h-6 bg-[var(--color-primary)] flex items-center justify-end pr-2 transition-all duration-500"
                 :style="{ width: `${Math.min((getPositionDifferential(slot).differential / 25) * 45, 45)}%` }"
               )
-                span.text-white.text-xs.font-bold +{{ getPositionDifferential(slot).differential.toFixed(1) }}
+                span(class="text-black text-xs font-bold font-mono") +{{ getPositionDifferential(slot).differential.toFixed(1) }}
 
     //- Bench Players
     section.mb-8
-      .bg-gradient-to-r.from-gray-600.to-gray-800.rounded-t-lg.px-6.py-4.border-b-4.border-yellow-400
-        h2.text-white.text-2xl.font-black.uppercase.tracking-wide Bench
+      div(class="bg-[var(--color-surface)] px-6 py-4 border-t border-x border-[var(--color-primary)]")
+        h2(class="text-[var(--color-primary)] text-2xl font-bold uppercase tracking-widest flex items-center gap-3")
+          span(class="text-[var(--color-secondary)]") >
+          | Bench
 
-      div(class="grid grid-cols-1 md:grid-cols-2 gap-6 bg-slate-900 rounded-b-lg p-6")
+      div(class="grid grid-cols-1 md:grid-cols-2 gap-6 bg-black border-b border-x border-[var(--color-primary)] p-6")
         //- Team 1 Bench
         div
-          h3.text-white.font-bold.text-xl.mb-4 {{ getTeamInfo(matchup[0].roster?.user?.display_name).aiModel }}
+          h3(class="text-[var(--color-text)] font-bold text-xl mb-4 uppercase tracking-wider") {{ getTeamInfo(matchup[0].roster?.user?.display_name).aiModel }}
           .space-y-2(v-if="getBenchPlayers(matchup[0]).length > 0")
             div(v-for="playerId in getBenchPlayers(matchup[0])" :key="playerId")
-              .bg-slate-800.rounded(:class="{ 'matchup-highlight': isPlayerScoreAnimating(playerId) }")
+              div(class="bg-[var(--color-surface)] border border-[var(--color-primary)]" :class="{ 'matchup-highlight': isPlayerScoreAnimating(playerId) }")
                 .p-3
                   .flex.items-center.gap-3
                     //- Position Label with Color
-                    div(class="w-16 h-16 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0"
+                    div(class="w-16 h-16 border flex items-center justify-center text-xs font-bold flex-shrink-0 font-mono"
                       :class="getPositionColor(getPlayerPosition(playerId))"
                     )
                       div(class="text-center")
                         div {{ getPlayerPosition(playerId) }}
-                    img.h-12.w-12.rounded-full.object-cover(
+                    img(class="h-12 w-12 border border-[var(--color-secondary)] object-cover"
                       v-if="getPlayerPortrait(playerId)"
                       :src="getPlayerPortrait(playerId)"
                       :alt="getPlayerName(playerId)"
@@ -388,60 +393,60 @@
                     )
                     .flex-1
                       .flex.items-center.gap-2
-                        .text-white.font-semibold.text-sm {{ getPlayerName(playerId) }}
+                        div(class="text-[var(--color-text)] font-semibold text-sm uppercase") {{ getPlayerName(playerId) }}
                         //- BYE badge
                         div(
                           v-if="getPlayerBye(playerId)"
-                          class="px-2 py-0.5 rounded text-xs font-bold bg-gray-600 text-white"
+                          class="px-2 py-0.5 border border-gray-600 text-gray-600 text-xs font-bold font-mono"
                         ) BYE
                         //- SUSP badge
                         div(
                           v-if="getPlayerSuspended(playerId)"
-                          class="px-2 py-0.5 rounded text-xs font-bold bg-purple-600 text-white"
+                          class="px-2 py-0.5 border border-purple-600 text-purple-600 text-xs font-bold font-mono"
                         ) SUSP
                         //- Injury badges
                         div(
                           v-if="getPlayerInjury(playerId)"
-                          class="px-2 py-0.5 rounded text-xs font-bold"
-                          :class="getPlayerInjury(playerId) === 'O' || getPlayerInjury(playerId) === 'IR' ? 'bg-red-600 text-white' : getPlayerInjury(playerId) === 'D' ? 'bg-orange-500 text-white' : 'bg-yellow-500 text-black'"
+                          class="px-2 py-0.5 border text-xs font-bold font-mono"
+                          :class="getPlayerInjury(playerId) === 'O' || getPlayerInjury(playerId) === 'IR' ? 'border-red-600 text-red-600' : getPlayerInjury(playerId) === 'D' ? 'border-orange-500 text-orange-500' : 'border-yellow-500 text-yellow-500'"
                         ) {{ getPlayerInjury(playerId) }}
-                      .text-gray-500.text-xs {{ getPlayerTeam(playerId) }} • {{ getPlayerPosition(playerId) }}
+                      div(class="text-[var(--color-primary)] text-xs font-mono") {{ getPlayerTeam(playerId) }} • {{ getPlayerPosition(playerId) }}
                       //- Game info (day/time)
-                      div(class="text-xs mt-0.5" v-if="!isEmpty(playerId) && getPlayerGameInfo(playerId)")
-                        span(:class="getPlayerGameInfo(playerId).status === 'in_progress' ? 'text-green-400 font-bold animate-pulse' : getPlayerGameInfo(playerId).status === 'final' ? 'text-gray-400' : 'text-blue-400'")
+                      div(class="text-xs mt-0.5 font-mono" v-if="!isEmpty(playerId) && getPlayerGameInfo(playerId)")
+                        span(:class="getPlayerGameInfo(playerId).status === 'in_progress' ? 'text-[var(--color-primary)] font-bold animate-pulse' : getPlayerGameInfo(playerId).status === 'final' ? 'text-[var(--color-secondary)]' : 'text-[var(--color-accent)]'")
                           | {{ getGameStatusText(getPlayerGameInfo(playerId)) }}
-                          span(v-if="getPlayerGameInfo(playerId).status === 'scheduled'" class="text-gray-400 ml-1")
+                          span(v-if="getPlayerGameInfo(playerId).status === 'scheduled'" class="text-[var(--color-secondary)] ml-1")
                             | {{ getPlayerGameInfo(playerId).isHome ? 'vs' : '@' }} {{ getPlayerGameInfo(playerId).opponent }}
                     .text-right.flex-shrink-0
                       //- Score colored by game status
                       div(
-                        class="font-bold text-lg transition-all duration-300"
+                        class="font-bold text-lg transition-all duration-300 font-mono"
                         :class="[{ 'score-pulse': isPlayerScoreAnimating(playerId) }, getScoreColorClass(playerId)]"
                       ) {{ getPlayerPoints(matchup[0], playerId) }}
                       //- Projected score underneath
-                      div(class="text-xs text-gray-400 mt-0.5" v-if="!isEmpty(playerId) && getPlayerProjectedPoints(playerId) && getPlayerProjectedPoints(playerId) !== '-'")
+                      div(class="text-xs text-[var(--color-secondary)] mt-0.5 font-mono" v-if="!isEmpty(playerId) && getPlayerProjectedPoints(playerId) && getPlayerProjectedPoints(playerId) !== '-'")
                         | Proj: {{ getPlayerProjectedPoints(playerId) }}
                       //- Delta (actual vs projected) for final games
-                      div(class="text-xs font-bold mt-0.5" v-if="getPlayerDelta(matchup[0], playerId)" :class="getPlayerDelta(matchup[0], playerId).colorClass")
+                      div(class="text-xs font-bold mt-0.5 font-mono" v-if="getPlayerDelta(matchup[0], playerId)" :class="getPlayerDelta(matchup[0], playerId).colorClass")
                         | {{ getPlayerDelta(matchup[0], playerId).display }}
           div(v-else)
-            .text-gray-500.text-sm No bench players
+            div(class="text-[var(--color-secondary)] text-sm font-mono") No bench players
 
         //- Team 2 Bench
         div
-          h3.text-white.font-bold.text-xl.mb-4 {{ getTeamInfo(matchup[1].roster?.user?.display_name).aiModel }}
+          h3(class="text-[var(--color-text)] font-bold text-xl mb-4 uppercase tracking-wider") {{ getTeamInfo(matchup[1].roster?.user?.display_name).aiModel }}
           .space-y-2(v-if="getBenchPlayers(matchup[1]).length > 0")
             div(v-for="playerId in getBenchPlayers(matchup[1])" :key="playerId")
-              .bg-slate-800.rounded(:class="{ 'matchup-highlight': isPlayerScoreAnimating(playerId) }")
+              div(class="bg-[var(--color-surface)] border border-[var(--color-primary)]" :class="{ 'matchup-highlight': isPlayerScoreAnimating(playerId) }")
                 .p-3
                   .flex.items-center.gap-3
                     //- Position Label with Color
-                    div(class="w-16 h-16 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0"
+                    div(class="w-16 h-16 border flex items-center justify-center text-xs font-bold flex-shrink-0 font-mono"
                       :class="getPositionColor(getPlayerPosition(playerId))"
                     )
                       div(class="text-center")
                         div {{ getPlayerPosition(playerId) }}
-                    img.h-12.w-12.rounded-full.object-cover(
+                    img(class="h-12 w-12 border border-[var(--color-secondary)] object-cover"
                       v-if="getPlayerPortrait(playerId)"
                       :src="getPlayerPortrait(playerId)"
                       :alt="getPlayerName(playerId)"
@@ -449,61 +454,63 @@
                     )
                     .flex-1
                       .flex.items-center.gap-2
-                        .text-white.font-semibold.text-sm {{ getPlayerName(playerId) }}
+                        div(class="text-[var(--color-text)] font-semibold text-sm uppercase") {{ getPlayerName(playerId) }}
                         //- BYE badge
                         div(
                           v-if="getPlayerBye(playerId)"
-                          class="px-2 py-0.5 rounded text-xs font-bold bg-gray-600 text-white"
+                          class="px-2 py-0.5 border border-gray-600 text-gray-600 text-xs font-bold font-mono"
                         ) BYE
                         //- SUSP badge
                         div(
                           v-if="getPlayerSuspended(playerId)"
-                          class="px-2 py-0.5 rounded text-xs font-bold bg-purple-600 text-white"
+                          class="px-2 py-0.5 border border-purple-600 text-purple-600 text-xs font-bold font-mono"
                         ) SUSP
                         //- Injury badges
                         div(
                           v-if="getPlayerInjury(playerId)"
-                          class="px-2 py-0.5 rounded text-xs font-bold"
-                          :class="getPlayerInjury(playerId) === 'O' || getPlayerInjury(playerId) === 'IR' ? 'bg-red-600 text-white' : getPlayerInjury(playerId) === 'D' ? 'bg-orange-500 text-white' : 'bg-yellow-500 text-black'"
+                          class="px-2 py-0.5 border text-xs font-bold font-mono"
+                          :class="getPlayerInjury(playerId) === 'O' || getPlayerInjury(playerId) === 'IR' ? 'border-red-600 text-red-600' : getPlayerInjury(playerId) === 'D' ? 'border-orange-500 text-orange-500' : 'border-yellow-500 text-yellow-500'"
                         ) {{ getPlayerInjury(playerId) }}
-                      .text-gray-500.text-xs {{ getPlayerTeam(playerId) }} • {{ getPlayerPosition(playerId) }}
+                      div(class="text-[var(--color-primary)] text-xs font-mono") {{ getPlayerTeam(playerId) }} • {{ getPlayerPosition(playerId) }}
                       //- Game info (day/time)
-                      div(class="text-xs mt-0.5" v-if="!isEmpty(playerId) && getPlayerGameInfo(playerId)")
-                        span(:class="getPlayerGameInfo(playerId).status === 'in_progress' ? 'text-green-400 font-bold animate-pulse' : getPlayerGameInfo(playerId).status === 'final' ? 'text-gray-400' : 'text-blue-400'")
+                      div(class="text-xs mt-0.5 font-mono" v-if="!isEmpty(playerId) && getPlayerGameInfo(playerId)")
+                        span(:class="getPlayerGameInfo(playerId).status === 'in_progress' ? 'text-[var(--color-primary)] font-bold animate-pulse' : getPlayerGameInfo(playerId).status === 'final' ? 'text-[var(--color-secondary)]' : 'text-[var(--color-accent)]'")
                           | {{ getGameStatusText(getPlayerGameInfo(playerId)) }}
-                          span(v-if="getPlayerGameInfo(playerId).status === 'scheduled'" class="text-gray-400 ml-1")
+                          span(v-if="getPlayerGameInfo(playerId).status === 'scheduled'" class="text-[var(--color-secondary)] ml-1")
                             | {{ getPlayerGameInfo(playerId).isHome ? 'vs' : '@' }} {{ getPlayerGameInfo(playerId).opponent }}
                     .text-right.flex-shrink-0
                       //- Score colored by game status
                       div(
-                        class="font-bold text-lg transition-all duration-300"
+                        class="font-bold text-lg transition-all duration-300 font-mono"
                         :class="[{ 'score-pulse': isPlayerScoreAnimating(playerId) }, getScoreColorClass(playerId)]"
                       ) {{ getPlayerPoints(matchup[1], playerId) }}
                       //- Projected score underneath
-                      div(class="text-xs text-gray-400 mt-0.5" v-if="!isEmpty(playerId) && getPlayerProjectedPoints(playerId) && getPlayerProjectedPoints(playerId) !== '-'")
+                      div(class="text-xs text-[var(--color-secondary)] mt-0.5 font-mono" v-if="!isEmpty(playerId) && getPlayerProjectedPoints(playerId) && getPlayerProjectedPoints(playerId) !== '-'")
                         | Proj: {{ getPlayerProjectedPoints(playerId) }}
                       //- Delta (actual vs projected) for final games
-                      div(class="text-xs font-bold mt-0.5" v-if="getPlayerDelta(matchup[1], playerId)" :class="getPlayerDelta(matchup[1], playerId).colorClass")
+                      div(class="text-xs font-bold mt-0.5 font-mono" v-if="getPlayerDelta(matchup[1], playerId)" :class="getPlayerDelta(matchup[1], playerId).colorClass")
                         | {{ getPlayerDelta(matchup[1], playerId).display }}
           div(v-else)
-            .text-gray-500.text-sm No bench players
+            div(class="text-[var(--color-secondary)] text-sm font-mono") No bench players
 
     //- Tokens
     section.mb-8(v-if="markdownContents.length > 0" id="tokens")
-      .bg-gradient-to-r.from-green-600.to-green-800.rounded-t-lg.px-6.py-4.border-b-4.border-yellow-400
-        h2.text-white.text-2xl.font-black.uppercase.tracking-wide Tokens
-      .bg-slate-900.rounded-b-lg.p-6.space-y-8
+      div(class="bg-[var(--color-surface)] px-6 py-4 border-t border-x border-[var(--color-primary)]")
+        h2(class="text-[var(--color-primary)] text-2xl font-bold uppercase tracking-widest flex items-center gap-3")
+          span(class="text-[var(--color-secondary)]") >
+          | Tokens
+      div(class="bg-black border-b border-x border-[var(--color-primary)] p-6 space-y-8")
         div(v-for="(item, index) in markdownContents" :key="index")
-          .flex.items-center.gap-3.mb-4.pb-3.border-b.border-slate-700
-            img.h-12.w-12.object-contain(
+          div(class="flex items-center gap-3 mb-4 pb-3 border-b border-[var(--color-primary)]")
+            img(class="h-12 w-12 object-contain"
               v-if="item.logo"
               :src="item.logo"
               :alt="item.team"
               :class="item.invertLogo ? 'invert brightness-200' : ''"
             )
             div
-              h3.text-white.text-xl.font-bold {{ item.team }}
-              p.text-blue-400.text-sm {{ item.owner }}
+              h3(class="text-[var(--color-text)] text-xl font-bold uppercase tracking-wider") {{ item.team }}
+              p(class="text-[var(--color-primary)] text-sm font-mono") {{ item.owner }}
           .markdown-body(v-html="item.content")
 </template>
 
@@ -1150,14 +1157,14 @@ export default {
 
     const getPositionColor = (position) => {
       const colors = {
-        'QB': 'bg-red-500 text-white',
-        'RB': 'bg-green-500 text-white',
-        'WR': 'bg-blue-500 text-white',
-        'TE': 'bg-yellow-500 text-black',
-        'K': 'bg-purple-500 text-white',
-        'DEF': 'bg-orange-500 text-white'
+        'QB': 'border-red-500 text-red-500',
+        'RB': 'border-green-500 text-green-500',
+        'WR': 'border-blue-500 text-blue-500',
+        'TE': 'border-yellow-500 text-yellow-500',
+        'K': 'border-purple-500 text-purple-500',
+        'DEF': 'border-orange-500 text-orange-500'
       }
-      return colors[position] || 'bg-gray-500 text-white'
+      return colors[position] || 'border-gray-500 text-gray-500'
     }
 
     const getPlayerInjury = (playerId) => {
@@ -1270,20 +1277,20 @@ export default {
 
     // Get score color class based on game status
     const getScoreColorClass = (playerId) => {
-      if (!playerId || isEmpty(playerId) || !week.value) return 'text-white'
+      if (!playerId || isEmpty(playerId) || !week.value) return 'text-[var(--color-text)]'
 
       const gameInfo = leagueStore.getPlayerGameInfo(playerId, week.value)
-      if (!gameInfo) return 'text-white'
+      if (!gameInfo) return 'text-[var(--color-text)]'
 
       switch (gameInfo.status) {
         case 'scheduled':
-          return 'text-blue-400'
+          return 'text-[var(--color-secondary)]'
         case 'in_progress':
-          return 'text-green-400'
+          return 'text-[var(--color-primary)]'
         case 'final':
-          return 'text-white'
+          return 'text-[var(--color-text)]'
         default:
-          return 'text-white'
+          return 'text-[var(--color-text)]'
       }
     }
 
@@ -1304,7 +1311,7 @@ export default {
 
       return {
         value: delta,
-        colorClass: delta >= 0 ? 'text-green-400' : 'text-red-400',
+        colorClass: delta >= 0 ? 'text-[var(--color-primary)]' : 'text-red-500',
         display: delta >= 0 ? `Δ +${delta.toFixed(1)}` : `Δ ${delta.toFixed(1)}`
       }
     }

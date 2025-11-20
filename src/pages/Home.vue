@@ -1,32 +1,32 @@
 <template lang="pug">
-.bg-slate-950
+div(class="bg-[var(--color-background)]")
   //- Main Content - App.vue ensures data is ready before rendering this component
   main.container.mx-auto.px-4.py-6.max-w-7xl
     //- Week Selector (Fixed)
-    div(class="fixed top-24 left-0 right-0 z-30 bg-slate-950 pb-4 pt-4 lg:pb-2 lg:pt-2 shadow-lg")
+    div(class="fixed top-24 left-0 right-0 z-30 bg-[var(--color-background)] pb-4 pt-4 lg:pb-2 lg:pt-2 border-b border-[var(--color-primary)]")
       .container.mx-auto.px-4.max-w-7xl
         div(class="flex items-center justify-center gap-3 mb-3 lg:mb-2")
-          button(class="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-700 disabled:text-slate-500 text-white font-bold rounded-lg transition-all duration-200 disabled:cursor-not-allowed"
+          button(class="px-4 py-2 bg-[var(--color-surface)] hover:bg-[var(--color-primary)] hover:text-black border border-[var(--color-primary)] disabled:opacity-50 disabled:cursor-not-allowed text-[var(--color-primary)] font-bold transition-all duration-200"
             @click="handleWeekChange('prev')"
             :disabled="selectedWeek === 1"
-          ) ← PREV
+          ) < PREV
           div(class="relative")
-            select(class="px-4 py-2 bg-slate-800 text-white font-black text-xl rounded-lg border-2 border-blue-600 focus:outline-none focus:border-yellow-400 transition-colors uppercase"
+            select(class="px-4 py-2 bg-[var(--color-surface)] text-[var(--color-primary)] font-bold text-xl border border-[var(--color-primary)] focus:outline-none focus:bg-[var(--color-primary)] focus:text-black transition-colors uppercase font-mono"
               v-model="selectedWeek"
             )
               option(v-for="week in 18" :key="week" :value="week") Week {{ week }}
-          button(class="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-700 disabled:text-slate-500 text-white font-bold rounded-lg transition-all duration-200 disabled:cursor-not-allowed"
+          button(class="px-4 py-2 bg-[var(--color-surface)] hover:bg-[var(--color-primary)] hover:text-black border border-[var(--color-primary)] disabled:opacity-50 disabled:cursor-not-allowed text-[var(--color-primary)] font-bold transition-all duration-200"
             @click="handleWeekChange('next')"
             :disabled="selectedWeek === 18"
-          ) NEXT →
+          ) NEXT >
 
         //- Season Progress Bar
         .max-w-2xl.mx-auto
           .flex.items-center.justify-between.text-xs.text-gray-400.mb-1
             span Week {{ selectedWeek }} of 18
             span {{ Math.round((selectedWeek / 18) * 100) }}% Complete
-          .w-full.bg-slate-800.rounded-full.h-2.overflow-hidden
-            .bg-gradient-to-r.from-blue-500.to-blue-600.h-full.rounded-full.transition-all.duration-500(
+          div(class="w-full bg-[var(--color-surface)] border border-[var(--color-primary)] h-2 overflow-hidden")
+            div(class="bg-[var(--color-primary)] h-full transition-all duration-500"
               :style="{ width: `${(selectedWeek / 18) * 100}%` }"
             )
 
@@ -48,19 +48,19 @@
     //- Week Matchups
     .mb-12
       //- Week Header
-      .bg-gradient-to-r.from-blue-600.to-blue-800.rounded-t-lg.px-6.py-4.border-b-4.border-yellow-400
-        h2.text-white.text-3xl.font-black.uppercase.tracking-wide.flex.items-center.gap-3
-          span.text-yellow-400 🏈
+      div(class="bg-[var(--color-surface)] border-t border-x border-[var(--color-primary)] px-6 py-4")
+        h2(class="text-[var(--color-primary)] text-3xl font-bold uppercase tracking-widest flex items-center gap-3")
+          span(class="text-[var(--color-secondary)]") >
           | Week {{ selectedWeek }}
 
       //- Matchups Grid
-      .bg-slate-900.rounded-b-lg(class="p-6 lg:p-4" v-if="allMatchups[selectedWeek]")
+      div(class="bg-black border-b border-x border-[var(--color-primary)] p-6 lg:p-4" v-if="allMatchups[selectedWeek]")
         div(class="grid grid-cols-1 gap-4 lg:gap-3")
           div(
             v-for="(matchup, index) in allMatchups[selectedWeek]"
             :key="index"
             @click="goToMatchupDetail(matchup)"
-            class="bg-slate-800 rounded-lg overflow-hidden hover:bg-slate-750 transition-all duration-200 cursor-pointer border-2 border-slate-700 hover:border-blue-500"
+            class="bg-[var(--color-surface)] overflow-hidden hover:bg-[var(--color-background)] transition-all duration-200 cursor-pointer border border-[var(--color-primary)] terminal-shadow hover:translate-x-1 hover:translate-y-1 hover:shadow-none"
             :class="{ 'matchup-highlight': matchup.length === 2 && isMatchupAnimating(selectedWeek, matchup[0].matchup_id) }"
           )
             div(class="p-4 lg:p-3" v-if="matchup.length === 2")
@@ -276,12 +276,12 @@
 
     //- Video
     section.mb-12(v-if="latestVideo || latestShorts.length > 0 || loadingVideos")
-      .bg-gradient-to-r.from-red-600.to-red-800.rounded-t-lg.px-6.py-4.border-b-4.border-yellow-400
-        h2.text-white.text-3xl.font-black.uppercase.tracking-wide.flex.items-center.gap-3
-          span.text-yellow-400 📺
+      div(class="bg-[var(--color-surface)] border-t border-x border-[var(--color-primary)] px-6 py-4")
+        h2(class="text-[var(--color-primary)] text-3xl font-bold uppercase tracking-widest flex items-center gap-3")
+          span(class="text-[var(--color-secondary)]") >
           | Videos
 
-      .bg-slate-900.rounded-b-lg.p-4.relative
+      div(class="bg-black border-b border-x border-[var(--color-primary)] p-4 relative")
         //- Loading Spinner
         div(v-if="loadingVideos" class="flex items-center justify-center py-12")
           .text-center
@@ -332,12 +332,12 @@
 
     //- Standings
     section.mb-12
-      .bg-gradient-to-r.from-purple-600.to-purple-800.rounded-t-lg.px-6.py-4.border-b-4.border-yellow-400
-        h2.text-white.text-3xl.font-black.uppercase.tracking-wide.flex.items-center.gap-3
-          span.text-yellow-400 🏆
+      div(class="bg-[var(--color-surface)] border-t border-x border-[var(--color-primary)] px-6 py-4")
+        h2(class="text-[var(--color-primary)] text-3xl font-bold uppercase tracking-widest flex items-center gap-3")
+          span(class="text-[var(--color-secondary)]") >
           | Standings
 
-      .bg-slate-900.rounded-b-lg.overflow-x-auto.relative
+      div(class="bg-black border-b border-x border-[var(--color-primary)] overflow-x-auto relative")
         //- Loading Spinner
         div(v-if="loadingStandings" class="absolute inset-0 flex items-center justify-center bg-slate-900/90 z-10")
           .text-center
@@ -345,11 +345,11 @@
             p.text-gray-400.text-sm Loading standings...
 
         table.w-full.min-w-max
-          thead.bg-slate-800.sticky.top-0
-            tr.text-left.text-gray-300.uppercase.text-xs.font-bold.tracking-wider
-              th(class="px-3 sm:px-6 py-4") Rank
-              th(class="px-3 sm:px-6 py-4") Team
-              th(class="px-3 sm:px-6 py-4 text-center") Record
+          thead(class="bg-[var(--color-surface)] sticky top-0 border-b border-[var(--color-primary)]")
+            tr(class="text-left text-[var(--color-primary)] uppercase text-xs font-bold tracking-wider")
+              th(class="px-3 sm:px-6 py-4 border-r border-[var(--color-primary)] last:border-r-0") Rank
+              th(class="px-3 sm:px-6 py-4 border-r border-[var(--color-primary)] last:border-r-0") Team
+              th(class="px-3 sm:px-6 py-4 text-center border-r border-[var(--color-primary)] last:border-r-0") Record
               th(class="px-3 sm:px-6 py-4 text-right") Points
           tbody.divide-y.divide-slate-800
             tr(
@@ -378,72 +378,72 @@
 
     //- History
     section.mb-12(v-show="leagueData && allMatchups && Object.keys(allMatchups).length > 0")
-      .bg-gradient-to-r.from-green-600.to-green-800.rounded-t-lg.px-6.py-4.border-b-4.border-yellow-400
-        h2(class="text-white text-xl sm:text-3xl font-black uppercase tracking-wide flex items-center gap-2 sm:gap-3")
-          span.text-yellow-400 📈
+      div(class="bg-[var(--color-surface)] border-t border-x border-[var(--color-primary)] px-6 py-4")
+        h2(class="text-[var(--color-primary)] text-xl sm:text-3xl font-bold uppercase tracking-widest flex items-center gap-2 sm:gap-3")
+          span(class="text-[var(--color-secondary)]") >
           | History
 
-      div(class="bg-slate-900 rounded-b-lg p-3 sm:p-6 overflow-x-auto relative")
+      div(class="bg-black border-b.border-x.border-[var(--color-primary)] p-3 sm:p-6 overflow-x-auto relative")
         div(ref="standingsChartRef" class="w-full min-w-[350px] h-[250px] sm:h-[400px]")
 
     //- Points
     section.mb-12(v-show="leagueData && allMatchups && Object.keys(allMatchups).length > 0")
-      .bg-gradient-to-r.from-cyan-600.to-cyan-800.rounded-t-lg.px-6.py-4.border-b-4.border-yellow-400
-        h2(class="text-white text-xl sm:text-3xl font-black uppercase tracking-wide flex items-center gap-2 sm:gap-3")
-          span.text-yellow-400 📊
+      div(class="bg-[var(--color-surface)] border-t border-x border-[var(--color-primary)] px-6 py-4")
+        h2(class="text-[var(--color-primary)] text-xl sm:text-3xl font-bold uppercase tracking-widest flex items-center gap-2 sm:gap-3")
+          span(class="text-[var(--color-secondary)]") >
           | Total Points
 
-      div(class="bg-slate-900 rounded-b-lg p-3 sm:p-6 overflow-x-auto relative")
+      div(class="bg-black border-b.border-x.border-[var(--color-primary)] p-3 sm:p-6 overflow-x-auto relative")
         div(ref="pointsChartRef" class="w-full min-w-[350px] h-[300px] sm:h-[500px]")
 
     //- Transactions Volume by Week
     section.mb-12(v-show="transactionStats && Object.keys(transactionStats.byWeek || {}).length > 0")
-      .bg-gradient-to-r.from-teal-600.to-teal-800.rounded-t-lg.px-6.py-4.border-b-4.border-yellow-400
-        h2(class="text-white text-xl sm:text-3xl font-black uppercase tracking-wide flex items-center gap-2 sm:gap-3")
-          span.text-yellow-400 📈
+      div(class="bg-[var(--color-surface)] border-t border-x border-[var(--color-primary)] px-6 py-4")
+        h2(class="text-[var(--color-primary)] text-xl sm:text-3xl font-bold uppercase tracking-widest flex items-center gap-2 sm:gap-3")
+          span(class="text-[var(--color-secondary)]") >
           | Transactions Volume by Week
 
-      div(class="bg-slate-900 rounded-b-lg p-3 sm:p-6 relative")
+      div(class="bg-black border-b border-x border-[var(--color-primary)] p-3 sm:p-6 relative")
         div(ref="transactionsChartRef" class="w-full h-[300px] sm:h-[400px]")
 
     //- Transaction Volume by Model
     section.mb-12(v-show="transactionStats && Object.keys(transactionStats.byWeek || {}).length > 0")
-      .bg-gradient-to-r.from-purple-600.to-purple-800.rounded-t-lg.px-6.py-4.border-b-4.border-yellow-400
-        h2(class="text-white text-xl sm:text-3xl font-black uppercase tracking-wide flex items-center gap-2 sm:gap-3")
-          span.text-yellow-400 🤖
+      div(class="bg-[var(--color-surface)] border-t border-x border-[var(--color-primary)] px-6 py-4")
+        h2(class="text-[var(--color-primary)] text-xl sm:text-3xl font-bold uppercase tracking-widest flex items-center gap-2 sm:gap-3")
+          span(class="text-[var(--color-secondary)]") >
           | Transaction Volume by Model
 
-      div(class="bg-slate-900 rounded-b-lg p-3 sm:p-6 relative")
+      div(class="bg-black border-b border-x border-[var(--color-primary)] p-3 sm:p-6 relative")
         div(ref="modelTransactionsChartRef" class="w-full h-[300px] sm:h-[400px]")
 
     //- Injury Volume by Week
     section.mb-12(v-show="leagueData && allMatchups && Object.keys(allMatchups).length > 0")
-      .bg-gradient-to-r.from-red-600.to-red-800.rounded-t-lg.px-6.py-4.border-b-4.border-yellow-400
-        h2(class="text-white text-xl sm:text-3xl font-black uppercase tracking-wide flex items-center gap-2 sm:gap-3")
-          span.text-yellow-400 🚑
+      div(class="bg-[var(--color-surface)] border-t border-x border-[var(--color-primary)] px-6 py-4")
+        h2(class="text-[var(--color-primary)] text-xl sm:text-3xl font-bold uppercase tracking-widest flex items-center gap-2 sm:gap-3")
+          span(class="text-[var(--color-secondary)]") >
           | Injury Volume by Week
 
-      div(class="bg-slate-900 rounded-b-lg p-3 sm:p-6 relative")
+      div(class="bg-black border-b border-x border-[var(--color-primary)] p-3 sm:p-6 relative")
         div(ref="injuriesChartRef" class="w-full h-[300px] sm:h-[400px]")
 
     //- Injury Volume by Model
     section.mb-12(v-show="leagueData && allMatchups && Object.keys(allMatchups).length > 0")
-      .bg-gradient-to-r.from-orange-600.to-orange-800.rounded-t-lg.px-6.py-4.border-b-4.border-yellow-400
-        h2(class="text-white text-xl sm:text-3xl font-black uppercase tracking-wide flex items-center gap-2 sm:gap-3")
-          span.text-yellow-400 🏥
+      div(class="bg-[var(--color-surface)] border-t border-x border-[var(--color-primary)] px-6 py-4")
+        h2(class="text-[var(--color-primary)] text-xl sm:text-3xl font-bold uppercase tracking-widest flex items-center gap-2 sm:gap-3")
+          span(class="text-[var(--color-secondary)]") >
           | Injury Volume by Model
 
-      div(class="bg-slate-900 rounded-b-lg p-3 sm:p-6 relative")
+      div(class="bg-black border-b border-x border-[var(--color-primary)] p-3 sm:p-6 relative")
         div(ref="modelInjuriesChartRef" class="w-full h-[300px] sm:h-[400px]")
 
     //- Transactions
     section.mb-12
-      div(class="bg-gradient-to-r from-orange-600 to-orange-800 rounded-t-lg px-4 sm:px-6 py-3 sm:py-4 border-b-4 border-yellow-400")
-        h2(class="text-white text-xl sm:text-3xl font-black uppercase tracking-wide flex items-center gap-2 sm:gap-3")
-          span.text-yellow-400 💼
+      div(class="bg-[var(--color-surface)] border-t border-x border-[var(--color-primary)] px-4 sm:px-6 py-3 sm:py-4")
+        h2(class="text-[var(--color-primary)] text-xl sm:text-3xl font-bold uppercase tracking-widest flex items-center gap-2 sm:gap-3")
+          span(class="text-[var(--color-secondary)]") >
           | Week {{ selectedWeek }} Transactions
 
-      div(class="bg-slate-900 rounded-b-lg p-3 sm:p-6" v-if="transactions && transactions.length > 0")
+      div(class="bg-black border-b border-x border-[var(--color-primary)] p-3 sm:p-6" v-if="transactions && transactions.length > 0")
         .space-y-3
           div(class="bg-slate-800 rounded-lg p-3 sm:p-4"
             v-for="(transaction, index) in transactions"

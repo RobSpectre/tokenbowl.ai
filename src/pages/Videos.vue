@@ -1,21 +1,21 @@
 <template lang="pug">
-.container.mx-auto.px-4.py-8.bg-slate-950
+.container.mx-auto.px-4.py-8(class="bg-[var(--color-background)]")
   //- Loading State
   .flex.items-center.justify-center(v-if="loading" style="min-height: 50vh")
     .text-center
-      .inline-block.animate-spin.rounded-full.h-16.w-16.border-4.border-blue-500.border-t-transparent
-      p.text-white.mt-4.text-xl.font-bold.uppercase.tracking-wider Loading videos...
+      .inline-block.animate-spin.h-16.w-16.border-4.border-t-transparent(class="border-[var(--color-primary)]")
+      p.mt-4.text-xl.font-bold.uppercase.tracking-wider.font-mono(class="text-[var(--color-primary)]") Loading videos...
 
   //- Main Content
   main(v-else)
     //- Long Form Videos
     section(v-if="longFormVideos.length > 0" class="mb-8 sm:mb-12")
-      div(class="bg-gradient-to-r from-red-600 to-red-800 rounded-t-lg px-4 sm:px-6 py-3 sm:py-4 border-b-4 border-yellow-400")
-        h2(class="text-white text-2xl sm:text-3xl font-black uppercase tracking-wide flex items-center gap-2 sm:gap-3")
-          span.text-yellow-400 🎬
+      div(class="bg-[var(--color-surface)] px-4 sm:px-6 py-3 sm:py-4 border-t border-x border-[var(--color-primary)]")
+        h2(class="text-[var(--color-primary)] text-2xl sm:text-3xl font-bold uppercase tracking-widest flex items-center gap-2 sm:gap-3 font-mono")
+          span(class="text-[var(--color-secondary)]") >
           | Long Form
 
-      div(class="bg-slate-900 rounded-b-lg p-3 sm:p-4")
+      div(class="bg-black border-b border-x border-[var(--color-primary)] p-3 sm:p-4")
         div(class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3")
           a(
             v-for="video in longFormVideos"
@@ -23,28 +23,29 @@
             :href="video.url"
             target="_blank"
             rel="noopener noreferrer"
-            class="block group"
+            class="block group border border-[var(--color-primary)] bg-[var(--color-surface)] hover:border-[var(--color-secondary)] transition-colors"
           )
-            .relative.overflow-hidden.rounded
+            .relative.overflow-hidden
               img(
                 class="w-full aspect-video object-cover group-hover:scale-105 transition-transform duration-200"
                 :src="video.thumbnail"
                 :alt="video.title"
               )
               div(class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center")
-                svg.w-8.h-8.text-white(fill="currentColor" viewBox="0 0 24 24")
+                svg.w-8.h-8(class="text-[var(--color-primary)]" fill="currentColor" viewBox="0 0 24 24")
                   path(d="M8 5v14l11-7z")
-            h3(class="text-white font-medium mt-1 text-xs group-hover:text-blue-400 transition-colors line-clamp-2") {{ video.title }}
-            p(class="text-gray-400 text-xs mt-0.5 line-clamp-1") {{ video.description }}
+            .p-2
+              h3(class="text-[var(--color-text)] font-bold mt-1 text-xs group-hover:text-[var(--color-primary)] transition-colors line-clamp-2 uppercase font-mono") {{ video.title }}
+              p(class="text-[var(--color-secondary)] text-xs mt-0.5 line-clamp-1 font-mono") {{ video.description }}
 
     //- Shorts
     section(v-if="shortsVideos.length > 0" class="mb-8 sm:mb-12")
-      div(class="bg-gradient-to-r from-purple-600 to-purple-800 rounded-t-lg px-4 sm:px-6 py-3 sm:py-4 border-b-4 border-yellow-400")
-        h2(class="text-white text-2xl sm:text-3xl font-black uppercase tracking-wide flex items-center gap-2 sm:gap-3")
-          span.text-yellow-400 ⚡
+      div(class="bg-[var(--color-surface)] px-4 sm:px-6 py-3 sm:py-4 border-t border-x border-[var(--color-primary)]")
+        h2(class="text-[var(--color-primary)] text-2xl sm:text-3xl font-bold uppercase tracking-widest flex items-center gap-2 sm:gap-3 font-mono")
+          span(class="text-[var(--color-secondary)]") >
           | Shorts
 
-      div(class="bg-slate-900 rounded-b-lg p-3 sm:p-4")
+      div(class="bg-black border-b border-x border-[var(--color-primary)] p-3 sm:p-4")
         div(class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2 sm:gap-3")
           a(
             v-for="video in shortsVideos"
@@ -52,19 +53,20 @@
             :href="video.url"
             target="_blank"
             rel="noopener noreferrer"
-            class="block group"
+            class="block group border border-[var(--color-primary)] bg-[var(--color-surface)] hover:border-[var(--color-secondary)] transition-colors"
           )
-            .relative.overflow-hidden.rounded
+            .relative.overflow-hidden
               img(
                 class="w-full aspect-[9/16] object-cover group-hover:scale-105 transition-transform duration-200"
                 :src="video.thumbnail"
                 :alt="video.title"
               )
               div(class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center")
-                svg.w-8.h-8.text-white(fill="currentColor" viewBox="0 0 24 24")
+                svg.w-8.h-8(class="text-[var(--color-primary)]" fill="currentColor" viewBox="0 0 24 24")
                   path(d="M8 5v14l11-7z")
-              div(class="absolute bottom-1 right-1 bg-black/80 px-1.5 py-0.5 rounded text-white text-[10px] font-bold") SHORTS
-            h3(class="text-white font-medium mt-1 text-xs group-hover:text-blue-400 transition-colors line-clamp-1") {{ video.title }}
+              div(class="absolute bottom-1 right-1 bg-black border border-[var(--color-primary)] px-1.5 py-0.5 text-[var(--color-primary)] text-[10px] font-bold font-mono") SHORTS
+            .p-2
+              h3(class="text-[var(--color-text)] font-bold mt-1 text-xs group-hover:text-[var(--color-primary)] transition-colors line-clamp-1 uppercase font-mono") {{ video.title }}
 </template>
 
 <script>

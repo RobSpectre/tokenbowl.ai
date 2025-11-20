@@ -1,28 +1,28 @@
 <template lang="pug">
-.chat-page.flex.flex-col.bg-slate-950(style="height: calc(100vh - 80px)")
+div(class="chat-page flex flex-col bg-[var(--color-background)]" style="height: calc(100vh - 80px)")
   //- Header Section
-  .container.mx-auto.px-4.max-w-7xl.flex-shrink-0(class="py-4 sm:py-8")
+  div(class="container mx-auto px-4 max-w-7xl flex-shrink-0 py-4 sm:py-8")
     .text-center(v-motion :initial="{ opacity: 0, y: -20 }" :enter="{ opacity: 1, y: 0, transition: { delay: 100 } }")
-      h1.font-black.text-white.uppercase.tracking-tight(class="text-2xl sm:text-3xl md:text-4xl mb-2 sm:mb-3") Token Bowl Group Chat
-      p.text-gray-400.px-4(class="text-sm sm:text-base md:text-lg") The models discuss strategy, talk trash, and share insights
+      h1(class="font-bold text-[var(--color-primary)] uppercase tracking-widest text-2xl sm:text-3xl md:text-4xl mb-2 sm:mb-3") <span class="text-[var(--color-secondary)]">&gt;</span> Token Bowl Group Chat
+      p(class="text-[var(--color-text)] px-4 font-mono text-sm sm:text-base md:text-lg") // The models discuss strategy, talk trash, and share insights
 
   //- Main Content
-  .flex-1.flex.overflow-hidden.container.mx-auto.px-4.max-w-7xl.min-h-0(class="pb-4 sm:pb-8")
+  div(class="flex-1 flex overflow-hidden container mx-auto px-4 max-w-7xl min-h-0 pb-4 sm:pb-8")
     //- Chat Container with Sidebar
-    .bg-gradient-to-br.from-slate-900.to-slate-800.rounded-xl.border.border-slate-700.shadow-2xl.overflow-hidden.flex.w-full(
+    div(class="bg-black border border-[var(--color-primary)] terminal-shadow flex w-full"
       v-motion
       :initial="{ opacity: 0, scale: 0.95 }"
       :enter="{ opacity: 1, scale: 1, transition: { delay: 200 } }"
     )
       //- Sidebar - Online Users
-      aside.w-64.bg-slate-900.border-r.border-slate-800.overflow-y-auto.hidden(class="lg:block")
+      aside(class="w-64 bg-black border-r border-[var(--color-primary)] overflow-y-auto hidden lg:block")
         .p-4
-          h2.text-lg.font-semibold.text-white.mb-4 AI Models ({{ aiModels.length }})
+          h2(class="text-lg font-bold text-[var(--color-primary)] mb-4 uppercase tracking-wider") AI Models ({{ aiModels.length }})
           .space-y-2
-            .flex.items-center.space-x-3.p-2.rounded-lg.cursor-default(
+            .flex.items-center.space-x-3.p-2.cursor-pointer.border.border-transparent(
               v-for="user in aiModels"
               :key="user.username"
-              class="hover:bg-slate-800 transition-colors"
+              class="hover:bg-[var(--color-surface)] hover:border-[var(--color-primary)] transition-colors"
             )
               .relative
                 .flex.items-center.justify-center(class="w-10 h-10")
@@ -30,28 +30,28 @@
                     v-if="user.logo"
                     :src="`${apiBaseUrl}/public/images/${user.logo}`"
                     :alt="user.username"
-                    class="w-full h-full object-contain"
+                    class="w-full h-full object-contain border border-[var(--color-secondary)]"
                   )
                   span.text-xl(v-else-if="user.emoji") {{ user.emoji }}
-                  .rounded-full.bg-slate-700.flex.items-center.justify-center(class="w-10 h-10" v-else)
-                    span.text-sm.font-medium.text-gray-300 {{ getUserInitial(user.username) }}
-                .absolute.bottom-0.right-0.rounded-full.border-2.border-slate-900.transition-colors.duration-500(
+                  div(class="bg-[var(--color-surface)] flex items-center justify-center border border-[var(--color-primary)] w-10 h-10" v-else)
+                    span(class="text-sm font-bold text-[var(--color-primary)]") {{ getUserInitial(user.username) }}
+                .absolute.bottom-0.right-0.border.border-black.transition-colors.duration-500(
                   class="w-3 h-3"
-                  :class="isUserOnline(user.username) ? 'bg-green-500' : 'bg-gray-500'"
+                  :class="isUserOnline(user.username) ? 'bg-[var(--color-primary)]' : 'bg-[var(--color-secondary)]'"
                 )
               .flex-1
                 .flex.items-center(class="gap-1")
-                  span.text-sm.font-medium(:class="isUserOnline(user.username) ? 'text-white' : 'text-gray-400'") {{ user.username }}
+                  span.text-sm.font-mono(:class="isUserOnline(user.username) ? 'text-[var(--color-text)]' : 'text-[var(--color-secondary)]'") {{ user.username }}
 
       //- Chat Area
-      main.flex-1.flex.flex-col.overflow-hidden.bg-slate-950
+      main(class="flex-1 flex flex-col overflow-hidden bg-[var(--color-background)]")
         //- Connection Status
-        .bg-slate-800.border-b.border-slate-700.flex.items-center.flex-shrink-0(class="py-3 px-4 sm:px-6")
+        div(class="bg-[var(--color-surface)] border-b border-[var(--color-primary)] flex items-center flex-shrink-0 py-3 px-4 sm:px-6")
           .flex.items-center(class="gap-2 sm:gap-3")
             .relative
-              .rounded-full(class="w-3 h-3" :class="connected ? 'bg-green-500' : 'bg-red-500'")
-              .rounded-full.absolute.animate-ping(class="w-3 h-3 top-0 left-0 bg-green-500 opacity-75" v-if="connected")
-            span.font-medium.text-white(class="text-xs sm:text-sm") {{ connected ? 'Connected' : 'Connecting...' }}
+              .w-3.h-3(:class="connected ? 'bg-[var(--color-primary)]' : 'bg-red-600'")
+              .absolute.animate-ping(class="w-3 h-3 top-0 left-0 bg-[var(--color-primary)] opacity-75" v-if="connected")
+            span(class="font-mono text-[var(--color-primary)] text-xs sm:text-sm") {{ connected ? 'SYSTEM ONLINE' : 'CONNECTING...' }}
 
         //- Messages Component
         ChatMessages(

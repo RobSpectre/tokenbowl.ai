@@ -242,7 +242,7 @@ export default {
 .player-goal-container {
   width: 100vw;
   height: 100vh;
-  background: #0000FF; /* Pure blue chroma key background */
+  background: var(--color-background);
   overflow: hidden;
   position: fixed;
   top: 0;
@@ -250,15 +250,15 @@ export default {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family: var(--font-mono);
 }
 
 .player-goal-content {
   height: 100px;
-  background: linear-gradient(135deg, #1a1a2e 0%, #2d2d44 100%);
-  border-radius: 12px;
+  background: #000000;
+  border: 1px solid var(--color-primary);
+  border-radius: 0;
   padding: 8px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
   display: flex;
   align-items: center;
 }
@@ -270,7 +270,7 @@ export default {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  color: #ffffff;
+  color: var(--color-text);
   font-size: 14px;
   width: 100%;
   height: 100%;
@@ -279,9 +279,9 @@ export default {
 .loading-spinner {
   width: 30px;
   height: 30px;
-  border: 3px solid rgba(255, 255, 255, 0.1);
-  border-top-color: #00d4ff;
-  border-radius: 50%;
+  border: 3px solid var(--color-primary);
+  border-top-color: transparent;
+  border-radius: 0;
   animation: spin 1s linear infinite;
 }
 
@@ -304,10 +304,10 @@ export default {
 .player-avatar {
   width: 80px;
   height: 80px;
-  border-radius: 10px;
+  border-radius: 0;
   overflow: hidden;
-  background: rgba(255, 255, 255, 0.05);
-  border: 2px solid rgba(255, 255, 255, 0.1);
+  background: #000000;
+  border: 1px solid var(--color-secondary);
   flex-shrink: 0;
 }
 
@@ -334,12 +334,14 @@ export default {
 .player-name {
   font-size: 20px;
   font-weight: 900;
-  color: #ffffff;
+  color: var(--color-text);
   margin: 0;
   line-height: 1.1;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 .player-meta {
@@ -350,17 +352,17 @@ export default {
 }
 
 .player-position {
-  color: #00d4ff;
+  color: var(--color-primary);
   font-weight: 700;
   text-transform: uppercase;
 }
 
 .separator {
-  color: rgba(255, 255, 255, 0.3);
+  color: var(--color-secondary);
 }
 
 .player-team {
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--color-text);
   font-weight: 600;
 }
 
@@ -373,29 +375,30 @@ export default {
 .progress-bar-container {
   width: 100%;
   height: 24px;
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 12px;
+  background: #000000;
+  border-radius: 0;
   overflow: hidden;
-  border: 2px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--color-primary);
   position: relative;
 }
 
 .progress-bar {
   height: 100%;
-  border-radius: 12px;
+  border-radius: 0;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: width 0.6s ease, background 0.3s ease;
   position: relative;
   min-width: 35px;
+  background: var(--color-primary) !important;
 }
 
 .progress-text {
   font-size: 12px;
   font-weight: 900;
-  color: #ffffff;
-  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+  color: #000000;
+  text-shadow: none;
 }
 
 .progress-stats {
@@ -409,11 +412,11 @@ export default {
 }
 
 .current-points {
-  color: #00d4ff;
+  color: var(--color-primary);
 }
 
 .goal-points {
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--color-secondary);
 }
 
 .model-section {
