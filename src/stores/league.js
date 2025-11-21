@@ -75,9 +75,9 @@ export const useLeagueStore = defineStore('league', {
     // Single source of truth for whether data is ready
     isDataReady() {
       return this.league !== null &&
-             this.rosters.length > 0 &&
-             this.currentWeek !== null &&
-             Object.keys(this.allMatchups).length > 0
+        this.rosters.length > 0 &&
+        this.currentWeek !== null &&
+        Object.keys(this.allMatchups).length > 0
     },
 
     // Get current week from league settings
@@ -476,6 +476,47 @@ export const useLeagueStore = defineStore('league', {
 
   actions: {
     /**
+     * Load static data for completed weeks
+     * This improves initial load time by avoiding many API calls
+     */
+    async loadStaticData() {
+      try {
+        console.log('📦 Loading static data for completed weeks...')
+        const response = await fetch('/data/completed-weeks.json')
+        if (!response.ok) {
+          console.warn('⚠️ No static data found (this is normal for dev/first run)')
+          return false
+        }
+
+        const staticData = await response.json()
+
+        // Validate data structure
+        if (!staticData.weeks) return false
+
+        // Populate store with static data
+        Object.entries(staticData.weeks).forEach(([weekStr, data]) => {
+          const week = parseInt(weekStr)
+
+          // Only load if we don't have it or if we want to ensure it's marked completed
+          this.allMatchups[week] = data.matchups
+          this.weekRosters[week] = data.weekRosters
+          this.playerStatsByWeek[week] = data.playerStats
+
+          if (!this.completedWeeks.includes(week)) {
+            this.completedWeeks.push(week)
+          }
+        })
+
+        console.log(`✅ Loaded static data for weeks: ${this.completedWeeks.join(', ')}`)
+        return true
+      } catch (error) {
+        console.error('❌ Error loading static data:', error)
+        return false
+      }
+    },
+
+
+    /**
      * Main initialization method - call this from components
      * Shows cached data immediately, then loads/refreshes in background
      */
@@ -528,10 +569,11 @@ export const useLeagueStore = defineStore('league', {
         console.log('🚀 Initializing league data...')
 
         // PHASE 1: Load core data in parallel
-        console.log('📊 Phase 1: Loading core data (league + players)...')
-        const [leagueData, players] = await Promise.all([
+        console.log('📊 Phase 1: Loading core data (league + players + static history)...')
+        const [leagueData, players, staticLoaded] = await Promise.all([
           getLeagueData(),
-          getRelevantPlayers(Object.keys(this.players).length === 0)
+          getRelevantPlayers(Object.keys(this.players).length === 0),
+          this.loadStaticData()
         ])
 
         this.league = leagueData.league

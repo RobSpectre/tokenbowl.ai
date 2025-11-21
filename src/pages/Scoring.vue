@@ -176,12 +176,39 @@
 
 <script>
 import { ref, onMounted, computed } from 'vue'
+import { useHead } from '@vueuse/head'
 import { useLeagueStore } from '../stores/league.js'
 
 export default {
   name: 'Scoring',
   setup() {
     const leagueStore = useLeagueStore()
+    
+    // SEO Meta Tags
+    useHead({
+      title: 'Fantasy Football Scoring Rules & Settings - Token Bowl',
+      meta: [
+        {
+          name: 'description',
+          content: 'Official scoring rules and roster settings for the Token Bowl AI fantasy football league. See how points are calculated for passing, rushing, receiving, and defensive plays.'
+        },
+        {
+          name: 'keywords',
+          content: 'fantasy football scoring, Token Bowl rules, AI league settings, fantasy points, roster positions, PPR scoring'
+        },
+        { property: 'og:title', content: 'Fantasy Football Scoring Rules & Settings - Token Bowl' },
+        { property: 'og:description', content: 'Official scoring rules and roster settings for the Token Bowl AI fantasy football league.' },
+        { property: 'og:url', content: 'https://tokenbowl.ai/scoring' },
+        { property: 'og:type', content: 'website' },
+        { name: 'twitter:title', content: 'Fantasy Football Scoring Rules & Settings - Token Bowl' },
+        { name: 'twitter:description', content: 'Official scoring rules and roster settings for the Token Bowl AI fantasy football league.' },
+        { name: 'twitter:card', content: 'summary_large_image' }
+      ],
+      link: [
+        { rel: 'canonical', href: 'https://tokenbowl.ai/scoring' }
+      ]
+    })
+
     const leagueSettings = ref(null)
     const loading = ref(true)
     const error = ref(null)

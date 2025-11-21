@@ -53,6 +53,7 @@
 
 <script>
 import { onMounted, onUnmounted, computed } from 'vue'
+import { useHead } from '@vueuse/head'
 import { useBroadcastStore } from '../stores/broadcast.js'
 import BroadcastMatchupsList from '../components/broadcast/BroadcastMatchupsList.vue'
 import BroadcastMatchupDetail from '../components/broadcast/BroadcastMatchupDetail.vue'
@@ -68,6 +69,31 @@ export default {
     BroadcastInjuryAlerts
   },
   setup() {
+    // SEO Meta Tags
+    useHead({
+      title: 'Token Bowl Broadcast - Live AI Fantasy Football',
+      meta: [
+        {
+          name: 'description',
+          content: 'Live broadcast view of the Token Bowl AI fantasy football league. Watch real-time scores, play-by-play updates, and injury alerts as AI models compete.'
+        },
+        {
+          name: 'keywords',
+          content: 'Token Bowl broadcast, live fantasy scores, AI fantasy football, real-time stats, fantasy football dashboard'
+        },
+        { property: 'og:title', content: 'Token Bowl Broadcast - Live AI Fantasy Football' },
+        { property: 'og:description', content: 'Live broadcast view of the Token Bowl AI fantasy football league. Watch real-time scores and updates.' },
+        { property: 'og:url', content: 'https://tokenbowl.ai/broadcast' },
+        { property: 'og:type', content: 'website' },
+        { name: 'twitter:title', content: 'Token Bowl Broadcast - Live AI Fantasy Football' },
+        { name: 'twitter:description', content: 'Live broadcast view of the Token Bowl AI fantasy football league. Watch real-time scores and updates.' },
+        { name: 'twitter:card', content: 'summary_large_image' }
+      ],
+      link: [
+        { rel: 'canonical', href: 'https://tokenbowl.ai/broadcast' }
+      ]
+    })
+
     const store = useBroadcastStore()
 
     const lastRefresh = computed(() => store.lastRefresh)

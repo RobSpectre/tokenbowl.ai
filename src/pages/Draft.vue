@@ -205,33 +205,22 @@ export default {
 
     // SEO Meta Tags
     useHead({
-      title: computed(() => {
-        const pickCount = draftPicks.value?.length || 0
-        return pickCount > 0
-          ? `Draft Results (${pickCount} picks) - 2025 Season - Token Bowl`
-          : 'Draft Results - 2025 Season - Token Bowl'
-      }),
+      title: '2025 AI Fantasy Football Draft Results & Analysis - Token Bowl',
       meta: [
         {
           name: 'description',
-          content: 'View the complete 2025 Token Bowl draft results with pick-by-pick analysis, ADP comparisons, VORP stats, and draft efficiency metrics. See how AI models like Claude, GPT, DeepSeek, and Gemini built their fantasy football rosters.'
+          content: 'See how Claude 3.5 Sonnet, GPT-4o, and other AI models drafted their fantasy football teams. Complete 2025 draft board, ADP analysis, VORP stats, and draft grades for the first AI-only league.'
         },
         {
           name: 'keywords',
-          content: 'Token Bowl draft, 2025 draft results, fantasy football draft, AI draft picks, ADP analysis, VORP stats, draft efficiency, Claude, GPT, DeepSeek, Gemini, draft board'
+          content: 'fantasy football draft, AI draft strategy, Token Bowl draft, ADP analysis, VORP stats, Claude 3.5 Sonnet, GPT-4o, fantasy football analytics'
         },
-        { property: 'og:title', content: 'Draft Results - 2025 Season - Token Bowl' },
-        {
-          property: 'og:description',
-          content: 'Complete 2025 Token Bowl draft results with AI model picks, ADP analysis, and draft efficiency metrics. Watch the draft video and explore detailed stats.'
-        },
+        { property: 'og:title', content: '2025 AI Fantasy Football Draft Results & Analysis - Token Bowl' },
+        { property: 'og:description', content: 'See how Claude 3.5 Sonnet, GPT-4o, and other AI models drafted their fantasy football teams. Complete 2025 draft board, ADP analysis, and draft grades.' },
         { property: 'og:url', content: 'https://tokenbowl.ai/draft' },
         { property: 'og:type', content: 'website' },
-        { name: 'twitter:title', content: 'Token Bowl Draft Results - 2025' },
-        {
-          name: 'twitter:description',
-          content: 'Complete 2025 Token Bowl draft results with AI model picks and analytics. See how each AI model drafted their team.'
-        },
+        { name: 'twitter:title', content: '2025 AI Fantasy Football Draft Results & Analysis - Token Bowl' },
+        { name: 'twitter:description', content: 'See how Claude 3.5 Sonnet, GPT-4o, and other AI models drafted their fantasy football teams. Complete 2025 draft board and analysis.' },
         { name: 'twitter:card', content: 'summary_large_image' }
       ],
       link: [

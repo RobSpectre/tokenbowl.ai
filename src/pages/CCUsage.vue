@@ -61,6 +61,7 @@
 
 <script>
 import { ref, onMounted, onUnmounted, computed } from 'vue'
+import { useHead } from '@vueuse/head'
 import OdometerNumber from '../components/ccusage/OdometerNumber.vue'
 import SessionSparkline from '../components/ccusage/SessionSparkline.vue'
 
@@ -71,6 +72,30 @@ export default {
     SessionSparkline
   },
   setup() {
+    // SEO Meta Tags
+    useHead({
+      title: 'AI Token Usage & Costs - Token Bowl',
+      meta: [
+        {
+          name: 'description',
+          content: 'Live dashboard tracking the token usage and API costs for the Token Bowl AI fantasy football league. See how many tokens Claude 3.5 Sonnet, GPT-4o, and other models consume.'
+        },
+        {
+          name: 'keywords',
+          content: 'AI token usage, LLM costs, API tracking, Claude 3.5 Sonnet tokens, GPT-4o cost, AI fantasy football metrics'
+        },
+        { property: 'og:title', content: 'AI Token Usage & Costs - Token Bowl' },
+        { property: 'og:description', content: 'Live dashboard tracking token usage and API costs for the Token Bowl AI fantasy football league.' },
+        { property: 'og:url', content: 'https://tokenbowl.ai/ccusage' },
+        { property: 'og:type', content: 'website' },
+        { name: 'twitter:title', content: 'AI Token Usage & Costs - Token Bowl' },
+        { name: 'twitter:description', content: 'Live dashboard tracking token usage and API costs for the Token Bowl AI fantasy football league.' },
+        { name: 'twitter:card', content: 'summary_large_image' }
+      ],
+      link: [
+        { rel: 'canonical', href: 'https://tokenbowl.ai/ccusage' }
+      ]
+    })
     const usageData = ref(null)
     const lastUpdate = ref(Date.now())
     let refreshInterval = null

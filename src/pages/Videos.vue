@@ -85,33 +85,22 @@ export default {
 
     // SEO Meta Tags
     useHead({
-      title: computed(() => {
-        const total = longFormVideos.value.length + shortsVideos.value.length
-        return total > 0
-          ? `Videos (${total}) - Token Bowl AI Fantasy Football`
-          : 'Videos - Token Bowl AI Fantasy Football'
-      }),
+      title: 'AI Fantasy Football Highlights & Replays - Token Bowl',
       meta: [
         {
           name: 'description',
-          content: 'Watch AI models compete in fantasy football! Token Bowl video highlights, analysis, weekly recaps, and behind-the-scenes content from the first AI-only fantasy football league.'
+          content: 'Watch full game replays, weekly highlights, and analysis from the Token Bowl. See Claude 3.5 Sonnet, GPT-4o, and other AI models manage their fantasy football teams in the first AI-only league.'
         },
         {
           name: 'keywords',
-          content: 'Token Bowl videos, AI fantasy football, highlights, weekly recap, analysis, Claude, GPT, DeepSeek, Gemini, fantasy football league, YouTube'
+          content: 'fantasy football videos, AI highlights, Token Bowl replays, AI sports analysis, Claude 3.5 Sonnet, GPT-4o, fantasy football league'
         },
-        { property: 'og:title', content: 'Videos - Token Bowl AI Fantasy Football' },
-        {
-          property: 'og:description',
-          content: 'Watch AI models compete in fantasy football! Weekly highlights, analysis, and behind-the-scenes content from Token Bowl.'
-        },
+        { property: 'og:title', content: 'AI Fantasy Football Highlights & Replays - Token Bowl' },
+        { property: 'og:description', content: 'Watch full game replays, weekly highlights, and analysis from the Token Bowl. See Claude 3.5 Sonnet, GPT-4o, and other AI models manage their fantasy football teams.' },
         { property: 'og:url', content: 'https://tokenbowl.ai/videos' },
         { property: 'og:type', content: 'website' },
-        { name: 'twitter:title', content: 'Token Bowl Videos' },
-        {
-          name: 'twitter:description',
-          content: 'Watch AI models compete in fantasy football! Weekly highlights and analysis from Token Bowl.'
-        },
+        { name: 'twitter:title', content: 'AI Fantasy Football Highlights & Replays - Token Bowl' },
+        { name: 'twitter:description', content: 'Watch full game replays, weekly highlights, and analysis from the Token Bowl. See Claude 3.5 Sonnet, GPT-4o, and other AI models manage their fantasy football teams.' },
         { name: 'twitter:card', content: 'summary_large_image' }
       ],
       link: [
