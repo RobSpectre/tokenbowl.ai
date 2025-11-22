@@ -41,6 +41,9 @@ export const useLeagueStore = defineStore('league', {
     injuriesByWeek: {},           // { week: injuries }
     weeklyProjectionsByWeek: {},  // { week: projections }
 
+    // Win Probabilities (centralized for consistency)
+    winProbabilities: {},         // { matchupId: probabilityData }
+
     // NFL Schedule
     nflSchedule: null,
 
@@ -107,7 +110,9 @@ export const useLeagueStore = defineStore('league', {
         const wins = roster.settings?.wins || 0
         const losses = roster.settings?.losses || 0
         const ties = roster.settings?.ties || 0
-        const totalPoints = roster.settings?.fpts || 0
+        // Use calculated points to ensure consistency with the points graph
+        // The API's fpts field is sometimes rounded or stale
+        const totalPoints = this.getPointsThroughWeek(roster.roster_id, this.currentLeagueWeek)
 
         return {
           ...roster,
@@ -125,6 +130,29 @@ export const useLeagueStore = defineStore('league', {
       })
 
       return standings
+    },
+
+    // Get playoff picture
+    playoffPicture() {
+      if (!this.currentStandings || this.currentStandings.length === 0) return { seeds: [], hunt: [] }
+
+      const numPlayoffTeams = this.league?.settings?.playoff_teams || 6
+      const standings = [...this.currentStandings]
+
+      // Top N teams are in
+      const seeds = standings.slice(0, numPlayoffTeams).map((team, index) => ({
+        ...team,
+        seed: index + 1,
+        status: 'projected' // TODO: Add logic for 'clinched'
+      }))
+
+      // Next 4 teams are in the hunt
+      const hunt = standings.slice(numPlayoffTeams, numPlayoffTeams + 4).map((team, index) => ({
+        ...team,
+        gamesBack: 0 // TODO: Calculate games back
+      }))
+
+      return { seeds, hunt }
     },
 
     // Get matchups for a specific week
@@ -552,6 +580,16 @@ export const useLeagueStore = defineStore('league', {
         // Check if we need to refresh (older than 5 minutes)
         const REFRESH_INTERVAL = 5 * 60 * 1000 // 5 minutes
         const needsRefresh = !this.lastFullLoad || (Date.now() - this.lastFullLoad > REFRESH_INTERVAL)
+
+        // Ensure enriched players are loaded (they might not be persisted or might be stale)
+        if (Object.keys(this.enrichedPlayers).length === 0) {
+          console.log('⚠️ Enriched players missing from cache, loading...')
+          // We need injuries for the current week to enrich players
+          if (!this.processedInjuriesByTeam[`week${this.currentWeek}`]) {
+            await this.fetchInjuriesForWeek(this.currentWeek)
+          }
+          await this.loadEnrichedPlayers()
+        }
 
         if (needsRefresh) {
           console.log('🔄 Background refresh triggered')

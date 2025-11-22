@@ -315,11 +315,6 @@ div(class="container mx-auto px-4 py-6 max-w-7xl bg-[var(--color-background)]")
                           div(class="text-[var(--color-text)] font-semibold text-sm uppercase") {{ getPlayerName(slot.team2Player) }}
                         div(class="text-[var(--color-primary)] text-xs font-mono") {{ getPlayerTeam(slot.team2Player) }} • {{ getPlayerPosition(slot.team2Player) }}
                         //- Game info (day/time)
-                        div(class="text-xs mt-0.5 text-right font-mono" v-if="!isEmpty(slot.team2Player) && getPlayerGameInfo(slot.team2Player)")
-                          span(:class="getPlayerGameInfo(slot.team2Player).status === 'in_progress' ? 'text-[var(--color-primary)] font-bold animate-pulse' : getPlayerGameInfo(slot.team2Player).status === 'final' ? 'text-[var(--color-secondary)]' : 'text-[var(--color-accent)]'")
-                            span(v-if="getPlayerGameInfo(slot.team2Player).status === 'scheduled'" class="text-[var(--color-secondary)] mr-1")
-                              | {{ getPlayerGameInfo(slot.team2Player).isHome ? 'vs' : '@' }} {{ getPlayerGameInfo(slot.team2Player).opponent }}
-                            | {{ getGameStatusText(getPlayerGameInfo(slot.team2Player)) }}
                       .text-left.flex-shrink-0
                         //- Score colored by game status
                         div(
@@ -515,13 +510,13 @@ div(class="container mx-auto px-4 py-6 max-w-7xl bg-[var(--color-background)]")
 </template>
 
 <script>
-import { ref, onMounted, onUnmounted, computed, watch, nextTick } from 'vue'
-import { useRoute } from 'vue-router'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { useHead } from '@vueuse/head'
+import { useLeagueStore } from '../stores/league'
 import { getTeamInfo } from '../teamMappings.js'
 // Removed: import { getPlayerInjuryStatus, getInjuryIndicator } from '../fantasyNerdsApi.js' - Now using enriched players from store
 import { getMultiplePlayerStats } from '../sleeperApi.js'
-import { useLeagueStore } from '../stores/league.js'
 import { marked } from 'marked'
 import 'github-markdown-css/github-markdown-dark.css'
 import WinProbabilityBar from '../components/WinProbabilityBar.vue'
@@ -768,7 +763,7 @@ export default {
         await leagueStore.loadNFLSchedule()
 
         // Try to load markdown file for this matchup
-        loadMarkdownFile()
+        await loadMarkdownFile()
 
         // Calculate win probability
         calculateMatchupWinProbability()
@@ -779,8 +774,39 @@ export default {
         console.error(err)
       } finally {
         loading.value = false
+
+        // Handle hash scroll after loading
+        if (route.hash) {
+          // Use a small timeout to ensure DOM is updated and layout is settled
+          setTimeout(() => {
+            const element = document.querySelector(route.hash)
+            if (element) {
+              console.log('📜 Scrolling to', route.hash)
+              element.scrollIntoView({ behavior: 'smooth' })
+            } else {
+              console.warn('⚠️ Could not find element for hash:', route.hash)
+              // Retry once more after a longer delay
+              setTimeout(() => {
+                const retryElement = document.querySelector(route.hash)
+                if (retryElement) {
+                  console.log('📜 Retry: Scrolling to', route.hash)
+                  retryElement.scrollIntoView({ behavior: 'smooth' })
+                }
+              }, 1000)
+            }
+          }, 100)
+        }
       }
     }
+
+    // Watch for enriched players updates to recalculate win probabilities
+    // This ensures we update probabilities when injury data loads in the background
+    watch(() => leagueStore.enrichedPlayers, (newVal) => {
+      if (newVal && Object.keys(newVal).length > 0) {
+        // console.log('Enriched players updated, recalculating win probabilities')
+        calculateMatchupWinProbability()
+      }
+    })
 
     // Calculate win probability for the matchup
     const calculateMatchupWinProbability = () => {
@@ -791,14 +817,22 @@ export default {
       try {
         const [team1Data, team2Data] = matchup.value
 
-        // Convert team data to player arrays
+        // Check if we already have this in the store (calculated from Home)
+        const matchupId = team1Data.matchup_id
+        // Check if we already have win probability for this matchup in store
+        const existingProb = leagueStore.getWinProbability(matchupId)
+        if (existingProb) {
+          winProbability.value = existingProb
+          return
+        }
+
         const team1Players = convertTeamToPlayerData(team1Data, players.value, enrichedPlayers.value)
         const team2Players = convertTeamToPlayerData(team2Data, players.value, enrichedPlayers.value)
 
         // Run Monte Carlo simulation (3000 for performance)
         const result = calculateWinProbability(team1Players, team2Players, 3000)
 
-        winProbability.value = {
+        const probabilityData = {
           ...result,
           team1: {
             rosterId: team1Data.roster_id,
@@ -807,10 +841,16 @@ export default {
           },
           team2: {
             rosterId: team2Data.roster_id,
-            currentPoints: team2Data.points || 0,
-            playerCount: team2Players.length
+            currentPoints: team1Data.points || 0,
+            playerCount: team1Players.length
           }
         }
+
+        winProbability.value = probabilityData
+        
+        // Save to store for future use
+        leagueStore.setWinProbability(matchupId, probabilityData)
+
       } catch (error) {
         console.error('Error calculating win probability:', error)
         winProbability.value = null
@@ -869,13 +909,19 @@ export default {
             }
           }
 
+          // Get injury status
+          const injuryStatus = player?.injury_status_combined || player?.injury_status || null
+
+          console.log(`Player: ${player?.full_name}, Status: ${injuryStatus}, Proj: ${projection}, GameStatus: ${gameStatus}`)
+
           return {
             playerId,
             currentPoints,
             projection,
             variance,
             gameStatus,
-            percentComplete
+            percentComplete,
+            injuryStatus
           }
         })
     }

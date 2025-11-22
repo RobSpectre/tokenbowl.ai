@@ -45,7 +45,8 @@ export function preparePlayerForSimulation(player) {
     projection = 0,
     variance = 0,
     gameStatus = 'scheduled',
-    percentComplete = 0
+    percentComplete = 0,
+    injuryStatus = null
   } = player
 
   // Game is finished - no more points possible
@@ -57,12 +58,31 @@ export function preparePlayerForSimulation(player) {
     }
   }
 
+  // Handle injuries for players who haven't played yet or are in progress
+  // If a player is OUT or IR, they won't score any more points
+  if (['OUT', 'O', 'IR', 'INJURED RESERVE', 'DOUBTFUL', 'D', 'SUS', 'SUSPENDED', 'PUP'].includes((injuryStatus || '').toUpperCase())) {
+    console.log(`Zeroing out player due to injury: ${injuryStatus}`)
+    return {
+      currentPoints,
+      remainingProjection: 0,
+      remainingStdDev: 0
+    }
+  }
+
+  let adjustedVariance = variance
+
+  // If a player is QUESTIONABLE, increase variance to account for uncertainty
+  // They might play a little, a lot, or not at all
+  if (['QUESTIONABLE', 'Q'].includes((injuryStatus || '').toUpperCase())) {
+    adjustedVariance = variance * 1.5
+  }
+
   // Game hasn't started - use full projection
   if (gameStatus === 'scheduled' || percentComplete <= 0) {
     return {
       currentPoints,
       remainingProjection: projection,
-      remainingStdDev: Math.sqrt(variance)
+      remainingStdDev: Math.sqrt(adjustedVariance)
     }
   }
 
@@ -72,7 +92,7 @@ export function preparePlayerForSimulation(player) {
   return {
     currentPoints,
     remainingProjection: projection * percentRemaining,
-    remainingStdDev: Math.sqrt(variance * percentRemaining)
+    remainingStdDev: Math.sqrt(adjustedVariance * percentRemaining)
   }
 }
 

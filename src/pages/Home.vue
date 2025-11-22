@@ -94,17 +94,13 @@ div(class="bg-[var(--color-background)]")
                       span.text-green-400.text-xs.font-bold.uppercase(v-if="matchup[0].points > matchup[1].points") W
                       span.text-red-400.text-xs.font-bold.uppercase(v-else-if="matchup[0].points < matchup[1].points") L
 
-                //- VS Separator (Mobile) - smaller and properly spaced
+                  //- VS Separator (Mobile) - smaller and properly spaced
                 div(class="flex items-center justify-center py-1")
                   div(class="relative flex items-center justify-center w-full")
                     div(class="absolute inset-0 flex items-center")
                       div(class="w-full border-t border-slate-600")
                     div(class="relative bg-slate-800 px-2")
                       span(class="text-gray-400 font-bold text-xs") VS
-                  button(
-                    @click.stop="goToMatchupTokens(matchup)"
-                    class="mt-1 px-2 py-0.5 bg-slate-800 border border-[var(--color-primary)] text-[var(--color-primary)] text-[10px] font-bold font-mono uppercase hover:bg-[var(--color-primary)] hover:text-black transition-colors z-10"
-                  ) TOKENS
 
                 //- Team 2 (Mobile)
                 .flex.items-center.justify-between.w-full.bg-slate-750.rounded-lg.p-2
@@ -176,10 +172,6 @@ div(class="bg-[var(--color-background)]")
                 div(class="hidden lg:flex flex-col items-center justify-center gap-2")
                   div(class="bg-slate-700 rounded px-3 py-1")
                     span(class="text-white font-black text-sm") VS
-                  button(
-                    @click.stop="goToMatchupTokens(matchup)"
-                    class="px-2 py-0.5 bg-[var(--color-surface)] border border-[var(--color-primary)] text-[var(--color-primary)] text-[10px] font-bold font-mono uppercase hover:bg-[var(--color-primary)] hover:text-black transition-colors"
-                  ) TOKENS
 
                 //- Team 2 Score (lg grid column only)
                 div(class="hidden lg:flex items-center gap-2")
@@ -226,7 +218,7 @@ div(class="bg-[var(--color-background)]")
                     //- Bar pointing toward winner (team 0 on left)
                     div(
                       v-if="matchup[0].points > matchup[1].points"
-                      class="absolute right-1/2 h-6 bg-gradient-to-l from-green-500 to-green-600 rounded-l flex items-center justify-start pl-3"
+                      class="absolute right-1/2 h-6 bg-gradient-to-l from-cyan-500 to-cyan-600 rounded-l flex items-center justify-start pl-3"
                       :style="{ width: `${Math.min(((matchup[0].points - matchup[1].points) / 70) * 48, 48)}%` }"
                     )
                       span(class="text-white text-sm font-bold") +{{ Math.abs((matchup[0].points || 0) - (matchup[1].points || 0)).toFixed(1) }}
@@ -234,7 +226,7 @@ div(class="bg-[var(--color-background)]")
                     //- Bar pointing toward winner (team 1 on right)
                     div(
                       v-else-if="matchup[1].points > matchup[0].points"
-                      class="absolute left-1/2 h-6 bg-gradient-to-r from-green-500 to-green-600 rounded-r flex items-center justify-end pr-3"
+                      class="absolute left-1/2 h-6 bg-gradient-to-r from-cyan-500 to-cyan-600 rounded-r flex items-center justify-end pr-3"
                       :style="{ width: `${Math.min(((matchup[1].points - matchup[0].points) / 70) * 48, 48)}%` }"
                     )
                       span(class="text-white text-sm font-bold") +{{ Math.abs((matchup[0].points || 0) - (matchup[1].points || 0)).toFixed(1) }}
@@ -248,7 +240,7 @@ div(class="bg-[var(--color-background)]")
                   //- Bar pointing toward winner (team 0 on left)
                   div(
                     v-if="matchup[0].points > matchup[1].points"
-                    class="absolute right-1/2 h-5 bg-gradient-to-l from-green-500 to-green-600 rounded-l flex items-center justify-start pl-2"
+                    class="absolute right-1/2 h-5 bg-gradient-to-l from-cyan-500 to-cyan-600 rounded-l flex items-center justify-start pl-2"
                     :style="{ width: `${Math.min(((matchup[0].points - matchup[1].points) / 70) * 45, 45)}%` }"
                   )
                     span(class="text-white text-xs font-bold") {{ Math.abs((matchup[0].points || 0) - (matchup[1].points || 0)).toFixed(2) }}
@@ -256,7 +248,7 @@ div(class="bg-[var(--color-background)]")
                   //- Bar pointing toward winner (team 1 on right)
                   div(
                     v-else-if="matchup[1].points > matchup[0].points"
-                    class="absolute left-1/2 h-5 bg-gradient-to-r from-green-500 to-green-600 rounded-r flex items-center justify-end pr-2"
+                    class="absolute left-1/2 h-5 bg-gradient-to-r from-cyan-500 to-cyan-600 rounded-r flex items-center justify-end pr-2"
                     :style="{ width: `${Math.min(((matchup[1].points - matchup[0].points) / 70) * 45, 45)}%` }"
                   )
                     span(class="text-white text-xs font-bold") {{ Math.abs((matchup[0].points || 0) - (matchup[1].points || 0)).toFixed(2) }}
@@ -268,15 +260,14 @@ div(class="bg-[var(--color-background)]")
                 :showDetails="false"
               )
 
-              //- View Tokens Button (hidden on lg+)
-              div(class="mt-3 pt-3 border-t border-slate-700 flex justify-end lg:hidden")
-                router-link(
-                  :to="`/matchup/${selectedWeek}/${matchup[0].matchup_id}#tokens`"
-                  @click.stop
-                  class="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-gray-300 hover:text-white text-xs rounded transition-colors duration-200 flex items-center gap-1.5"
+              //- Universal Matchup Actions Footer
+              div(class="mt-3 pt-3 border-t border-slate-700 flex justify-center bg-slate-900/30 -mx-4 -mb-4 lg:-mx-3 lg:-mb-3 py-2 relative z-20")
+                button(
+                  @click.stop="goToMatchupTokens(matchup)"
+                  class="flex items-center gap-2 px-4 py-1.5 rounded-full bg-slate-800 hover:bg-[var(--color-primary)] text-[var(--color-primary)] hover:text-black transition-all duration-200 border border-[var(--color-primary)] group relative z-30"
                 )
-                  span 💬
-                  |  View tokens
+                  span(class="text-lg") 🎟️
+                  span(class="text-xs font-bold uppercase tracking-wider") View Tokens
 
       //- No Matchups
       .bg-slate-900.rounded-b-lg.p-8.text-center(v-else)
@@ -383,6 +374,135 @@ div(class="bg-[var(--color-background)]")
                 div(:class="getRecordColor(roster.currentRecord.wins, roster.currentRecord.losses)" class="font-bold text-sm sm:text-lg") {{ roster.currentRecord.wins }}-{{ roster.currentRecord.losses }}
               td(class="px-3 sm:px-6 py-4 text-right")
                 div(class="text-white font-black text-base sm:text-xl") {{ roster.currentPoints.toFixed(2) }}
+
+    //- Playoff Picture
+    section.mb-12(v-if="leagueStore.playoffPicture.seeds.length > 0")
+      div(class="bg-[var(--color-surface)] border-t border-x border-[var(--color-primary)] px-6 py-4")
+        h2(class="text-[var(--color-primary)] text-3xl font-bold uppercase tracking-widest flex items-center gap-3")
+          span(class="text-[var(--color-secondary)]") >
+          | Playoff Picture
+
+      div(class="bg-black border-b border-x border-[var(--color-primary)] p-6")
+        div(class="grid grid-cols-1 lg:grid-cols-3 gap-8")
+          
+          //- Column 1: Quarterfinals (Round 1)
+          div
+            h3(class="text-white text-lg font-bold mb-4 flex items-center gap-2 uppercase tracking-wider text-gray-400")
+              span Quarterfinals
+            
+            div(class="space-y-6")
+              //- Matchup: #4 vs #5
+              div(class="relative")
+                div(class="absolute -right-4 top-1/2 w-4 h-px bg-slate-700 hidden lg:block")
+                div(class="bg-slate-900/50 border border-slate-800 rounded overflow-hidden")
+                  //- Team 4
+                  div(class="p-3 flex items-center gap-3 border-b border-slate-800/50")
+                    div(class="text-gray-500 font-bold text-sm w-4") #4
+                    img(
+                      class="h-6 w-6 object-contain"
+                      :src="getTeamInfo(leagueStore.playoffPicture.seeds[3]?.user?.display_name).logo"
+                      :class="getTeamInfo(leagueStore.playoffPicture.seeds[3]?.user?.display_name).invertLogo ? 'invert brightness-200' : ''"
+                    )
+                    div(class="text-sm font-bold text-white truncate") {{ getTeamInfo(leagueStore.playoffPicture.seeds[3]?.user?.display_name).aiModel }}
+                    div(class="ml-auto text-xs text-gray-400") {{ leagueStore.playoffPicture.seeds[3]?.currentRecord.wins }}-{{ leagueStore.playoffPicture.seeds[3]?.currentRecord.losses }}
+
+                  //- Team 5
+                  div(class="p-3 flex items-center gap-3")
+                    div(class="text-gray-500 font-bold text-sm w-4") #5
+                    img(
+                      class="h-6 w-6 object-contain"
+                      :src="getTeamInfo(leagueStore.playoffPicture.seeds[4]?.user?.display_name).logo"
+                      :class="getTeamInfo(leagueStore.playoffPicture.seeds[4]?.user?.display_name).invertLogo ? 'invert brightness-200' : ''"
+                    )
+                    div(class="text-sm font-bold text-white truncate") {{ getTeamInfo(leagueStore.playoffPicture.seeds[4]?.user?.display_name).aiModel }}
+                    div(class="ml-auto text-xs text-gray-400") {{ leagueStore.playoffPicture.seeds[4]?.currentRecord.wins }}-{{ leagueStore.playoffPicture.seeds[4]?.currentRecord.losses }}
+
+              //- Matchup: #3 vs #6
+              div(class="relative")
+                div(class="absolute -right-4 top-1/2 w-4 h-px bg-slate-700 hidden lg:block")
+                div(class="bg-slate-900/50 border border-slate-800 rounded overflow-hidden")
+                  //- Team 3
+                  div(class="p-3 flex items-center gap-3 border-b border-slate-800/50")
+                    div(class="text-gray-500 font-bold text-sm w-4") #3
+                    img(
+                      class="h-6 w-6 object-contain"
+                      :src="getTeamInfo(leagueStore.playoffPicture.seeds[2]?.user?.display_name).logo"
+                      :class="getTeamInfo(leagueStore.playoffPicture.seeds[2]?.user?.display_name).invertLogo ? 'invert brightness-200' : ''"
+                    )
+                    div(class="text-sm font-bold text-white truncate") {{ getTeamInfo(leagueStore.playoffPicture.seeds[2]?.user?.display_name).aiModel }}
+                    div(class="ml-auto text-xs text-gray-400") {{ leagueStore.playoffPicture.seeds[2]?.currentRecord.wins }}-{{ leagueStore.playoffPicture.seeds[2]?.currentRecord.losses }}
+
+                  //- Team 6
+                  div(class="p-3 flex items-center gap-3")
+                    div(class="text-gray-500 font-bold text-sm w-4") #6
+                    img(
+                      class="h-6 w-6 object-contain"
+                      :src="getTeamInfo(leagueStore.playoffPicture.seeds[5]?.user?.display_name).logo"
+                      :class="getTeamInfo(leagueStore.playoffPicture.seeds[5]?.user?.display_name).invertLogo ? 'invert brightness-200' : ''"
+                    )
+                    div(class="text-sm font-bold text-white truncate") {{ getTeamInfo(leagueStore.playoffPicture.seeds[5]?.user?.display_name).aiModel }}
+                    div(class="ml-auto text-xs text-gray-400") {{ leagueStore.playoffPicture.seeds[5]?.currentRecord.wins }}-{{ leagueStore.playoffPicture.seeds[5]?.currentRecord.losses }}
+
+          //- Column 2: Semifinals (Byes)
+          div
+            h3(class="text-white text-lg font-bold mb-4 flex items-center gap-2 uppercase tracking-wider text-gray-400")
+              span Semifinals
+            
+            div(class="space-y-6")
+              //- Seed 1 (Bye)
+              div(class="relative h-[106px] flex items-center")
+                div(class="absolute -left-4 top-1/2 w-4 h-px bg-slate-700 hidden lg:block")
+                div(class="w-full bg-slate-900/80 border border-yellow-500/30 rounded p-4 relative overflow-hidden")
+                  div(class="absolute top-0 right-0 px-2 py-0.5 bg-yellow-500/20 text-yellow-400 text-[10px] font-bold uppercase") Bye
+                  div(class="flex items-center gap-4")
+                    div(class="text-yellow-500 font-black text-lg w-6") #1
+                    img(
+                      class="h-10 w-10 object-contain"
+                      :src="getTeamInfo(leagueStore.playoffPicture.seeds[0]?.user?.display_name).logo"
+                      :class="getTeamInfo(leagueStore.playoffPicture.seeds[0]?.user?.display_name).invertLogo ? 'invert brightness-200' : ''"
+                    )
+                    div
+                      div(class="text-white font-bold text-lg") {{ getTeamInfo(leagueStore.playoffPicture.seeds[0]?.user?.display_name).aiModel }}
+                      div(class="text-gray-400 text-xs") Awaiting Winner of 4 vs 5
+
+              //- Seed 2 (Bye)
+              div(class="relative h-[106px] flex items-center")
+                div(class="absolute -left-4 top-1/2 w-4 h-px bg-slate-700 hidden lg:block")
+                div(class="w-full bg-slate-900/80 border border-yellow-500/30 rounded p-4 relative overflow-hidden")
+                  div(class="absolute top-0 right-0 px-2 py-0.5 bg-yellow-500/20 text-yellow-400 text-[10px] font-bold uppercase") Bye
+                  div(class="flex items-center gap-4")
+                    div(class="text-yellow-500 font-black text-lg w-6") #2
+                    img(
+                      class="h-10 w-10 object-contain"
+                      :src="getTeamInfo(leagueStore.playoffPicture.seeds[1]?.user?.display_name).logo"
+                      :class="getTeamInfo(leagueStore.playoffPicture.seeds[1]?.user?.display_name).invertLogo ? 'invert brightness-200' : ''"
+                    )
+                    div
+                      div(class="text-white font-bold text-lg") {{ getTeamInfo(leagueStore.playoffPicture.seeds[1]?.user?.display_name).aiModel }}
+                      div(class="text-gray-400 text-xs") Awaiting Winner of 3 vs 6
+
+          //- Column 3: In the Hunt
+          div(class="lg:border-l lg:border-slate-800 lg:pl-8")
+            h3(class="text-white text-lg font-bold mb-4 flex items-center gap-2 uppercase tracking-wider text-gray-400")
+              span In the Hunt
+            
+            div(class="space-y-2")
+              div(
+                v-for="(team, index) in leagueStore.playoffPicture.hunt" 
+                :key="team.roster_id"
+                class="flex items-center gap-3 bg-slate-900/30 p-3 rounded border border-slate-800/50 hover:border-slate-700 transition-colors opacity-75 hover:opacity-100"
+              )
+                div(class="w-6 h-6 flex items-center justify-center font-bold text-gray-600 text-sm") {{ leagueStore.playoffPicture.seeds.length + index + 1 }}
+                
+                img(
+                  class="h-8 w-8 object-contain grayscale"
+                  :src="getTeamInfo(team.user?.display_name).logo"
+                  :class="getTeamInfo(team.user?.display_name).invertLogo ? 'invert brightness-200' : ''"
+                )
+                
+                div(class="flex-1")
+                  div(class="text-gray-300 font-bold text-sm") {{ getTeamInfo(team.user?.display_name).aiModel }}
+                  div(class="text-gray-500 text-xs") {{ team.currentRecord.wins }}-{{ team.currentRecord.losses }} | {{ team.currentPoints.toFixed(2) }} pts
 
     //- History
     section.mb-12(v-show="leagueData && allMatchups && Object.keys(allMatchups).length > 0")
@@ -786,6 +906,38 @@ export default {
       return isNFLGameTime() && viewingCurrentWeek
     }
 
+    // Watch for enriched players updates to recalculate win probabilities
+    // This ensures we update probabilities when injury data loads in the background
+    watch(() => leagueStore.enrichedPlayers, (newVal) => {
+      if (newVal && Object.keys(newVal).length > 0) {
+        console.log('Enriched players updated (watcher), recalculating win probabilities')
+        const jacobs = newVal['5850']
+        if (jacobs) {
+            console.log('Watcher Jacobs Data:', JSON.stringify(jacobs))
+        } else {
+            console.log('Watcher: Jacobs not found in enrichedPlayers')
+        }
+        calculateMatchupWinProbabilities()
+      }
+    }, { deep: true })
+
+    // Polling fallback to ensure we catch the data load
+    let pollInterval
+    onMounted(() => {
+      pollInterval = setInterval(() => {
+        if (leagueStore.enrichedPlayers && Object.keys(leagueStore.enrichedPlayers).length > 0) {
+          // console.log('Enriched players check (polling)')
+          // Only recalculate if we suspect data is stale or missing (simplified for now: just run it)
+          calculateMatchupWinProbabilities()
+          clearInterval(pollInterval)
+        }
+      }, 1000)
+    })
+
+    onUnmounted(() => {
+      if (pollInterval) clearInterval(pollInterval)
+    })
+
     const loadData = async () => {
       try {
         // App.vue has already initialized the store - data is ready
@@ -808,7 +960,8 @@ export default {
         // Process injuries and transaction data (on-demand, will only run once due to caching)
         await Promise.all([
           leagueStore.processInjuriesData(currentWeek),
-          leagueStore.processTransactionStats(currentWeek)
+          leagueStore.processTransactionStats(currentWeek),
+          leagueStore.loadEnrichedPlayers() // Ensure we have injury data for win prob
         ])
 
         // Data is ready, hide section loading states
@@ -868,7 +1021,7 @@ export default {
           // Run Monte Carlo simulation (3000 for performance)
           const result = calculateWinProbability(team1Players, team2Players, 3000)
 
-          newProbabilities[matchupId] = {
+          const probabilityData = {
             ...result,
             team1: {
               rosterId: team1Data.roster_id,
@@ -881,6 +1034,11 @@ export default {
               playerCount: team2Players.length
             }
           }
+
+          newProbabilities[matchupId] = probabilityData
+          
+          // Save to store for consistency across pages
+          leagueStore.setWinProbability(matchupId, probabilityData)
         } catch (error) {
           console.error(`Error calculating win probability for matchup ${matchup[0]?.matchup_id}:`, error)
         }
@@ -910,13 +1068,17 @@ export default {
           // Determine game status (simplified)
           const gameStatus = getSimplifiedGameStatus(currentPoints, projection)
 
+          // Get injury status
+          const injuryStatus = player?.injury_status_combined || player?.injury_status || null
+
           return {
             playerId,
             currentPoints,
             projection,
             variance,
             gameStatus: gameStatus.status,
-            percentComplete: gameStatus.percentComplete
+            percentComplete: gameStatus.percentComplete,
+            injuryStatus
           }
         })
     }
@@ -1025,16 +1187,38 @@ export default {
     }
 
     const goToMatchupTokens = (matchup) => {
+      console.log('🎟️ Tokens button clicked', matchup)
+      
+      if (!selectedWeek.value) {
+        console.error('❌ Missing selectedWeek for tokens navigation')
+        return
+      }
+
       if (matchup && matchup.length > 0 && matchup[0].matchup_id) {
-        trackButtonClick('matchup_tokens_click', {
-          week: selectedWeek.value,
-          matchup_id: matchup[0].matchup_id
-        })
-        // Use router.push with hash to scroll to tokens section
-        router.push({
-          path: `/matchup/${selectedWeek.value}/${matchup[0].matchup_id}`,
+        const matchupId = matchup[0].matchup_id
+        const routeData = {
+          name: 'MatchupDetail',
+          params: { week: selectedWeek.value, matchupId },
           hash: '#tokens'
+        }
+        
+        console.log('🚀 Navigating to tokens section', routeData)
+        
+        try {
+          trackButtonClick('matchup_tokens_click', {
+            week: selectedWeek.value,
+            matchup_id: matchupId
+          })
+        } catch (e) {
+          console.error('Analytics error:', e)
+        }
+        
+        // Use router.push with named route and hash
+        router.push(routeData).catch(err => {
+          console.error('❌ Router push error:', err)
         })
+      } else {
+        console.error('❌ Invalid matchup data for tokens navigation', matchup)
       }
     }
 
@@ -2511,9 +2695,11 @@ export default {
       modelTransactionsChartRef,
       injuriesChartRef,
       modelInjuriesChartRef,
+      modelInjuriesChartRef,
       refreshMatchups,
       isScoreAnimating,
-      isMatchupAnimating
+      isMatchupAnimating,
+      goToMatchupTokens
     }
   }
 }
