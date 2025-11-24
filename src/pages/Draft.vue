@@ -1204,7 +1204,11 @@ export default {
       setTimeout(() => {
         renderADPChart()
         renderDivergenceChart()
-        renderCharts()
+        // Only render dynamic charts if data is already available
+        // Otherwise, the watcher will handle it when data loads
+        if (draftPicks.value?.length > 0 && rosters.value?.length > 0) {
+          renderCharts()
+        }
       }, 500)
 
       // Add resize listener
@@ -1220,11 +1224,18 @@ export default {
     })
 
     // Watch for data changes to re-render charts
-    watch([draftPicks, rosters], () => {
-      if (draftPicks.value?.length > 0 && rosters.value?.length > 0) {
-        renderCharts()
-      }
-    }, { deep: true })
+    // Use a getter function to watch the array lengths explicitly
+    // This ensures the watcher triggers when data loads from empty -> populated
+    watch(
+      () => [leagueStore.draftPicks.length, leagueStore.rosters.length],
+      ([draftLen, rostersLen], [oldDraftLen, oldRostersLen]) => {
+        console.log('Draft data watcher triggered:', { draftLen, rostersLen, oldDraftLen, oldRostersLen })
+        if (draftLen > 0 && rostersLen > 0) {
+          renderCharts()
+        }
+      },
+      { flush: 'post' }
+    )
 
     // Watch for enrichedPlayers and playerStatsByWeek changes to update injury chart
     // This is needed because injury data depends on live player status from Fantasy Nerds
