@@ -66,6 +66,33 @@
       div(class="bg-black border-b border-x border-[var(--color-primary)] p-6")
         div(ref="divergenceChartRef" style="width: 100%; height: 450px")
 
+    //- Draft Efficacy Chart
+    section.mb-8
+      div(class="bg-[var(--color-surface)] px-6 py-4 border-t border-x border-[var(--color-primary)]")
+        h2(class="text-[var(--color-primary)] text-2xl font-bold uppercase tracking-widest flex items-center gap-3")
+          span(class="text-[var(--color-secondary)]") >
+          | Draft Efficacy (Total Points)
+      div(class="bg-black border-b border-x border-[var(--color-primary)] p-6")
+        div(ref="draftEfficacyChartRef" style="width: 100%; height: 450px;")
+
+    //- Draft Retention Chart
+    section.mb-8
+      div(class="bg-[var(--color-surface)] px-6 py-4 border-t border-x border-[var(--color-primary)]")
+        h2(class="text-[var(--color-primary)] text-2xl font-bold uppercase tracking-widest flex items-center gap-3")
+          span(class="text-[var(--color-secondary)]") >
+          | Draft Retention (Players Remaining)
+      div(class="bg-black border-b border-x border-[var(--color-primary)] p-6")
+        div(ref="draftRetentionChartRef" style="width: 100%; height: 450px;")
+
+    //- Drafted Players Lost To Injury Chart
+    section.mb-8
+      div(class="bg-[var(--color-surface)] px-6 py-4 border-t border-x border-[var(--color-primary)]")
+        h2(class="text-[var(--color-primary)] text-2xl font-bold uppercase tracking-widest flex items-center gap-3")
+          span(class="text-[var(--color-secondary)]") >
+          | Drafted Players Lost To Injury (Actual Points Lost)
+      div(class="bg-black border-b border-x border-[var(--color-primary)] p-6")
+        div(ref="draftInjuryChartRef" style="width: 100%; height: 450px;")
+
     //- Draft Board
     section(v-if="draftPicks && draftPicks.length > 0")
       div(class="bg-black border border-[var(--color-primary)] overflow-hidden")
@@ -179,10 +206,10 @@
 </template>
 
 <script>
-import { ref, onMounted, onUnmounted, computed, nextTick } from 'vue'
+import { ref, onMounted, onUnmounted, computed, nextTick, watch } from 'vue'
 import { useHead } from '@vueuse/head'
 import { useLeagueStore } from '../stores/league.js'
-import { getTeamInfoByAiModel } from '../teamMappings.js'
+import { getTeamInfoByAiModel, getTeamInfo } from '../teamMappings.js'
 import * as echarts from 'echarts'
 
 export default {
@@ -195,8 +222,14 @@ export default {
     const adpData = ref([])
     const divergenceChartRef = ref(null)
     const divergenceData = ref([])
+    const draftEfficacyChartRef = ref(null)
+    const draftRetentionChartRef = ref(null)
+    const draftInjuryChartRef = ref(null)
     let adpChart = null
     let divergenceChart = null
+    let draftEfficacyChart = null
+    let draftRetentionChart = null
+    let draftInjuryChart = null
 
     // Computed properties from store
     const draftPicks = computed(() => leagueStore.draftPicks)
@@ -623,6 +656,523 @@ export default {
       divergenceChart.setOption(option)
     }
 
+    const calculateDraftEfficacy = () => {
+      const efficacy = {}
+
+      if (!draftPicks.value || draftPicks.value.length === 0) return []
+
+      // First pass: Calculate total points and collect drafted players per manager
+      draftPicks.value.forEach(pick => {
+        const manager = pick.manager
+
+        // Use the manager name directly from the draft (e.g., "Claude", "GPT", "gpt-oss")
+        if (!efficacy[manager]) {
+            efficacy[manager] = {
+              points: 0,
+              draftedPlayers: new Set()
+            }
+        }
+
+        if (pick.sleeper_id) {
+            const stats = leagueStore.getPlayerSeasonStats(pick.sleeper_id)
+            efficacy[manager].points += stats?.totalPoints || 0
+            efficacy[manager].draftedPlayers.add(pick.sleeper_id)
+        }
+      })
+
+      // Second pass: Calculate players remaining
+      // Map draft manager names to rosters using teamMappings
+      const managerToRoster = {}
+      rosters.value.forEach(roster => {
+        if (roster.user?.display_name) {
+           const teamInfo = getTeamInfo(roster.user.display_name)
+           if (teamInfo && teamInfo.aiModel) {
+             // Need to handle the case sensitivity and variations
+             // "GPT-OSS" in teamMappings vs "gpt-oss" in draft
+             // Also handle "Hermes" which should map to "Kimi K2"
+             const aiModel = teamInfo.aiModel
+
+             // Find matching draft manager name (case-insensitive)
+             Object.keys(efficacy).forEach(draftManager => {
+               if (draftManager.toLowerCase() === aiModel.toLowerCase() ||
+                   (draftManager.toLowerCase() === 'gpt-oss' && aiModel === 'GPT-OSS') ||
+                   (draftManager === 'Hermes' && aiModel === 'Kimi K2')) {
+                 managerToRoster[draftManager] = roster
+               }
+             })
+           }
+        }
+      })
+
+      return Object.entries(efficacy)
+        .map(([manager, data]) => {
+          const roster = managerToRoster[manager]
+          let playersRemaining = 0
+
+          if (roster && roster.players) {
+            // Count how many drafted players are currently in the roster
+            data.draftedPlayers.forEach(playerId => {
+              if (roster.players.includes(playerId)) {
+                playersRemaining++
+              }
+            })
+          }
+
+          return {
+            manager,
+            points: data.points,
+            playersRemaining
+          }
+        })
+        .sort((a, b) => b.points - a.points) // Sort descending (Highest points first)
+    }
+
+    const calculateInjuryLosses = () => {
+      const injuries = {}
+
+      if (!draftPicks.value || draftPicks.value.length === 0) return []
+
+      const currentWeek = leagueStore.currentLeagueWeek || 12
+
+      // Calculate actual points lost from injured drafted players
+      // Uses live data and calculates weeks missed × average PPG
+      draftPicks.value.forEach(pick => {
+        const manager = pick.manager
+
+        if (!injuries[manager]) {
+          injuries[manager] = {
+            lostPoints: 0,
+            injuredPlayers: []
+          }
+        }
+
+        // Get CURRENT injury status from live enriched player data (not stale JSON)
+        const enrichedPlayer = leagueStore.enrichedPlayers[pick.sleeper_id]
+        const currentStatus = (enrichedPlayer?.injury_status_combined || '').toUpperCase()
+
+        // Only count SERIOUS injuries - not Questionable/Doubtful (those players usually play)
+        const isSeriouslyInjured = currentStatus.includes('IR') ||
+                                   currentStatus.includes('OUT') ||
+                                   currentStatus.includes('PUP') ||
+                                   currentStatus.includes('INJURED RESERVE')
+
+        if (!isSeriouslyInjured) return
+
+        // Calculate games with actual points scored (not just weeks on roster)
+        // This is more accurate for injury calculations than totalGames which includes benched weeks with 0 pts
+        let gamesWithPoints = 0
+        let actualPoints = 0
+
+        for (let week = 1; week <= currentWeek; week++) {
+          const weekStats = leagueStore.playerStatsByWeek[week]?.[pick.sleeper_id]
+          if (weekStats && weekStats.points > 0) {
+            gamesWithPoints++
+            actualPoints += weekStats.points
+          }
+        }
+
+        // Calculate weeks missed (current week - games with actual points)
+        const weeksMissed = Math.max(0, currentWeek - gamesWithPoints)
+
+        if (weeksMissed > 0) {
+          // Calculate average PPG when healthy (only counting games with points)
+          let avgPPG
+          if (gamesWithPoints > 0) {
+            avgPPG = actualPoints / gamesWithPoints
+          } else {
+            // Player hasn't scored at all - use preseason projection / 17 weeks
+            avgPPG = (pick.projected_points_2025 || 0) / 17
+          }
+
+          // Points lost = weeks missed × average PPG when healthy
+          const pointsLost = avgPPG * weeksMissed
+
+          injuries[manager].lostPoints += pointsLost
+          injuries[manager].injuredPlayers.push({
+            name: pick.player_name,
+            projectedPoints: Math.round(pointsLost * 10) / 10,
+            weeksMissed: weeksMissed,
+            avgPPG: Math.round(avgPPG * 10) / 10,
+            injuryStatus: currentStatus || 'Unknown'
+          })
+        }
+      })
+
+      return Object.entries(injuries)
+        .map(([manager, data]) => ({
+          manager,
+          lostPoints: data.lostPoints,
+          injuredPlayers: data.injuredPlayers
+        }))
+        .sort((a, b) => b.lostPoints - a.lostPoints) // Sort descending by lost points
+    }
+
+    const renderDraftPointsChart = async (data) => {
+      console.log('Rendering Points Chart', { 
+        ref: draftEfficacyChartRef.value, 
+        width: draftEfficacyChartRef.value?.offsetWidth,
+        height: draftEfficacyChartRef.value?.offsetHeight,
+        dataLength: data?.length 
+      })
+      if (!draftEfficacyChartRef.value) return
+
+      await nextTick()
+
+      if (!draftEfficacyChart) {
+        draftEfficacyChart = echarts.init(draftEfficacyChartRef.value)
+      }
+      // ... rest of function
+
+
+      const teams = data.map(d => {
+        const teamInfo = getTeamInfoByAiModel(d.manager)
+        return {
+          name: d.manager,
+          points: d.points,
+          logo: teamInfo.logo,
+          invertLogo: teamInfo.invertLogo || false
+        }
+      })
+
+      const option = {
+        backgroundColor: 'transparent',
+        animation: true,
+        animationDuration: 1000,
+        animationEasing: 'cubicOut',
+        title: {
+          text: 'Draft Efficacy (Total Points)',
+          left: 'center',
+          top: 0,
+          textStyle: {
+            color: '#00ff00',
+            fontSize: 16,
+            fontWeight: 'bold',
+            fontFamily: 'monospace'
+          }
+        },
+        tooltip: {
+          trigger: 'axis',
+          axisPointer: { type: 'shadow' },
+          backgroundColor: 'rgba(0, 0, 0, 0.9)',
+          borderColor: '#00ff00',
+          textStyle: { color: '#00ff00', fontFamily: 'monospace' },
+          formatter: (params) => {
+            const teamName = params[0].name
+            const val = params[0].value
+            return `<div style="font-weight: bold; margin-bottom: 4px; color: #00ff00;">${teamName}</div>
+                    <div style="color: #00f3ff;">Total Points: ${val}</div>`
+          }
+        },
+        grid: {
+          left: '120', // Space for labels
+          right: '40',
+          bottom: '20',
+          top: '40',
+          containLabel: false
+        },
+        xAxis: {
+          type: 'value',
+          position: 'top',
+          axisLabel: { color: '#00f3ff', fontFamily: 'monospace' },
+          axisLine: { lineStyle: { color: '#00f3ff' } },
+          splitLine: { lineStyle: { color: '#333333', type: 'dashed' } }
+        },
+        yAxis: {
+          type: 'category',
+          data: teams.map(t => t.name),
+          inverse: true,
+          axisLabel: {
+            color: '#00ff00',
+            fontSize: 11,
+            fontFamily: 'monospace'
+          },
+          axisLine: { lineStyle: { color: '#00ff00' } }
+        },
+        series: [
+          {
+            name: 'Total Points',
+            type: 'bar',
+            data: teams.map(t => ({
+              value: t.points.toFixed(1),
+              itemStyle: {
+                color: new echarts.graphic.LinearGradient(0, 0, 1, 0, [
+                  { offset: 0, color: '#00ff00' },
+                  { offset: 1, color: '#00f3ff' }
+                ])
+                // No borderRadius
+              }
+            })),
+            label: {
+              show: true,
+              position: 'insideRight',
+              color: '#000',
+              formatter: '{c}'
+            }
+          }
+        ]
+      }
+
+      draftEfficacyChart.setOption(option)
+    }
+
+    const renderDraftRetentionChart = async (data) => {
+      console.log('Rendering Retention Chart', { ref: draftRetentionChartRef.value, dataLength: data?.length })
+      if (!draftRetentionChartRef.value) return
+
+      await nextTick()
+
+      if (!draftRetentionChart) {
+        draftRetentionChart = echarts.init(draftRetentionChartRef.value)
+      }
+
+      // Sort by players remaining in descending order
+      const sortedData = [...data].sort((a, b) => b.playersRemaining - a.playersRemaining)
+
+      const teams = sortedData.map(d => {
+        const teamInfo = getTeamInfoByAiModel(d.manager)
+        return {
+          name: d.manager,
+          playersRemaining: d.playersRemaining,
+          logo: teamInfo.logo
+        }
+      })
+
+      const option = {
+        backgroundColor: 'transparent',
+        animation: true,
+        animationDuration: 1000,
+        animationEasing: 'cubicOut',
+        title: {
+          text: 'Retention (Players Left)',
+          left: 'center',
+          top: 0,
+          textStyle: {
+            color: '#a855f7',
+            fontSize: 16,
+            fontWeight: 'bold',
+            fontFamily: 'monospace'
+          }
+        },
+        tooltip: {
+          trigger: 'axis',
+          axisPointer: { type: 'shadow' },
+          backgroundColor: 'rgba(0, 0, 0, 0.9)',
+          borderColor: '#a855f7',
+          textStyle: { color: '#a855f7', fontFamily: 'monospace' },
+          formatter: (params) => {
+            const teamName = params[0].name
+            const val = params[0].value
+            return `<div style="font-weight: bold; margin-bottom: 4px; color: #a855f7;">${teamName}</div>
+                    <div style="color: #d8b4fe;">Players Remaining: ${val}</div>`
+          }
+        },
+        grid: {
+          left: '120',
+          right: '40',
+          bottom: '20',
+          top: '40',
+          containLabel: false
+        },
+        xAxis: {
+          type: 'value',
+          position: 'top',
+          axisLabel: { color: '#a855f7', fontFamily: 'monospace' },
+          axisLine: { lineStyle: { color: '#a855f7' } },
+          splitLine: { lineStyle: { color: '#333333', type: 'dashed' } },
+          minInterval: 1
+        },
+        yAxis: {
+          type: 'category',
+          data: teams.map(t => t.name),
+          inverse: true,
+          axisLabel: {
+            color: '#a855f7',
+            fontSize: 11,
+            fontFamily: 'monospace'
+          },
+          axisLine: { lineStyle: { color: '#a855f7' } }
+        },
+        series: [
+          {
+            name: 'Players Remaining',
+            type: 'bar',
+            data: teams.map(t => ({
+              value: t.playersRemaining,
+              itemStyle: {
+                color: '#a855f7'
+                // No borderRadius
+              }
+            })),
+            label: {
+              show: true,
+              position: 'insideRight',
+              color: '#fff',
+              formatter: '{c}'
+            }
+          }
+        ]
+      }
+
+      draftRetentionChart.setOption(option)
+    }
+
+    const renderInjuryChart = async (data) => {
+      console.log('Rendering Injury Chart', { ref: draftInjuryChartRef.value, dataLength: data?.length })
+      if (!draftInjuryChartRef.value) return
+
+      await nextTick()
+
+      if (!draftInjuryChart) {
+        draftInjuryChart = echarts.init(draftInjuryChartRef.value)
+      }
+
+      // Filter to only show teams with injury losses
+      const teamsWithLosses = data.filter(d => d.lostPoints > 0)
+
+      if (teamsWithLosses.length === 0) {
+        // Show "No injuries" message if no teams have injuries
+        const option = {
+          backgroundColor: 'transparent',
+          title: {
+            text: 'No injured players from the draft',
+            left: 'center',
+            top: 'center',
+            textStyle: {
+              color: '#666666',
+              fontSize: 18,
+              fontFamily: 'monospace'
+            }
+          }
+        }
+        draftInjuryChart.setOption(option)
+        return
+      }
+
+      const teams = teamsWithLosses.map(d => {
+        const teamInfo = getTeamInfoByAiModel(d.manager)
+        return {
+          name: d.manager,
+          lostPoints: d.lostPoints,
+          logo: teamInfo.logo
+        }
+      })
+
+      const option = {
+        backgroundColor: 'transparent',
+        animation: true,
+        animationDuration: 1000,
+        animationEasing: 'cubicOut',
+        title: {
+          text: 'Points Lost to Injury (Drafted Players)',
+          subtext: 'Weeks Missed × Avg PPG When Healthy',
+          left: 'center',
+          top: 0,
+          textStyle: {
+            color: '#ef4444',
+            fontSize: 16,
+            fontWeight: 'bold',
+            fontFamily: 'monospace'
+          },
+          subtextStyle: {
+            color: '#fca5a5',
+            fontSize: 11,
+            fontFamily: 'monospace'
+          }
+        },
+        tooltip: {
+          trigger: 'axis',
+          axisPointer: { type: 'shadow' },
+          backgroundColor: 'rgba(0, 0, 0, 0.9)',
+          borderColor: '#ef4444',
+          textStyle: { color: '#ef4444', fontFamily: 'monospace' },
+          formatter: (params) => {
+            const teamName = params[0].name
+            const val = params[0].value
+            // Find the team's injured players from our data
+            const teamData = teamsWithLosses.find(t => t.name === teamName)
+            let playerDetails = ''
+            if (teamData && data.find(d => d.manager === teamName)?.injuredPlayers) {
+              const injured = data.find(d => d.manager === teamName).injuredPlayers
+              playerDetails = injured.map(p =>
+                `<div style="color: #fca5a5; font-size: 11px; margin-top: 2px;">• ${p.name}: ${p.weeksMissed} wks × ${p.avgPPG} PPG = ${p.projectedPoints} pts</div>`
+              ).join('')
+            }
+            return `<div style="font-weight: bold; margin-bottom: 4px; color: #ef4444;">${teamName}</div>
+                    <div style="color: #fca5a5;">Points Lost: ${val}</div>
+                    ${playerDetails}`
+          }
+        },
+        grid: {
+          left: '60',
+          right: '40',
+          bottom: '40',
+          top: '60',
+          containLabel: false
+        },
+        xAxis: {
+          type: 'value',
+          position: 'top',
+          axisLabel: { color: '#ef4444', fontFamily: 'monospace' },
+          axisLine: { lineStyle: { color: '#ef4444' } },
+          splitLine: { lineStyle: { color: '#333333', type: 'dashed' } }
+        },
+        yAxis: {
+          type: 'category',
+          data: teams.map(t => t.name),
+          inverse: true,
+          axisLabel: {
+            color: '#ef4444',
+            fontSize: 11,
+            fontFamily: 'monospace'
+          },
+          axisLine: { lineStyle: { color: '#ef4444' } }
+        },
+        series: [
+          {
+            name: 'Points Lost',
+            type: 'bar',
+            data: teams.map(t => ({
+              value: t.lostPoints.toFixed(1),
+              itemStyle: {
+                color: new echarts.graphic.LinearGradient(0, 0, 1, 0, [
+                  { offset: 0, color: '#dc2626' },
+                  { offset: 1, color: '#f87171' }
+                ])
+              }
+            })),
+            label: {
+              show: true,
+              position: 'insideRight',
+              color: '#fff',
+              formatter: '{c}'
+            }
+          }
+        ]
+      }
+
+      draftInjuryChart.setOption(option)
+    }
+
+    const renderCharts = async () => {
+        console.log('renderCharts called', {
+          draftPicks: draftPicks.value?.length,
+          rosters: rosters.value?.length
+        })
+        const efficacyData = calculateDraftEfficacy()
+        console.log('Calculated Efficacy Data:', efficacyData)
+        if (efficacyData.length === 0) {
+            console.warn('No efficacy data calculated')
+            return
+        }
+
+        const injuryData = calculateInjuryLosses()
+        console.log('Calculated Injury Data:', injuryData)
+
+        await renderDraftPointsChart(efficacyData)
+        await renderDraftRetentionChart(efficacyData)
+        await renderInjuryChart(injuryData)
+    }
+
     // Handle window resize for responsive charts
     const handleResize = () => {
       if (adpChart) {
@@ -630,6 +1180,15 @@ export default {
       }
       if (divergenceChart) {
         divergenceChart.resize()
+      }
+      if (draftEfficacyChart) {
+        draftEfficacyChart.resize()
+      }
+      if (draftRetentionChart) {
+        draftRetentionChart.resize()
+      }
+      if (draftInjuryChart) {
+        draftInjuryChart.resize()
       }
     }
 
@@ -645,11 +1204,45 @@ export default {
       setTimeout(() => {
         renderADPChart()
         renderDivergenceChart()
+        renderCharts()
       }, 500)
 
       // Add resize listener
       window.addEventListener('resize', handleResize)
+      
+      // Expose for debugging
+      window.debugDraft = {
+        renderCharts,
+        draftPicks,
+        rosters,
+        leagueStore
+      }
     })
+
+    // Watch for data changes to re-render charts
+    watch([draftPicks, rosters], () => {
+      if (draftPicks.value?.length > 0 && rosters.value?.length > 0) {
+        renderCharts()
+      }
+    }, { deep: true })
+
+    // Watch for enrichedPlayers and playerStatsByWeek changes to update injury chart
+    // This is needed because injury data depends on live player status from Fantasy Nerds
+    // and games played data from playerStatsByWeek
+    watch(
+      () => [
+        Object.keys(leagueStore.enrichedPlayers).length,
+        Object.keys(leagueStore.playerStatsByWeek).length
+      ],
+      ([enrichedLen, statsLen], [oldEnrichedLen, oldStatsLen]) => {
+        if ((enrichedLen > 0 || statsLen > 0) && draftPicks.value?.length > 0) {
+          console.log('Player data updated, re-rendering charts', {
+            enrichedLen, statsLen, oldEnrichedLen, oldStatsLen
+          })
+          renderCharts()
+        }
+      }
+    )
 
     // Clean up on unmount
     onUnmounted(() => {
@@ -659,6 +1252,15 @@ export default {
       }
       if (divergenceChart) {
         divergenceChart.dispose()
+      }
+      if (draftEfficacyChart) {
+        draftEfficacyChart.dispose()
+      }
+      if (draftRetentionChart) {
+        draftRetentionChart.dispose()
+      }
+      if (draftInjuryChart) {
+        draftInjuryChart.dispose()
       }
     })
 
@@ -677,7 +1279,10 @@ export default {
       getPlayerTeam,
       draftedTeams,
       adpChartRef,
-      divergenceChartRef
+      divergenceChartRef,
+      draftEfficacyChartRef,
+      draftRetentionChartRef,
+      draftInjuryChartRef
     }
   }
 }

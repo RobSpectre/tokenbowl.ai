@@ -886,10 +886,13 @@ export const useLeagueStore = defineStore('league', {
           console.log('📦 Draft already loaded')
           return
         }
-        console.log('🌐 Loading draft...')
+        console.log('🌐 Loading draft from /data/draft_picks.json...')
         const response = await fetch('/data/draft_picks.json')
+        console.log('Draft fetch response:', response.status, response.statusText)
         if (!response.ok) throw new Error('Failed to load draft picks')
-        this.draftPicks = await response.json()
+        const data = await response.json()
+        console.log('Draft data loaded:', data?.length)
+        this.draftPicks = data
       } catch (error) {
         console.error('❌ Error loading draft:', error)
         this.errors.draft = error.message

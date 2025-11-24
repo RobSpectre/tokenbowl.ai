@@ -865,7 +865,8 @@ export default {
       return starters
         .filter(playerId => playerId) // Filter out null/undefined
         .map(playerId => {
-          const player = playersData?.[playerId] || enrichedPlayersData?.[playerId]
+          // Prioritize enriched players data as it contains the latest injury status
+          const player = enrichedPlayersData?.[playerId] || playersData?.[playerId]
           const currentPoints = playerPoints[playerId] || 0
 
           // Get historical stats from store for better variance calculation

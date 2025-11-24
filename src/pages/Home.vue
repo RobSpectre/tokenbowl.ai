@@ -908,35 +908,14 @@ export default {
 
     // Watch for enriched players updates to recalculate win probabilities
     // This ensures we update probabilities when injury data loads in the background
+    // Watch for enriched players updates to recalculate win probabilities
+    // This ensures we update probabilities when injury data loads in the background
     watch(() => leagueStore.enrichedPlayers, (newVal) => {
       if (newVal && Object.keys(newVal).length > 0) {
-        console.log('Enriched players updated (watcher), recalculating win probabilities')
-        const jacobs = newVal['5850']
-        if (jacobs) {
-            console.log('Watcher Jacobs Data:', JSON.stringify(jacobs))
-        } else {
-            console.log('Watcher: Jacobs not found in enrichedPlayers')
-        }
+        // console.log('Enriched players updated, recalculating win probabilities')
         calculateMatchupWinProbabilities()
       }
-    }, { deep: true })
-
-    // Polling fallback to ensure we catch the data load
-    let pollInterval
-    onMounted(() => {
-      pollInterval = setInterval(() => {
-        if (leagueStore.enrichedPlayers && Object.keys(leagueStore.enrichedPlayers).length > 0) {
-          // console.log('Enriched players check (polling)')
-          // Only recalculate if we suspect data is stale or missing (simplified for now: just run it)
-          calculateMatchupWinProbabilities()
-          clearInterval(pollInterval)
-        }
-      }, 1000)
-    })
-
-    onUnmounted(() => {
-      if (pollInterval) clearInterval(pollInterval)
-    })
+    }, { deep: true, immediate: true })
 
     const loadData = async () => {
       try {
@@ -1055,7 +1034,8 @@ export default {
       return starters
         .filter(playerId => playerId) // Filter out null/undefined
         .map(playerId => {
-          const player = playersData?.[playerId] || enrichedPlayersData?.[playerId]
+          // Prioritize enriched players data as it contains the latest injury status
+          const player = enrichedPlayersData?.[playerId] || playersData?.[playerId]
           const currentPoints = playerPoints[playerId] || 0
 
           // Get projection and variance
