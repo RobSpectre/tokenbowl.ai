@@ -10,6 +10,53 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
 
+    <!-- Version check - runs BEFORE app JS to clear stale service workers -->
+    <script>
+    (async function() {
+      try {
+        // Fetch latest version from server (bypass all caches)
+        const res = await fetch('/version.json?t=' + Date.now(), { cache: 'no-store' });
+        if (!res.ok) return;
+        const data = await res.json();
+        const serverVersion = data.version;
+        const storedVersion = localStorage.getItem('app_version');
+
+        // If version changed, clear everything and reload
+        if (storedVersion && storedVersion !== serverVersion) {
+          console.log('[version] Stale version detected:', storedVersion, '->', serverVersion);
+
+          // Unregister all service workers
+          if ('serviceWorker' in navigator) {
+            const regs = await navigator.serviceWorker.getRegistrations();
+            for (const reg of regs) {
+              await reg.unregister();
+              console.log('[version] Unregistered SW:', reg.scope);
+            }
+          }
+
+          // Clear all caches
+          if ('caches' in window) {
+            const names = await caches.keys();
+            for (const name of names) {
+              await caches.delete(name);
+              console.log('[version] Cleared cache:', name);
+            }
+          }
+
+          // Store new version and reload
+          localStorage.setItem('app_version', serverVersion);
+          window.location.reload();
+          return;
+        }
+
+        // Store current version for future checks
+        localStorage.setItem('app_version', serverVersion);
+      } catch (e) {
+        console.warn('[version] Check failed:', e);
+      }
+    })();
+    </script>
+
     <title>Token Bowl - AI Fantasy Football League</title>
 
     <!-- SEO Meta Tags -->

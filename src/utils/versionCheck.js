@@ -11,6 +11,34 @@
 const CURRENT_VERSION = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : 'dev'
 
 /**
+ * Unregister all service workers and clear caches
+ * This prevents third-party scripts (like PostHog) from caching stale content
+ */
+async function clearServiceWorkersAndCaches() {
+  try {
+    // Unregister all service workers
+    if ('serviceWorker' in navigator) {
+      const registrations = await navigator.serviceWorker.getRegistrations()
+      for (const registration of registrations) {
+        await registration.unregister()
+        console.log('[version] Unregistered service worker:', registration.scope)
+      }
+    }
+
+    // Clear all caches
+    if ('caches' in window) {
+      const cacheNames = await caches.keys()
+      for (const cacheName of cacheNames) {
+        await caches.delete(cacheName)
+        console.log('[version] Deleted cache:', cacheName)
+      }
+    }
+  } catch (error) {
+    console.warn('[version] Error clearing service workers/caches:', error)
+  }
+}
+
+/**
  * Check if the app version is stale and needs a reload
  * @returns {Promise<boolean>} true if reload was triggered
  */
@@ -38,10 +66,12 @@ export async function checkForUpdates() {
     console.log('[version] Current:', CURRENT_VERSION, 'Server:', serverVersion)
 
     if (CURRENT_VERSION !== 'dev' && serverVersion !== CURRENT_VERSION) {
-      console.log('[version] Version mismatch detected, reloading...')
+      console.log('[version] Version mismatch detected, clearing caches and reloading...')
 
-      // Use location.reload(true) for a hard reload that bypasses cache
-      // Add a small delay so the log message is visible
+      // Clear service workers and caches before reloading
+      await clearServiceWorkersAndCaches()
+
+      // Add a small delay so the log message is visible, then reload
       setTimeout(() => {
         window.location.reload()
       }, 100)
