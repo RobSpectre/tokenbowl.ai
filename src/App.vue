@@ -140,7 +140,6 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useLeagueStore } from './stores/league.js'
 import { trackButtonClick } from './analytics.js'
-import { checkForUpdates } from './utils/versionCheck.js'
 
 export default {
   name: 'App',
@@ -174,13 +173,7 @@ export default {
       trackButtonClick('navigation', { page })
     }
 
-    onMounted(async () => {
-      // Check if app version is stale - if so, this will reload the page
-      const needsReload = await checkForUpdates()
-      if (needsReload) {
-        return // Don't load data if we're about to reload
-      }
-
+    onMounted(() => {
       loadLeagueInfo()
     })
 
