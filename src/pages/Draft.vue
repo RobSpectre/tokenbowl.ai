@@ -263,10 +263,15 @@ export default {
 
     const loadDraftData = async () => {
       try {
-        loading.value = false
+        loading.value = true
         error.value = null
-        // App.vue has already initialized the store - data is ready
-        // Draft data is already in leagueStore.draftPicks
+        
+        // Explicitly load draft data to ensure it's available
+        // This handles cases where App.vue initialization might be delayed or incomplete
+        await leagueStore.loadDraft()
+        
+        // Draft data is now in leagueStore.draftPicks
+        loading.value = false
       } catch (err) {
         error.value = 'Failed to load draft data. Please try again later.'
         console.error('[Draft] Error loading data:', err)
@@ -657,74 +662,81 @@ export default {
     }
 
     const calculateDraftEfficacy = () => {
-      const efficacy = {}
+      try {
+        const efficacy = {}
 
-      if (!draftPicks.value || draftPicks.value.length === 0) return []
+        if (!draftPicks.value || draftPicks.value.length === 0) return []
 
-      // First pass: Calculate total points and collect drafted players per manager
-      draftPicks.value.forEach(pick => {
-        const manager = pick.manager
+        // First pass: Calculate total points and collect drafted players per manager
+        draftPicks.value.forEach(pick => {
+          const manager = pick.manager
 
-        // Use the manager name directly from the draft (e.g., "Claude", "GPT", "gpt-oss")
-        if (!efficacy[manager]) {
-            efficacy[manager] = {
-              points: 0,
-              draftedPlayers: new Set()
-            }
-        }
-
-        if (pick.sleeper_id) {
-            const stats = leagueStore.getPlayerSeasonStats(pick.sleeper_id)
-            efficacy[manager].points += stats?.totalPoints || 0
-            efficacy[manager].draftedPlayers.add(pick.sleeper_id)
-        }
-      })
-
-      // Second pass: Calculate players remaining
-      // Map draft manager names to rosters using teamMappings
-      const managerToRoster = {}
-      rosters.value.forEach(roster => {
-        if (roster.user?.display_name) {
-           const teamInfo = getTeamInfo(roster.user.display_name)
-           if (teamInfo && teamInfo.aiModel) {
-             // Need to handle the case sensitivity and variations
-             // "GPT-OSS" in teamMappings vs "gpt-oss" in draft
-             // Also handle "Hermes" which should map to "Kimi K2"
-             const aiModel = teamInfo.aiModel
-
-             // Find matching draft manager name (case-insensitive)
-             Object.keys(efficacy).forEach(draftManager => {
-               if (draftManager.toLowerCase() === aiModel.toLowerCase() ||
-                   (draftManager.toLowerCase() === 'gpt-oss' && aiModel === 'GPT-OSS') ||
-                   (draftManager === 'Hermes' && aiModel === 'Kimi K2')) {
-                 managerToRoster[draftManager] = roster
-               }
-             })
-           }
-        }
-      })
-
-      return Object.entries(efficacy)
-        .map(([manager, data]) => {
-          const roster = managerToRoster[manager]
-          let playersRemaining = 0
-
-          if (roster && roster.players) {
-            // Count how many drafted players are currently in the roster
-            data.draftedPlayers.forEach(playerId => {
-              if (roster.players.includes(playerId)) {
-                playersRemaining++
+          // Use the manager name directly from the draft (e.g., "Claude", "GPT", "gpt-oss")
+          if (!efficacy[manager]) {
+              efficacy[manager] = {
+                points: 0,
+                draftedPlayers: new Set()
               }
-            })
           }
 
-          return {
-            manager,
-            points: data.points,
-            playersRemaining
+          if (pick.sleeper_id) {
+              const stats = leagueStore.getPlayerSeasonStats(pick.sleeper_id)
+              efficacy[manager].points += stats?.totalPoints || 0
+              efficacy[manager].draftedPlayers.add(pick.sleeper_id)
           }
         })
-        .sort((a, b) => b.points - a.points) // Sort descending (Highest points first)
+
+        // Second pass: Calculate players remaining
+        // Map draft manager names to rosters using teamMappings
+        const managerToRoster = {}
+        if (rosters.value) {
+          rosters.value.forEach(roster => {
+            if (roster.user?.display_name) {
+               const teamInfo = getTeamInfo(roster.user.display_name)
+               if (teamInfo && teamInfo.aiModel) {
+                  // Need to handle the case sensitivity and variations
+                  // "GPT-OSS" in teamMappings vs "gpt-oss" in draft
+                  // Also handle "Hermes" which should map to "Kimi K2"
+                  const aiModel = teamInfo.aiModel
+
+                  // Find matching draft manager name (case-insensitive)
+                  Object.keys(efficacy).forEach(draftManager => {
+                    if (draftManager.toLowerCase() === aiModel.toLowerCase() ||
+                        (draftManager.toLowerCase() === 'gpt-oss' && aiModel === 'GPT-OSS') ||
+                        (draftManager === 'Hermes' && aiModel === 'Kimi K2')) {
+                      managerToRoster[draftManager] = roster
+                    }
+                  })
+                }
+            }
+          })
+        }
+
+        return Object.entries(efficacy)
+          .map(([manager, data]) => {
+            const roster = managerToRoster[manager]
+            let playersRemaining = 0
+
+            if (roster && roster.players) {
+              // Count how many drafted players are currently in the roster
+              data.draftedPlayers.forEach(playerId => {
+                if (roster.players.includes(playerId)) {
+                  playersRemaining++
+                }
+              })
+            }
+
+            return {
+              manager,
+              points: data.points,
+              playersRemaining
+            }
+          })
+          .sort((a, b) => b.points - a.points) // Sort descending (Highest points first)
+      } catch (err) {
+        console.error('Error calculating draft efficacy:', err)
+        return []
+      }
     }
 
     const calculateInjuryLosses = () => {
@@ -1234,7 +1246,7 @@ export default {
           renderCharts()
         }
       },
-      { flush: 'post' }
+      { flush: 'post', immediate: true }
     )
 
     // Watch for enrichedPlayers and playerStatsByWeek changes to update injury chart

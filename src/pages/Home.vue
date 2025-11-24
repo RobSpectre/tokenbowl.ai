@@ -1682,12 +1682,19 @@ export default {
     const historicalStandings = computed(() => {
       if (!leagueData.value || !selectedWeek.value) return []
 
-      // Determine which week to calculate standings through
-      // IMPORTANT: Only show standings through the previous week when viewing current week
-      // This ensures all rostered players have finished playing before updating records
-      // Only show current week standings once the league has officially advanced to the next week
       const currentWeek = leagueData.value.league?.settings?.leg || 1
+      
+      // If viewing the current week, use the official standings from the store (Sleeper API)
+      // This ensures records match the official app/site
+      if (selectedWeek.value === currentWeek) {
+        return leagueStore.currentStandings.map(roster => ({
+          ...roster,
+          historicalRecord: roster.currentRecord,
+          historicalPoints: roster.currentPoints
+        }))
+      }
 
+      // For past weeks, we still calculate manually
       // If viewing current week, show through previous week (all players have finished)
       // If viewing past weeks, show through that week
       const standingsWeek = selectedWeek.value < currentWeek
