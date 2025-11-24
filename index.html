@@ -10,52 +10,47 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
 
-    <!-- Version check & cache cleanup - runs BEFORE app JS -->
+    <!-- Version check - runs BEFORE app JS to clear stale service workers -->
     <script>
     (async function() {
-      // STEP 1: Check if we need to bust the cache with a redirect
-      // This works even if old HTML is cached because the redirect URL is new
-      const urlParams = new URLSearchParams(window.location.search);
-      const cacheKey = urlParams.get('_v');
-
       try {
+        // Fetch latest version from server (bypass all caches)
         const res = await fetch('/version.json?t=' + Date.now(), { cache: 'no-store' });
-        if (res.ok) {
-          const data = await res.json();
-          const serverVersion = data.version;
+        if (!res.ok) return;
+        const data = await res.json();
+        const serverVersion = data.version;
+        const storedVersion = localStorage.getItem('app_version');
 
-          // If URL doesn't have current version, redirect to add it
-          // This forces a fresh HTML fetch that bypasses service worker cache
-          if (cacheKey !== serverVersion) {
-            console.log('[version] Redirecting to bust cache:', serverVersion);
+        // If version changed, clear everything and reload
+        if (storedVersion && storedVersion !== serverVersion) {
+          console.log('[version] Stale version detected:', storedVersion, '->', serverVersion);
 
-            // First clear any service workers
-            if ('serviceWorker' in navigator) {
-              const regs = await navigator.serviceWorker.getRegistrations();
-              for (const reg of regs) {
-                await reg.unregister();
-                console.log('[version] Unregistered SW:', reg.scope);
-              }
+          // Unregister all service workers
+          if ('serviceWorker' in navigator) {
+            const regs = await navigator.serviceWorker.getRegistrations();
+            for (const reg of regs) {
+              await reg.unregister();
+              console.log('[version] Unregistered SW:', reg.scope);
             }
-
-            // Clear caches
-            if ('caches' in window) {
-              const names = await caches.keys();
-              for (const name of names) {
-                await caches.delete(name);
-              }
-            }
-
-            // Redirect with version in URL to bypass all caches
-            urlParams.set('_v', serverVersion);
-            const newUrl = window.location.pathname + '?' + urlParams.toString() + window.location.hash;
-            window.location.replace(newUrl);
-            return;
           }
 
-          // Version matches, store it
+          // Clear all caches
+          if ('caches' in window) {
+            const names = await caches.keys();
+            for (const name of names) {
+              await caches.delete(name);
+              console.log('[version] Cleared cache:', name);
+            }
+          }
+
+          // Store new version and reload
           localStorage.setItem('app_version', serverVersion);
+          window.location.reload();
+          return;
         }
+
+        // Store current version for future checks
+        localStorage.setItem('app_version', serverVersion);
       } catch (e) {
         console.warn('[version] Check failed:', e);
       }
