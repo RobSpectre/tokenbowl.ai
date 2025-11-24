@@ -32,24 +32,19 @@ describe('Standings Bug Fix - Use API Records Instead of Recalculating', () => {
       }
     ]
 
-    // Mock week 8 matchups (incomplete - only Thursday games played)
-    // This should NO LONGER affect the standings since we use API data
+    // Mock allMatchups with data that sums to the expected fpts totals
+    // getPointsThroughWeek calculates from matchup data, not roster.settings.fpts
     store.allMatchups = {
-      8: [
-        [
-          {
-            roster_id: 1,
-            points: 55.2,
-            starters_points: [0.0, 3.9, 9.9, 14.4, 0.0, 0.0, 8.4, 11.6, 0.0, 7.0] // Many zeros
-          },
-          {
-            roster_id: 2,
-            points: 18.62,
-            starters_points: [2.12, 7.9, 0.0, 3.6, 0.0, 0.0, 0.0, 0.0, 0.0, 5.0] // Many zeros
-          }
-        ]
-      ]
+      1: [[{ roster_id: 1, points: 136 }, { roster_id: 2, points: 141.625 }]],
+      2: [[{ roster_id: 1, points: 136 }, { roster_id: 2, points: 141.625 }]],
+      3: [[{ roster_id: 1, points: 136 }, { roster_id: 2, points: 141.625 }]],
+      4: [[{ roster_id: 1, points: 136 }, { roster_id: 2, points: 141.625 }]],
+      5: [[{ roster_id: 1, points: 136 }, { roster_id: 2, points: 141.625 }]],
+      6: [[{ roster_id: 1, points: 136 }, { roster_id: 2, points: 141.625 }]],
+      7: [[{ roster_id: 1, points: 136 }, { roster_id: 2, points: 141.625 }]],
+      8: [[{ roster_id: 1, points: 136 }, { roster_id: 2, points: 141.625 }]]
     }
+    // 136 * 8 = 1088, 141.625 * 8 = 1133
 
     // Get current standings
     const standings = store.currentStandings
@@ -105,6 +100,19 @@ describe('Standings Bug Fix - Use API Records Instead of Recalculating', () => {
       }
     ]
 
+    // Mock allMatchups - getPointsThroughWeek calculates from matchup data
+    // Points per week: roster1=125, roster2=137.5, roster3=118.75 (x8 weeks = 1000, 1100, 950)
+    store.allMatchups = {
+      1: [[{ roster_id: 1, points: 125 }, { roster_id: 2, points: 137.5 }], [{ roster_id: 3, points: 118.75 }]],
+      2: [[{ roster_id: 1, points: 125 }, { roster_id: 2, points: 137.5 }], [{ roster_id: 3, points: 118.75 }]],
+      3: [[{ roster_id: 1, points: 125 }, { roster_id: 2, points: 137.5 }], [{ roster_id: 3, points: 118.75 }]],
+      4: [[{ roster_id: 1, points: 125 }, { roster_id: 2, points: 137.5 }], [{ roster_id: 3, points: 118.75 }]],
+      5: [[{ roster_id: 1, points: 125 }, { roster_id: 2, points: 137.5 }], [{ roster_id: 3, points: 118.75 }]],
+      6: [[{ roster_id: 1, points: 125 }, { roster_id: 2, points: 137.5 }], [{ roster_id: 3, points: 118.75 }]],
+      7: [[{ roster_id: 1, points: 125 }, { roster_id: 2, points: 137.5 }], [{ roster_id: 3, points: 118.75 }]],
+      8: [[{ roster_id: 1, points: 125 }, { roster_id: 2, points: 137.5 }], [{ roster_id: 3, points: 118.75 }]]
+    }
+
     const standings = store.currentStandings
 
     // Should be sorted by wins first, then by points
@@ -138,6 +146,9 @@ describe('Standings Bug Fix - Use API Records Instead of Recalculating', () => {
       }
     ]
 
+    // No allMatchups data - getPointsThroughWeek will return 0 for all
+    store.allMatchups = {}
+
     const standings = store.currentStandings
 
     expect(standings).toBeDefined()
@@ -160,6 +171,6 @@ describe('Standings Bug Fix - Use API Records Instead of Recalculating', () => {
     expect(roster3.currentRecord.wins).toBe(3)
     expect(roster3.currentRecord.losses).toBe(5)
     expect(roster3.currentRecord.ties).toBe(0)  // Defaults to 0
-    expect(roster3.currentPoints).toBe(0)  // Defaults to 0
+    expect(roster3.currentPoints).toBe(0)  // No matchup data, so 0 points
   })
 })
