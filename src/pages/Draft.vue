@@ -744,14 +744,16 @@ export default {
     const calculateInjuryLosses = () => {
       const injuries = {}
 
-      if (!draftPicks.value || draftPicks.value.length === 0) return []
+      if (!Array.isArray(draftPicks.value) || draftPicks.value.length === 0) return []
 
       const currentWeek = leagueStore.currentLeagueWeek || 12
 
       // Calculate actual points lost from injured drafted players
-      // Uses live data and calculates weeks missed × average PPG
+      // Uses HISTORICAL injury data week-by-week to track all injuries throughout the season
+      // Not just players who are currently injured
       draftPicks.value.forEach(pick => {
         const manager = pick.manager
+        const playerName = pick.player_name?.toLowerCase() || ''
 
         if (!injuries[manager]) {
           injuries[manager] = {
@@ -760,36 +762,48 @@ export default {
           }
         }
 
-        // Get CURRENT injury status from live enriched player data (not stale JSON)
-        const enrichedPlayer = leagueStore.enrichedPlayers[pick.sleeper_id]
-        const currentStatus = (enrichedPlayer?.injury_status_combined || '').toUpperCase()
-
-        // Only count SERIOUS injuries - not Questionable/Doubtful (those players usually play)
-        const isSeriouslyInjured = currentStatus.includes('IR') ||
-                                   currentStatus.includes('OUT') ||
-                                   currentStatus.includes('PUP') ||
-                                   currentStatus.includes('INJURED RESERVE')
-
-        if (!isSeriouslyInjured) return
-
-        // Calculate games with actual points scored (not just weeks on roster)
-        // This is more accurate for injury calculations than totalGames which includes benched weeks with 0 pts
+        // Track weeks where player was injured and missed games
+        let injuredWeeks = 0
         let gamesWithPoints = 0
         let actualPoints = 0
+        const injuryStatuses = new Set()
 
         for (let week = 1; week <= currentWeek; week++) {
           const weekStats = leagueStore.playerStatsByWeek[week]?.[pick.sleeper_id]
-          if (weekStats && weekStats.points > 0) {
+          const weekInjuries = leagueStore.injuriesByWeek[week] || {}
+
+          // Check if player had points this week
+          const hadPoints = weekStats && weekStats.points > 0
+
+          if (hadPoints) {
             gamesWithPoints++
             actualPoints += weekStats.points
+          } else {
+            // Player had 0 points - check if they were injured this week
+            // Look up by player name (injury data is keyed by lowercase name)
+            const playerInjury = weekInjuries[playerName]
+
+            if (playerInjury) {
+              const gameStatus = (playerInjury.game_status || '').toUpperCase()
+
+              // Count serious injuries that would cause missing a game
+              const isSeriousInjury = gameStatus.includes('OUT') ||
+                                      gameStatus.includes('IR') ||
+                                      gameStatus.includes('PUP') ||
+                                      gameStatus.includes('DOUBTFUL') ||
+                                      gameStatus.includes('SUSPENDED')
+
+              if (isSeriousInjury) {
+                injuredWeeks++
+                injuryStatuses.add(gameStatus)
+              }
+            }
           }
         }
 
-        // Calculate weeks missed (current week - games with actual points)
-        const weeksMissed = Math.max(0, currentWeek - gamesWithPoints)
-
-        if (weeksMissed > 0) {
-          // Calculate average PPG when healthy (only counting games with points)
+        // Only add to injury losses if player actually missed games due to injury
+        if (injuredWeeks > 0) {
+          // Calculate average PPG when healthy
           let avgPPG
           if (gamesWithPoints > 0) {
             avgPPG = actualPoints / gamesWithPoints
@@ -798,16 +812,16 @@ export default {
             avgPPG = (pick.projected_points_2025 || 0) / 17
           }
 
-          // Points lost = weeks missed × average PPG when healthy
-          const pointsLost = avgPPG * weeksMissed
+          // Points lost = injured weeks × average PPG when healthy
+          const pointsLost = avgPPG * injuredWeeks
 
           injuries[manager].lostPoints += pointsLost
           injuries[manager].injuredPlayers.push({
             name: pick.player_name,
             projectedPoints: Math.round(pointsLost * 10) / 10,
-            weeksMissed: weeksMissed,
+            weeksMissed: injuredWeeks,
             avgPPG: Math.round(avgPPG * 10) / 10,
-            injuryStatus: currentStatus || 'Unknown'
+            injuryStatus: Array.from(injuryStatuses).join(', ') || 'Injured'
           })
         }
       })
@@ -1206,10 +1220,34 @@ export default {
       }
     }
 
+    // Load historical injury data for all weeks (needed for injury loss calculation)
+    const loadHistoricalInjuries = async () => {
+      const currentWeek = leagueStore.currentLeagueWeek || 12
+      console.log(`🩹 Loading historical injury data for weeks 1-${currentWeek}...`)
+
+      const injuryPromises = []
+      for (let week = 1; week <= currentWeek; week++) {
+        // Only load if we don't have data for this week
+        if (!leagueStore.injuriesByWeek[week]) {
+          injuryPromises.push(leagueStore.fetchInjuriesForWeek(week))
+        }
+      }
+
+      if (injuryPromises.length > 0) {
+        await Promise.all(injuryPromises)
+        console.log(`✅ Loaded injury data for ${injuryPromises.length} weeks`)
+      } else {
+        console.log('📦 Historical injury data already cached')
+      }
+    }
+
     onMounted(async () => {
       await loadDraftData()
       await loadADPData()
       await loadDivergenceData()
+
+      // Load historical injury data for accurate injury loss calculations
+      await loadHistoricalInjuries()
 
       // Wait for DOM to be ready, then render charts
       await nextTick()
@@ -1220,20 +1258,22 @@ export default {
         renderDivergenceChart()
         // Only render dynamic charts if data is already available
         // Otherwise, the watcher will handle it when data loads
-        if (draftPicks.value?.length > 0 && rosters.value?.length > 0) {
+        if (Array.isArray(draftPicks.value) && draftPicks.value.length > 0 &&
+            Array.isArray(rosters.value) && rosters.value.length > 0) {
           renderCharts()
         }
       }, 500)
 
       // Add resize listener
       window.addEventListener('resize', handleResize)
-      
+
       // Expose for debugging
       window.debugDraft = {
         renderCharts,
         draftPicks,
         rosters,
-        leagueStore
+        leagueStore,
+        calculateInjuryLosses  // Add for debugging
       }
     })
 
@@ -1256,19 +1296,23 @@ export default {
       { flush: 'post', immediate: true }
     )
 
-    // Watch for enrichedPlayers and playerStatsByWeek changes to update injury chart
-    // This is needed because injury data depends on live player status from Fantasy Nerds
-    // and games played data from playerStatsByWeek
+    // Watch for enrichedPlayers, playerStatsByWeek, and injuriesByWeek changes to update charts
+    // This is needed because injury data depends on:
+    // - Live player status from Fantasy Nerds (enrichedPlayers)
+    // - Games played data (playerStatsByWeek)
+    // - Historical injury data (injuriesByWeek) for accurate injury loss calculations
     watch(
       () => [
         Object.keys(leagueStore.enrichedPlayers || {}).length,
-        Object.keys(leagueStore.playerStatsByWeek || {}).length
+        Object.keys(leagueStore.playerStatsByWeek || {}).length,
+        Object.keys(leagueStore.injuriesByWeek || {}).length
       ],
-      ([enrichedLen, statsLen], oldValue) => {
-        const [oldEnrichedLen, oldStatsLen] = oldValue || [0, 0]
-        if ((enrichedLen > 0 || statsLen > 0) && Array.isArray(draftPicks.value) && draftPicks.value.length > 0) {
-          console.log('Player data updated, re-rendering charts', {
-            enrichedLen, statsLen, oldEnrichedLen, oldStatsLen
+      ([enrichedLen, statsLen, injuriesLen], oldValue) => {
+        const [oldEnrichedLen, oldStatsLen, oldInjuriesLen] = oldValue || [0, 0, 0]
+        if ((enrichedLen > 0 || statsLen > 0 || injuriesLen > 0) &&
+            Array.isArray(draftPicks.value) && draftPicks.value.length > 0) {
+          console.log('Player/injury data updated, re-rendering charts', {
+            enrichedLen, statsLen, injuriesLen, oldEnrichedLen, oldStatsLen, oldInjuriesLen
           })
           renderCharts()
         }
