@@ -7,7 +7,7 @@ import { getPlayers as getPlayersFromService, enrichPlayerData } from '../utils/
 
 // Cache version - increment when making breaking changes to data structure
 // Bumped to v17 to remove dynamic data (injuries/projections/transactions) from localStorage
-const CACHE_VERSION = 17 // v17: Remove dynamic data from persistence to fix stale injury badges
+const CACHE_VERSION = 18 // v18: Fix draft page for returning users with corrupted cache
 
 // Team code normalization mapping
 const normalizeTeamCode = (code) => {
@@ -634,6 +634,7 @@ export const useLeagueStore = defineStore('league', {
           weeksToLoad.push(week)
         }
 
+
         // Load weeks in batches of 6 to stay within browser connection limits
         const BATCH_SIZE = 6
         console.log(`⏳ Loading ${weeksToLoad.length} weeks in batches of ${BATCH_SIZE}...`)
@@ -706,6 +707,7 @@ export const useLeagueStore = defineStore('league', {
         const matchupGroups = {}
         const weekRosterData = {}
         const weekPlayerStats = {}
+
 
         for (const matchup of matchups) {
           // Enrich player data
@@ -882,7 +884,9 @@ export const useLeagueStore = defineStore('league', {
      */
     async loadDraft() {
       try {
-        if (this.draftPicks.length > 0) {
+        // CRITICAL: Check if draftPicks is a valid array with data
+        // This handles cases where cache might have corrupted data (null, undefined, or object)
+        if (Array.isArray(this.draftPicks) && this.draftPicks.length > 0) {
           console.log('📦 Draft already loaded')
           return
         }
@@ -892,10 +896,13 @@ export const useLeagueStore = defineStore('league', {
         if (!response.ok) throw new Error('Failed to load draft picks')
         const data = await response.json()
         console.log('Draft data loaded:', data?.length)
-        this.draftPicks = data
+        // Ensure we only set valid array data
+        this.draftPicks = Array.isArray(data) ? data : []
       } catch (error) {
         console.error('❌ Error loading draft:', error)
         this.errors.draft = error.message
+        // Reset to empty array on error to allow retry
+        this.draftPicks = []
       }
     },
 

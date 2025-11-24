@@ -16,6 +16,9 @@ import MatchupDetail from '../pages/MatchupDetail.vue'
 // Import App component
 import App from '../App.vue'
 
+// Import test helpers
+import { setupLeagueStore, createStandardFetchMock } from './helpers/storeTestHelper.js'
+
 describe('Template Compilation', () => {
   let router
   let pinia
@@ -216,10 +219,18 @@ describe('Template Compilation', () => {
   })
 
   describe('Template Rendering', () => {
-    it.skip('should render App component without crashing', () => {
+    it('should render App component without crashing', async () => {
+      // Use setupLeagueStore to pre-populate the store
+      // This ensures isDataReady returns true and the component renders properly
+      const setup = setupLeagueStore()
+      const populatedPinia = setup.pinia
+
+      // Mock fetch for any API calls during mount
+      global.fetch = vi.fn(createStandardFetchMock())
+
       const wrapper = mount(App, {
         global: {
-          plugins: [router, pinia],
+          plugins: [router, populatedPinia],
           stubs: {
             RouterLink: true,
             RouterView: true
@@ -229,6 +240,8 @@ describe('Template Compilation', () => {
 
       expect(wrapper.exists()).toBe(true)
       expect(wrapper.find('header').exists()).toBe(true)
+
+      wrapper.unmount()
     })
 
     it('should render page components without crashing', () => {

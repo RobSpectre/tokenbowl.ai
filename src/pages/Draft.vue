@@ -351,7 +351,7 @@ export default {
     }
 
     const draftedTeams = computed(() => {
-      if (!draftPicks.value || draftPicks.value.length === 0) return []
+      if (!Array.isArray(draftPicks.value) || draftPicks.value.length === 0) return []
 
       // Group draft picks by manager
       const teamMap = {}
@@ -382,8 +382,10 @@ export default {
         const response = await fetch('/data/picks_by_adp.json')
         const data = await response.json()
 
-        const filtered = data.filter(d => d.adp !== null)
-        adpData.value = filtered
+        if (Array.isArray(data)) {
+          const filtered = data.filter(d => d.adp !== null)
+          adpData.value = filtered
+        }
       } catch (err) {
         console.error('Error loading ADP data:', err)
       }
@@ -1238,9 +1240,14 @@ export default {
     // Watch for data changes to re-render charts
     // Use a getter function to watch the array lengths explicitly
     // This ensures the watcher triggers when data loads from empty -> populated
+    // CRITICAL: Use Array.isArray() to safely handle corrupted cache data
     watch(
-      () => [leagueStore.draftPicks.length, leagueStore.rosters.length],
-      ([draftLen, rostersLen], [oldDraftLen, oldRostersLen]) => {
+      () => [
+        Array.isArray(leagueStore.draftPicks) ? leagueStore.draftPicks.length : 0,
+        Array.isArray(leagueStore.rosters) ? leagueStore.rosters.length : 0
+      ],
+      ([draftLen, rostersLen], oldValue) => {
+        const [oldDraftLen, oldRostersLen] = oldValue || [0, 0]
         console.log('Draft data watcher triggered:', { draftLen, rostersLen, oldDraftLen, oldRostersLen })
         if (draftLen > 0 && rostersLen > 0) {
           renderCharts()
@@ -1254,11 +1261,12 @@ export default {
     // and games played data from playerStatsByWeek
     watch(
       () => [
-        Object.keys(leagueStore.enrichedPlayers).length,
-        Object.keys(leagueStore.playerStatsByWeek).length
+        Object.keys(leagueStore.enrichedPlayers || {}).length,
+        Object.keys(leagueStore.playerStatsByWeek || {}).length
       ],
-      ([enrichedLen, statsLen], [oldEnrichedLen, oldStatsLen]) => {
-        if ((enrichedLen > 0 || statsLen > 0) && draftPicks.value?.length > 0) {
+      ([enrichedLen, statsLen], oldValue) => {
+        const [oldEnrichedLen, oldStatsLen] = oldValue || [0, 0]
+        if ((enrichedLen > 0 || statsLen > 0) && Array.isArray(draftPicks.value) && draftPicks.value.length > 0) {
           console.log('Player data updated, re-rendering charts', {
             enrichedLen, statsLen, oldEnrichedLen, oldStatsLen
           })
