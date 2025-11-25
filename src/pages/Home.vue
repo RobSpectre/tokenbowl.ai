@@ -816,7 +816,9 @@ export default {
 
     const router = useRouter()
     const leagueStore = useLeagueStore()
-    const selectedWeek = ref(null)
+    // Initialize selectedWeek from store (which may be hydrated from cache) or default to 7
+    // This prevents the template from rendering with null and showing empty content
+    const selectedWeek = ref(leagueStore.currentWeek || 7)
     const standingsChartRef = ref(null)
     const pointsChartRef = ref(null)
     const transactionsChartRef = ref(null)
@@ -908,14 +910,14 @@ export default {
 
     // Watch for enriched players updates to recalculate win probabilities
     // This ensures we update probabilities when injury data loads in the background
-    // Watch for enriched players updates to recalculate win probabilities
-    // This ensures we update probabilities when injury data loads in the background
+    // Note: NOT using immediate:true because calculateMatchupWinProbabilities is defined later
+    // and loadData() already calls it during mount
     watch(() => leagueStore.enrichedPlayers, (newVal) => {
       if (newVal && Object.keys(newVal).length > 0) {
         // console.log('Enriched players updated, recalculating win probabilities')
         calculateMatchupWinProbabilities()
       }
-    }, { deep: true, immediate: true })
+    }, { deep: true })
 
     const loadData = async () => {
       try {

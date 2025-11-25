@@ -8,6 +8,31 @@ let transactionRoundsCacheTimestamp = null
 let transactionRoundsPromise = null
 const TRANSACTION_CACHE_DURATION = 5 * 60 * 1000 // 5 minutes
 
+/**
+ * Helper to validate fetch response and provide meaningful errors
+ * @param {Response} response - Fetch response object
+ * @param {string} endpoint - Description of the endpoint for error messages
+ * @returns {Response} - The same response if ok
+ * @throws {Error} - Descriptive error if response is not ok
+ */
+async function validateResponse(response, endpoint) {
+  // Check explicitly for response.ok === false to handle test mocks that don't set ok
+  // Real fetch responses always have ok as a boolean
+  if (response.ok === false) {
+    // Try to get error text, but handle cases where .text() isn't available (test mocks)
+    let errorText = 'Unknown error'
+    try {
+      if (typeof response.text === 'function') {
+        errorText = await response.text()
+      }
+    } catch {
+      // Ignore errors getting text
+    }
+    throw new Error(`Sleeper API error (${response.status}) for ${endpoint}: ${errorText}`)
+  }
+  return response
+}
+
 // Export function to reset cache (useful for testing)
 export function resetTransactionCache() {
   transactionRoundsCache = null
@@ -18,24 +43,28 @@ export function resetTransactionCache() {
 export async function getLeague() {
   // Cache-busting v2 - timestamp query prevents CDN/browser caching stale data
   const response = await fetch(`${BASE_URL}/league/${LEAGUE_ID}?_t=${Date.now()}`)
+  await validateResponse(response, 'getLeague')
   return response.json()
 }
 
 export async function getLeagueUsers() {
   // Add cache-busting timestamp to ensure fresh data
   const response = await fetch(`${BASE_URL}/league/${LEAGUE_ID}/users?_t=${Date.now()}`)
+  await validateResponse(response, 'getLeagueUsers')
   return response.json()
 }
 
 export async function getRosters() {
   // Add cache-busting timestamp to ensure fresh data
   const response = await fetch(`${BASE_URL}/league/${LEAGUE_ID}/rosters?_t=${Date.now()}`)
+  await validateResponse(response, 'getRosters')
   return response.json()
 }
 
 export async function getMatchups(week) {
   // Add cache-busting timestamp to ensure fresh data
   const response = await fetch(`${BASE_URL}/league/${LEAGUE_ID}/matchups/${week}?_t=${Date.now()}`)
+  await validateResponse(response, `getMatchups(week=${week})`)
   return response.json()
 }
 
@@ -124,11 +153,13 @@ export async function getCurrentMatchups() {
 
 export async function getDrafts() {
   const response = await fetch(`${BASE_URL}/league/${LEAGUE_ID}/drafts`)
+  await validateResponse(response, 'getDrafts')
   return response.json()
 }
 
 export async function getDraftPicks(draftId) {
   const response = await fetch(`${BASE_URL}/draft/${draftId}/picks`)
+  await validateResponse(response, `getDraftPicks(draftId=${draftId})`)
   return response.json()
 }
 
@@ -140,6 +171,7 @@ export async function getPlayers(bustCache = false) {
   const response = await fetch(url, {
     cache: bustCache ? 'reload' : 'default'
   })
+  await validateResponse(response, 'getPlayers (local JSON)')
   return response.json()
 }
 
@@ -204,6 +236,7 @@ export async function getRelevantPlayers(bustCache = false) {
     } else {
       console.log('Fetching all players from Sleeper API...')
       const response = await fetch(`${BASE_URL}/players/nfl`)
+      await validateResponse(response, 'getAllPlayers (Sleeper NFL)')
       allPlayers = await response.json()
 
       // Cache the result

@@ -230,6 +230,7 @@ export default {
     let draftEfficacyChart = null
     let draftRetentionChart = null
     let draftInjuryChart = null
+    let adpChartCycleInterval = null // Track interval to prevent memory leak
 
     // Computed properties from store
     const draftPicks = computed(() => leagueStore.draftPicks)
@@ -523,8 +524,12 @@ export default {
       // Initial render
       updateChart()
 
-      // Cycle between views every 2.5 seconds
-      setInterval(() => {
+      // Cycle between views every 5 seconds
+      // Clear any existing interval before creating a new one (handles hot reload)
+      if (adpChartCycleInterval) {
+        clearInterval(adpChartCycleInterval)
+      }
+      adpChartCycleInterval = setInterval(() => {
         currentView = (currentView + 1) % 2
         updateChart()
       }, 5000)
@@ -1321,6 +1326,11 @@ export default {
 
     // Clean up on unmount
     onUnmounted(() => {
+      // Clear chart cycle interval to prevent memory leak
+      if (adpChartCycleInterval) {
+        clearInterval(adpChartCycleInterval)
+        adpChartCycleInterval = null
+      }
       window.removeEventListener('resize', handleResize)
       if (adpChart) {
         adpChart.dispose()
