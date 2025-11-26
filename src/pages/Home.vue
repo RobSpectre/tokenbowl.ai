@@ -2,6 +2,7 @@
 div(class="bg-[var(--color-background)]")
   //- Main Content - App.vue ensures data is ready before rendering this component
   main.container.mx-auto.px-4.py-6.max-w-7xl
+
     //- Week Selector (Fixed)
     div(class="fixed top-24 left-0 right-0 z-30 bg-[var(--color-background)] pb-4 pt-4 lg:pb-2 lg:pt-2 border-b border-[var(--color-primary)]")
       .container.mx-auto.px-4.max-w-7xl
@@ -562,8 +563,7 @@ div(class="bg-[var(--color-background)]")
           | Injury Volume by Model
 
       div(class="bg-black border-b border-x border-[var(--color-primary)] p-3 sm:p-6 relative")
-        div(ref="modelInjuriesChartRef" class="w-full h-[300px] sm:h-[400px]")
-
+        div(ref="modelInjuriesChartRef" class="w-full h-96")
     //- Transactions
     section.mb-12
       div(class="bg-[var(--color-surface)] border-t border-x border-[var(--color-primary)] px-4 sm:px-6 py-3 sm:py-4")
@@ -674,7 +674,7 @@ div(class="bg-[var(--color-background)]")
             //- Desktop Layout - Trade (two-way exchange)
             div(v-if="transaction.type === 'trade' && transaction.counterpartyInfo" class="hidden sm:block")
               //- Trade Header
-              .flex.items-center.justify-between.mb-4
+              .flex.items.center.justify-between.mb-4
                 .flex.items-center.gap-3
                   .text-purple-400.font-black.text-lg 🔄 Trade
                   .text-gray-400.text-sm with
@@ -816,15 +816,16 @@ export default {
 
     const router = useRouter()
     const leagueStore = useLeagueStore()
-    // Initialize selectedWeek from store (which may be hydrated from cache) or default to 7
-    // This prevents the template from rendering with null and showing empty content
-    const selectedWeek = ref(leagueStore.currentWeek || 7)
+    // Initialize selectedWeek from store (which may be hydrated from cache)
+    // If null, we wait for the store to initialize
+    const selectedWeek = ref(leagueStore.currentWeek)
     const standingsChartRef = ref(null)
     const pointsChartRef = ref(null)
     const transactionsChartRef = ref(null)
     const modelTransactionsChartRef = ref(null)
     const injuriesChartRef = ref(null)
     const modelInjuriesChartRef = ref(null)
+
     let standingsChart = null
     let pointsChart = null
     let transactionsChart = null
@@ -927,7 +928,22 @@ export default {
         // Get current week from league data or URL
         const weekParam = router.currentRoute.value.query.week
         const urlWeek = weekParam ? parseInt(weekParam) : null
-        const currentWeek = leagueStore.currentWeek || 7
+        
+        // If we don't have currentWeek yet, wait for it
+        if (!leagueStore.currentWeek) {
+          console.log('[Home] Waiting for leagueStore.currentWeek...')
+          const unwatch = watch(() => leagueStore.currentWeek, (newWeek) => {
+            if (newWeek) {
+              console.log('[Home] leagueStore.currentWeek populated:', newWeek)
+              unwatch()
+              // Recursive call to retry loading once we have data
+              loadData()
+            }
+          })
+          return
+        }
+
+        const currentWeek = leagueStore.currentWeek
 
         // Set selected week
         if (urlWeek && urlWeek >= 1 && urlWeek <= 18) {
@@ -936,12 +952,15 @@ export default {
           selectedWeek.value = currentWeek
         }
 
-        console.log('[Home] Selected week set to:', selectedWeek.value, 'currentWeek:', leagueStore.currentWeek)
+        console.log('[Home] Selected week set to:', selectedWeek.value, 'currentWeek:', currentWeek)
+
+        // Ensure the week data is loaded
+        await leagueStore.ensureWeekLoaded(selectedWeek.value)
 
         // Process injuries and transaction data (on-demand, will only run once due to caching)
         await Promise.all([
-          leagueStore.processInjuriesData(currentWeek),
-          leagueStore.processTransactionStats(currentWeek),
+          leagueStore.processInjuriesData(18),
+          leagueStore.processTransactionStats(18),
           leagueStore.loadEnrichedPlayers() // Ensure we have injury data for win prob
         ])
 
@@ -1465,53 +1484,61 @@ export default {
       }
     }, { deep: true })
 
+    const injuriesWidth = ref(0)
+    const modelInjuriesWidth = ref(0)
+    const debugInfo = ref(null)
+
     // Watch for week changes to reload transactions and check auto-refresh
     watch(selectedWeek, async (newWeek, oldWeek) => {
-      if (newWeek) {
-        console.log(`[Week Change] ${oldWeek} → ${newWeek}`)
+      // Fetch transactions for the new week
+      await leagueStore.fetchTransactionsForWeek(newWeek)
 
-        // Fetch transactions for the new week
-        await leagueStore.fetchTransactionsForWeek(newWeek)
+      // Calculate win probabilities for the new week
+      calculateMatchupWinProbabilities()
 
-        // Calculate win probabilities for the new week
-        calculateMatchupWinProbabilities()
+      // Re-evaluate auto-refresh when week changes
+      checkAutoRefreshStatus()
 
-        // Re-evaluate auto-refresh when week changes
-        checkAutoRefreshStatus()
-
-        // Update URL when week changes (skip initial load to avoid duplicate navigation)
-        if (oldWeek !== null) {
-          router.replace({ query: { week: newWeek } }).catch(() => {})
-        }
-
-        // Wait for Vue to update the DOM with new data
-        await nextTick()
-        await nextTick() // Extra tick for v-show to take effect
-
-        // Re-render all charts with new week data if refs exist
-        if (standingsChartRef.value && pointsChartRef.value) {
-          renderStandingsChart()
-          renderPointsChart()
-        }
-        if (transactionsChartRef.value && modelTransactionsChartRef.value) {
-          renderTransactionsChart()
-          renderModelTransactionsChart()
-        }
-        // Only render injury charts if containers have dimensions
-        if (injuriesChartRef.value && modelInjuriesChartRef.value) {
-          const injuriesWidth = injuriesChartRef.value.clientWidth
-          const modelInjuriesWidth = modelInjuriesChartRef.value.clientWidth
-          console.log(`[Week Change] Injury chart dimensions: ${injuriesWidth}x${modelInjuriesWidth}`)
-          if (injuriesWidth > 0 && modelInjuriesWidth > 0) {
-            console.log('[Week Change] Rendering injury charts')
-            renderInjuriesChart()
-            renderModelInjuriesChart()
-          } else {
-            console.log('[Week Change] Skipping injury charts - no dimensions yet')
-          }
+      // Update URL when week changes (skip initial load to avoid duplicate navigation)
+      // Update URL when week changes (skip initial load to avoid duplicate navigation)
+      if (oldWeek !== null || newWeek) {
+        if (newWeek === leagueStore.currentWeek) {
+          // If selected week is current week, remove the query param to keep URL clean
+          router.replace({ query: { ...router.currentRoute.value.query, week: undefined } }).catch(() => {})
+        } else {
+          // Otherwise update the URL with the selected week
+          router.replace({ query: { ...router.currentRoute.value.query, week: newWeek } }).catch(() => {})
         }
       }
-    })
+
+      // Wait for Vue to update the DOM with new data
+      await nextTick()
+      await nextTick() // Extra tick for v-show to take effect
+
+      // Re-render all charts with new week data if refs exist
+      if (standingsChartRef.value && pointsChartRef.value) {
+        renderStandingsChart()
+        renderPointsChart()
+      }
+
+      if (transactionsChartRef.value && modelTransactionsChartRef.value) {
+        renderTransactionsChart()
+        renderModelTransactionsChart()
+      }
+
+      if (injuriesChartRef.value && modelInjuriesChartRef.value) {
+        const injuriesWidthVal = injuriesChartRef.value.clientWidth
+        const modelInjuriesWidthVal = modelInjuriesChartRef.value.clientWidth
+        
+        if (injuriesWidthVal > 0 && modelInjuriesWidthVal > 0) {
+          console.log('[Week Change] Rendering injury charts')
+          renderInjuriesChart()
+          renderModelInjuriesChart()
+        } else {
+          console.log('[Week Change] Skipping injury charts - no dimensions yet')
+        }
+      }
+    }, { deep: true })
 
     // Watch for enrichedPlayers to become available - recalculate win probabilities
     // enrichedPlayers is not persisted to cache, so it loads asynchronously
@@ -1535,6 +1562,20 @@ export default {
         }
       }
     })
+
+
+
+    // Watch for store current week to update selected week on initial load
+    watch(() => leagueStore.currentWeek, (newCurrentWeek) => {
+      console.log(`[Home] leagueStore.currentWeek changed to: ${newCurrentWeek}`)
+      // Only update if the URL doesn't specify a week
+      if (newCurrentWeek && !router.currentRoute.value.query.week) {
+        if (selectedWeek.value !== newCurrentWeek) {
+          console.log(`[Home] Updating selected week to current week: ${newCurrentWeek}`)
+          selectedWeek.value = newCurrentWeek
+        }
+      }
+    }, { immediate: true })
 
     // Watch for matchups data to render History and Points charts
     watch(allMatchups, async (newData) => {
@@ -1942,7 +1983,7 @@ export default {
             },
             rich: teamPoints.reduce((acc, team) => {
               const teamKey = team.name.replace(/[^a-zA-Z0-9]/g, '_')
-              const logoUrl = team.logo.startsWith('http') ? team.logo : window.location.origin + team.logo
+              const logoUrl = (team.logo && team.logo.startsWith('http')) ? team.logo : window.location.origin + (team.logo || '')
               acc[`logo_${teamKey}`] = {
                 height: 24,
                 width: 24,
@@ -2564,6 +2605,16 @@ export default {
         ]
       }
 
+      // DEBUG: Expose data for inspection
+      debugInfo.value = {
+        rosters: leagueData.value.rosters.map(r => ({
+          user: r.user?.display_name,
+          aiModel: getTeamInfo(r.user?.display_name).aiModel
+        })),
+        teamSeasonInjuries,
+        sortedTeams: sortedTeamsWithInfo.map(t => t.aiModel)
+      }
+
       modelInjuriesChart.setOption(option, true) // Use notMerge: true to ensure chart fully updates
     }
 
@@ -2602,7 +2653,30 @@ export default {
       }, 250) // 250ms debounce delay
     }
 
-    onMounted(() => {
+    // ResizeObserver for robust chart rendering
+    const resizeObservers = []
+
+    const setupResizeObserver = (elementRef, renderCallback) => {
+      if (!elementRef.value) return
+
+      const observer = new ResizeObserver((entries) => {
+        for (const entry of entries) {
+          if (entry.contentRect.width > 0 && entry.contentRect.height > 0) {
+            // Element is visible and has dimensions, safe to render
+            // Debounce slightly to avoid thrashing
+            if (entry.target._renderTimeout) clearTimeout(entry.target._renderTimeout)
+            entry.target._renderTimeout = setTimeout(() => {
+              renderCallback()
+            }, 100)
+          }
+        }
+      })
+
+      observer.observe(elementRef.value)
+      resizeObservers.push(observer)
+    }
+
+    onMounted(async () => {
       loadData().then(() => {
         // Standings and points charts don't have watchers, so render them here
         // Transaction and injury charts are handled by watchers and loadData() cache rendering
@@ -2618,6 +2692,17 @@ export default {
 
       // Add resize listener
       window.addEventListener('resize', handleResize)
+
+      // Setup ResizeObservers for chart containers
+      // This ensures charts render as soon as their containers become visible/sized
+      // regardless of v-show timing
+      await nextTick()
+      setupResizeObserver(standingsChartRef, renderStandingsChart)
+      setupResizeObserver(pointsChartRef, renderPointsChart)
+      setupResizeObserver(transactionsChartRef, renderTransactionsChart)
+      setupResizeObserver(modelTransactionsChartRef, renderModelTransactionsChart)
+      setupResizeObserver(injuriesChartRef, renderInjuriesChart)
+      setupResizeObserver(modelInjuriesChartRef, renderModelInjuriesChart)
     })
 
     // Clean up on unmount
@@ -2627,6 +2712,10 @@ export default {
         clearInterval(autoRefreshCheckInterval.value)
       }
       window.removeEventListener('resize', handleResize)
+      
+      // Disconnect all resize observers
+      resizeObservers.forEach(observer => observer.disconnect())
+      
       if (standingsChart) {
         standingsChart.dispose()
       }

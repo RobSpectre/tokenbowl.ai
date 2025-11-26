@@ -39,15 +39,27 @@ div(class="container mx-auto px-4 py-6 max-w-7xl bg-[var(--color-background)]")
             span(class="text-[var(--color-secondary)]") :: {{ lastUpdated?.toLocaleTimeString() || 'Updating...' }}
 
         //- Positions Yet to Start
-        div(v-if="gameStatus !== 'Final' && getPositionsYetToStart().length > 0" class="bg-black px-4 sm:px-6 py-3 border-x border-[var(--color-primary)]")
-          .flex.items-center.justify-center.gap-2.flex-wrap.font-mono
-            span(class="text-[var(--color-secondary)] text-sm font-semibold uppercase") PENDING: {{ getPlayersYetToPlayCount() }} {{ getPlayersYetToPlayCount() === 1 ? 'PLAYER' : 'PLAYERS' }}
-            span(class="text-[var(--color-secondary)] text-sm font-semibold uppercase") ::
-            .flex.items-center.gap-2.flex-wrap
+        div(v-if="gameStatus !== 'Final' && (getTeamPlayersYetToPlayCount(0) > 0 || getTeamPlayersYetToPlayCount(1) > 0)" class="bg-black px-4 sm:px-6 py-3 border-x border-[var(--color-primary)]")
+          .grid.grid-cols-2.gap-4.font-mono
+            //- Team 1 Pending
+            .flex.items-center.justify-start.gap-2.flex-wrap
+              span(v-if="getTeamPlayersYetToPlayCount(0) > 0" class="text-[var(--color-secondary)] text-xs font-semibold uppercase") PENDING ({{ getTeamPlayersYetToPlayCount(0) }}):
+              span(v-else class="text-[var(--color-secondary)] text-xs font-semibold uppercase opacity-50") DONE
+              
               span(class="px-2 py-1 border text-xs font-bold border-[var(--color-secondary)] text-[var(--color-secondary)]"
-                v-for="position in getPositionsYetToStart()"
-                :key="position"
+                v-for="(position, idx) in getTeamPositionsYetToStart(0)"
+                :key="`t1-${idx}`"
               ) {{ position }}
+
+            //- Team 2 Pending
+            .flex.items-center.justify-end.gap-2.flex-wrap
+              span(class="px-2 py-1 border text-xs font-bold border-[var(--color-secondary)] text-[var(--color-secondary)]"
+                v-for="(position, idx) in getTeamPositionsYetToStart(1)"
+                :key="`t2-${idx}`"
+              ) {{ position }}
+              
+              span(v-if="getTeamPlayersYetToPlayCount(1) > 0" class="text-[var(--color-secondary)] text-xs font-semibold uppercase") :PENDING ({{ getTeamPlayersYetToPlayCount(1) }})
+              span(v-else class="text-[var(--color-secondary)] text-xs font-semibold uppercase opacity-50") DONE
 
       //- Score Summary with Animation
       div(class="bg-black border-b border-x border-[var(--color-primary)] p-4 sm:p-6")
@@ -723,6 +735,9 @@ export default {
         // App.vue has already initialized the store - data is ready
         week.value = parseInt(route.params.week)
         matchupId.value = parseInt(route.params.matchupId)
+
+        // Ensure the week data is loaded
+        await leagueStore.ensureWeekLoaded(week.value)
 
         // Get matchup data and draft data from store
         const matchupsData = leagueStore.getMatchupsForWeek(week.value)
@@ -1439,60 +1454,30 @@ export default {
       }
     }
 
-    // Get positions that have yet to start play for both teams
-    const getPositionsYetToStart = () => {
+    // Get positions that have yet to start play for a specific team
+    const getTeamPositionsYetToStart = (teamIndex) => {
       if (!matchup.value || !week.value) return []
 
-      const positions = new Set()
+      const positions = []
       const slots = getRosterSlots()
 
       slots.forEach(slot => {
-        // Check team 1 player
-        if (slot.team1Player && slot.team1Player !== '0' && slot.team1Player !== 0) {
-          const gameInfo = leagueStore.getPlayerGameInfo(slot.team1Player, week.value)
+        const playerId = teamIndex === 0 ? slot.team1Player : slot.team2Player
+        
+        if (playerId && playerId !== '0' && playerId !== 0) {
+          const gameInfo = leagueStore.getPlayerGameInfo(playerId, week.value)
           if (gameInfo && gameInfo.status === 'scheduled') {
-            positions.add(slot.name)
-          }
-        }
-
-        // Check team 2 player
-        if (slot.team2Player && slot.team2Player !== '0' && slot.team2Player !== 0) {
-          const gameInfo = leagueStore.getPlayerGameInfo(slot.team2Player, week.value)
-          if (gameInfo && gameInfo.status === 'scheduled') {
-            positions.add(slot.name)
+            positions.push(slot.name)
           }
         }
       })
 
-      return Array.from(positions)
+      return positions
     }
 
-    // Get count of players yet to play for both teams
-    const getPlayersYetToPlayCount = () => {
-      if (!matchup.value || !week.value) return 0
-
-      let count = 0
-      const slots = getRosterSlots()
-
-      slots.forEach(slot => {
-        // Check team 1 player
-        if (slot.team1Player && slot.team1Player !== '0' && slot.team1Player !== 0) {
-          const gameInfo = leagueStore.getPlayerGameInfo(slot.team1Player, week.value)
-          if (gameInfo && gameInfo.status === 'scheduled') {
-            count++
-          }
-        }
-
-        // Check team 2 player
-        if (slot.team2Player && slot.team2Player !== '0' && slot.team2Player !== 0) {
-          const gameInfo = leagueStore.getPlayerGameInfo(slot.team2Player, week.value)
-          if (gameInfo && gameInfo.status === 'scheduled') {
-            count++
-          }
-        }
-      })
-
-      return count
+    // Get count of players yet to play for a specific team
+    const getTeamPlayersYetToPlayCount = (teamIndex) => {
+      return getTeamPositionsYetToStart(teamIndex).length
     }
 
 
@@ -1547,8 +1532,9 @@ export default {
       getRosterSlots,
       getSlotColor,
       getPositionDifferential,
-      getPositionsYetToStart,
-      getPlayersYetToPlayCount,
+      getPositionDifferential,
+      getTeamPositionsYetToStart,
+      getTeamPlayersYetToPlayCount,
       markdownContents,
       isScoreAnimating,
       isPlayerScoreAnimating

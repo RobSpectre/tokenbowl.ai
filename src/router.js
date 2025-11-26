@@ -112,22 +112,19 @@ const router = createRouter({
   history: createWebHistory(),
   routes,
   scrollBehavior(to, from, savedPosition) {
-    // If there's a hash, wait for the page to render then scroll to that element
-    if (to.hash) {
-      return new Promise((resolve) => {
-        setTimeout(() => {
-          resolve({
-            el: to.hash,
-            behavior: 'smooth',
-            top: 0
-          })
-        }, 500)
-      })
-    }
     // If there's a saved position (browser back/forward), use it
     if (savedPosition) {
       return savedPosition
     }
+
+    // If there's a hash, scroll to it
+    if (to.hash) {
+      return {
+        el: to.hash,
+        behavior: 'smooth',
+      }
+    }
+
     // If only query params changed on the same path, preserve scroll position
     // EXCEPT for week param changes (handled by component with percentage-based scrolling)
     if (to.path === from.path && from.path) {
@@ -137,6 +134,7 @@ const router = createRouter({
       }
       return false // false means don't scroll
     }
+
     // Otherwise scroll to top
     return { top: 0 }
   }

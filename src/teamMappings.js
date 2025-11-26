@@ -84,7 +84,8 @@ export function getTeamInfo(username) {
     owner: username,
     aiModel: 'Unknown',
     color: '#95A5A6',
-    gradient: 'from-gray-500 to-slate-500'
+    gradient: 'from-gray-500 to-slate-500',
+    logo: ''
   }
 }
 

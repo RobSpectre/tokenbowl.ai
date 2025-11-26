@@ -76,11 +76,11 @@ export const useLeagueStore = defineStore('league', {
 
   getters: {
     // Single source of truth for whether data is ready
+    // NOW: Only checks if core league metadata and rosters are loaded
     isDataReady() {
       return this.league !== null &&
         this.rosters.length > 0 &&
-        this.currentWeek !== null &&
-        Object.keys(this.allMatchups).length > 0
+        this.currentWeek !== null
     },
 
     // Get current week from league settings
@@ -548,11 +548,14 @@ export const useLeagueStore = defineStore('league', {
      * Main initialization method - call this from components
      * Shows cached data immediately, then loads/refreshes in background
      */
+    /**
+     * Main initialization method - call this from components
+     * Shows cached data immediately, then loads/refreshes in background
+     */
     async initialize(forceRefresh = false) {
       console.log('[INIT] initialize() called, forceRefresh:', forceRefresh, 'cacheVersion:', this.cacheVersion, 'CACHE_VERSION:', CACHE_VERSION)
 
       // CRITICAL: Always reset runtime flags first to prevent deadlocks from persisted state
-      // This must be the FIRST thing we do before any other checks
       if (this.isInitializing || this.isRefreshing) {
         console.log('⚠️ Detected persisted runtime flags - resetting to prevent deadlock')
         this.isInitializing = false
@@ -577,11 +580,7 @@ export const useLeagueStore = defineStore('league', {
           this.loadNFLSchedule()
         }
 
-        // Check if we need to refresh (older than 5 minutes)
-        const REFRESH_INTERVAL = 5 * 60 * 1000 // 5 minutes
-        const needsRefresh = !this.lastFullLoad || (Date.now() - this.lastFullLoad > REFRESH_INTERVAL)
-
-        // Ensure enriched players are loaded (they might not be persisted or might be stale)
+        // Ensure enriched players are loaded
         if (Object.keys(this.enrichedPlayers).length === 0) {
           console.log('⚠️ Enriched players missing from cache, loading...')
           // We need injuries for the current week to enrich players
@@ -589,11 +588,6 @@ export const useLeagueStore = defineStore('league', {
             await this.fetchInjuriesForWeek(this.currentWeek)
           }
           await this.loadEnrichedPlayers()
-        }
-
-        if (needsRefresh) {
-          console.log('🔄 Background refresh triggered')
-          this.refreshCurrentWeek() // Non-blocking background refresh
         }
 
         return
@@ -620,46 +614,11 @@ export const useLeagueStore = defineStore('league', {
         this.players = players
         this.currentWeek = this.league?.settings?.leg || 1
 
-        // PHASE 2: Load all weeks in batches to avoid overwhelming browser connection limits
-        console.log('📊 Phase 2: Loading all 18 weeks in batches...')
-        console.log(`Current week: ${this.currentWeek}, Completed weeks: ${this.completedWeeks.join(', ')}`)
-
-        const weeksToLoad = []
-        for (let week = 1; week <= 18; week++) {
-          // Skip completed weeks that we already have
-          if (this.completedWeeks.includes(week) && this.allMatchups[week] && !forceRefresh) {
-            console.log(`📦 Skipping week ${week} - already completed and cached`)
-            continue
-          }
-          weeksToLoad.push(week)
-        }
-
-
-        // Load weeks in batches of 6 to stay within browser connection limits
-        const BATCH_SIZE = 6
-        console.log(`⏳ Loading ${weeksToLoad.length} weeks in batches of ${BATCH_SIZE}...`)
-
-        for (let i = 0; i < weeksToLoad.length; i += BATCH_SIZE) {
-          const batch = weeksToLoad.slice(i, i + BATCH_SIZE)
-          console.log(`📦 Loading batch: weeks ${batch.join(', ')}`)
-          const batchPromises = batch.map(week => this.loadWeekData(week))
-          await Promise.all(batchPromises)
-          console.log(`✅ Batch complete: weeks ${batch.join(', ')}`)
-        }
-
-        console.log(`✅ All ${weeksToLoad.length} weeks loaded`)
-
-        // Mark past weeks as completed
-        for (let week = 1; week < this.currentWeek; week++) {
-          if (!this.completedWeeks.includes(week)) {
-            this.completedWeeks.push(week)
-          }
-        }
-        console.log(`✅ Marked weeks 1-${this.currentWeek - 1} as completed`)
-        console.log(`📊 Total matchups loaded: ${Object.keys(this.allMatchups).length} weeks`)
+        // PHASE 2: Load ONLY current week initially
+        console.log(`📊 Phase 2: Loading current week ${this.currentWeek}...`)
+        await this.loadWeekData(this.currentWeek)
 
         // PHASE 3: Load supplementary data
-        // NFL Schedule needs to be loaded before badges can show bye weeks
         console.log('📊 Phase 3: Loading supplementary data...')
         await Promise.all([
           this.loadNFLSchedule(),
@@ -669,7 +628,7 @@ export const useLeagueStore = defineStore('league', {
           console.error('Error loading supplementary data:', err)
         })
 
-        // PHASE 4: Load fresh injury data for current week BEFORE enriching players
+        // PHASE 4: Load fresh injury data for current week
         console.log('📊 Phase 4: Loading fresh injury data...')
         await this.fetchInjuriesForWeek(this.currentWeek)
 
@@ -684,6 +643,52 @@ export const useLeagueStore = defineStore('league', {
         throw error
       } finally {
         this.isInitializing = false
+      }
+    },
+
+    /**
+     * Ensure a specific week is loaded
+     * Call this from pages that need specific week data
+     */
+    async ensureWeekLoaded(week) {
+      // If we already have data for this week, do nothing
+      if (this.allMatchups[week]) {
+        return true
+      }
+
+      // Ensure core data (rosters/users) is loaded first
+      // This prevents race conditions where matchups are loaded but can't be linked to rosters
+      if (this.rosters.length === 0) {
+        console.log('⏳ Core data missing in ensureWeekLoaded, checking status...')
+
+        if (!this.isInitializing && !this.isRefreshing) {
+          console.log('⚠️ Store not initializing, triggering initialization...')
+          // Trigger initialization but don't await the whole thing (it loads current week)
+          // We just need Phase 1 (core data) to complete
+          this.initialize()
+        }
+
+        // Wait for rosters to be populated
+        console.log('⏳ Waiting for rosters to load...')
+        let attempts = 0
+        while (this.rosters.length === 0 && attempts < 50) { // 5 second timeout
+          await new Promise(resolve => setTimeout(resolve, 100))
+          attempts++
+        }
+
+        if (this.rosters.length === 0) {
+          console.error('❌ Timed out waiting for rosters to load')
+          return false
+        }
+      }
+
+      console.log(`🔄 On-demand loading for week ${week}...`)
+      try {
+        await this.loadWeekData(week)
+        return true
+      } catch (error) {
+        console.error(`❌ Error ensuring week ${week} loaded:`, error)
+        return false
       }
     },
 
@@ -1129,7 +1134,8 @@ export const useLeagueStore = defineStore('league', {
      * Process injuries data (on-demand)
      */
     async processInjuriesData(maxWeek) {
-      if (Object.keys(this.processedInjuriesByTeam).length > 0) {
+      const targetWeek = Math.min(maxWeek, 18)
+      if (this.processedInjuriesByTeam[`week${targetWeek}`]) {
         return this.processedInjuriesByTeam
       }
 
@@ -1252,6 +1258,13 @@ export const useLeagueStore = defineStore('league', {
         console.error('❌ Error processing transaction stats:', error)
         return this.processedTransactionStats
       }
+    },
+
+    /**
+     * Set win probability for a matchup
+     */
+    setWinProbability(matchupId, probabilityData) {
+      this.winProbabilities[matchupId] = probabilityData
     },
 
     /**

@@ -1,14 +1,8 @@
 <template lang="pug">
 div(:class="isBroadcastPage ? '' : 'min-h-screen bg-[var(--color-background)] text-[var(--color-text)] font-mono'")
   //- Global Loading Screen - shown until Pinia has all data ready
-  div(v-if="!isDataReady && !isBroadcastPage" class="flex items-center justify-center min-h-screen")
-    .text-center
-      .inline-block.animate-spin.rounded-full.h-16.w-16.border-t-2.border-b-2.border-blue-500.mb-4
-      h2.text-2xl.font-bold.text-white.mb-2 Loading Token Bowl...
-      p.text-gray-400 Fetching league data... 
-
-  //- Main App Content - only shown when data is ready
-  div(v-else)
+  //- Main App Content
+  div
     //- Header (hidden on broadcast page)
     header(
       v-if="!isBroadcastPage"

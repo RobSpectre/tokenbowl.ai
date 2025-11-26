@@ -1225,24 +1225,27 @@ export default {
       }
     }
 
-    // Load historical injury data for all weeks (needed for injury loss calculation)
+    // Load historical injury data and player stats for all weeks (needed for injury loss calculation)
     const loadHistoricalInjuries = async () => {
       const currentWeek = leagueStore.currentLeagueWeek || 12
-      console.log(`🩹 Loading historical injury data for weeks 1-${currentWeek}...`)
+      console.log(`🩹 Loading historical injury data and player stats for weeks 1-${currentWeek}...`)
 
-      const injuryPromises = []
+      const promises = []
       for (let week = 1; week <= currentWeek; week++) {
-        // Only load if we don't have data for this week
+        // Load injury data if missing
         if (!leagueStore.injuriesByWeek[week]) {
-          injuryPromises.push(leagueStore.fetchInjuriesForWeek(week))
+          promises.push(leagueStore.fetchInjuriesForWeek(week))
         }
+        
+        // Ensure week data (matchups/player stats) is loaded for injury calculations
+        promises.push(leagueStore.ensureWeekLoaded(week))
       }
 
-      if (injuryPromises.length > 0) {
-        await Promise.all(injuryPromises)
-        console.log(`✅ Loaded injury data for ${injuryPromises.length} weeks`)
+      if (promises.length > 0) {
+        await Promise.all(promises)
+        console.log(`✅ Loaded historical data for ${promises.length} items`)
       } else {
-        console.log('📦 Historical injury data already cached')
+        console.log('📦 Historical data already cached')
       }
     }
 

@@ -44,12 +44,7 @@ describe('Template Compilation', () => {
     setActivePinia(pinia)
 
     // Mock fetch to prevent actual API calls
-    global.fetch = vi.fn(() =>
-      Promise.resolve({
-        ok: true,
-        json: () => Promise.resolve({})
-      })
-    )
+    global.fetch = vi.fn(createStandardFetchMock())
   })
 
   describe('App Component', () => {
