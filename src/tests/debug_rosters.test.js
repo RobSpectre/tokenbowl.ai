@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
 import { useLeagueStore } from '../stores/league'
-import { createStandardFetchMock } from './utils/testUtils'
+import { createStandardFetchMock } from './helpers/storeTestHelper'
 
 // Mock fetch
 global.fetch = vi.fn()
