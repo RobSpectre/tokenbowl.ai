@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { getLeagueData, getRelevantPlayers, getMatchups, getTransactions } from '../sleeperApi.js'
+import { getLeagueData, getRelevantPlayers, getMatchups, getTransactions, getLeague } from '../sleeperApi.js'
 import { getTeamInfo } from '../teamMappings.js'
 import { getLatestVideoAndShorts } from '../youtubeApi.js'
 import { getInjuries, getPlayerInjuryStatus, getInjuryIndicator, getWeeklyProjections, getNFLSchedule } from '../fantasyNerdsApi.js'
@@ -7,7 +7,8 @@ import { getPlayers as getPlayersFromService, enrichPlayerData } from '../utils/
 
 // Cache version - increment when making breaking changes to data structure
 // Bumped to v17 to remove dynamic data (injuries/projections/transactions) from localStorage
-const CACHE_VERSION = 18 // v18: Fix draft page for returning users with corrupted cache
+// Bumped to v19 to force refresh for week 13 update
+const CACHE_VERSION = 19 // v19: Force refresh for week 13 update
 
 // Team code normalization mapping
 const normalizeTeamCode = (code) => {
@@ -589,6 +590,16 @@ export const useLeagueStore = defineStore('league', {
           }
           await this.loadEnrichedPlayers()
         }
+
+        // BACKGROUND CHECK: Even if we have cache, check if the week has advanced
+        // This fixes the issue where the app gets stuck on an old week
+        getLeague().then(leagueData => {
+          const remoteWeek = leagueData.settings.leg || 1
+          if (remoteWeek !== this.currentWeek) {
+            console.log(`🔄 Week advanced from ${this.currentWeek} to ${remoteWeek}. Forcing refresh...`)
+            this.initialize(true)
+          }
+        }).catch(err => console.error('Background week check failed:', err))
 
         return
       }
