@@ -28,7 +28,7 @@ describe('League Store Week Advancement', () => {
         store.league = { settings: { leg: 12 } }
         store.currentWeek = 12
         store.rosters = [{ id: 1 }] // Dummy rosters to satisfy "cached data" check
-        store.cacheVersion = 19 // Match current version
+        store.cacheVersion = 20 // Match current version
 
         // 2. Mock API to return Week 13
         sleeperApi.getLeague.mockResolvedValue({

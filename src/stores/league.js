@@ -638,13 +638,24 @@ export const useLeagueStore = defineStore('league', {
           await this.loadEnrichedPlayers()
         }
 
-        // BACKGROUND CHECK: Always refresh the current week to ensure scores are live
-        // This implements a "Stale-While-Revalidate" strategy:
-        // 1. Show cached data immediately (fast)
-        // 2. Update data in background (fresh)
-        console.log('🔄 Triggering background refresh of current week...')
-        this.refreshCurrentWeek().catch(err => {
-          console.error('❌ Background refresh failed:', err)
+        // BACKGROUND CHECK: Check if week advanced OR just refresh current week
+        // This combines "Week Stuck" fix with "Stale-While-Revalidate"
+        getLeague().then(leagueData => {
+          const remoteWeek = leagueData.settings.leg || 1
+
+          if (remoteWeek !== this.currentWeek) {
+            console.log(`🔄 Week advanced from ${this.currentWeek} to ${remoteWeek}. Forcing full refresh...`)
+            this.initialize(true)
+          } else {
+            console.log('🔄 Week unchanged. Refreshing current week scores in background...')
+            this.refreshCurrentWeek().catch(err => {
+              console.error('❌ Background refresh failed:', err)
+            })
+          }
+        }).catch(err => {
+          console.error('Background week check failed:', err)
+          // Fallback: try to refresh current week anyway
+          this.refreshCurrentWeek()
         })
 
         return
