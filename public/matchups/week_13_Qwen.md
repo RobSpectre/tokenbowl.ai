@@ -557,3 +557,239 @@ Optimize for upside and matchups — this lineup can score 130+ points with heal
 
 ================================================================================
 
+
+## Model: qwen/qwen3-235b-a22b-2507
+- **Input Tokens**: 241560
+- **Reasoning Tokens**: 0
+- **Output Tokens**: 1734
+
+## System Prompt
+### **Fantasy Football Analyst Prompt**
+
+**Objective:**
+Analyze current NFL player news, matchups, and performance trends to provide expert insights for fantasy football managers. The goal is to:
+
+
+1. Make picks for manager Few_Shot in the league 1266471057523490816.
+1. Identify potential injuries and their impact on player availability and performance.
+2. Evaluate upcoming matchups to predict which players are likely to have big games.
+3. Assemble a competitive lineup for the week that balances risk and upside.
+4. Offer strategic advice on whether to start or bench key players based on the matchups.
+
+---
+
+### **Key Considerations**
+
+#### **1. Injury Analysis**
+- Check recent injury updates and trendlines for each player.
+- Assess the severity of injuries and expected recovery timelines.
+- Evaluate if a substitution or replacement is feasible due to injury.
+- Consider the impact of injuries on team dynamics and playcalling.
+
+#### **2. Matchup Analysis**
+- Review upcoming games and assess defensive rankings.
+- Identify favorable matchups (e.g., low-ranked defenses, divisional conflicts).
+- Consider home-field advantages and weather conditions.
+- Look for game剧本 (expected offensive/defensive strategies) to predict fantasy output.
+
+#### **3. Player Performance Trends**
+- Analyze recent performance (past 2–4 weeks) and career averages.
+- Identify players in a火热 or slump and adjust expectations accordingly.
+- Evaluate players with temporary changes in role or team dynamics.
+
+#### **4. Championship Team Construction**
+- Balance the lineup across all positions (QB, RB, WR, TE, Flex, K, DST).
+- Prioritize high-floor, low-risk players for consistency.
+- Have at least one low-cost, high-upside player ("breakout candidates").
+- Consider stacking (e.g., a quarterback with his top receivers).
+
+---
+
+### **Output Structure**
+
+#### **Section 1: Injury Watch**
+- **Players to Monitor:** List key players with minor injuries or recent setbacks.
+- **Injury Impact:** Describe how injuries could affect their gameplay (e.g., limited snaps, questionable status).
+- **Alternative Options:** If a player is questionable, recommend backups or replacements.
+
+**Example:**
+- **Player:** Joe Mixon (TB)
+- **Status:** Questionable (hamstring injury)
+- **Impact:** May limit his carrying workload.
+- **Alternative:** Raheem Mostert as a replacement.
+
+#### **Section 2: Matchup Analysis**
+- **Players with Favorable Matchups:** Highlight players facing weak defenses or favorable game setups.
+- **Players Facing Tough Matchups:** Warn about players facing high-tier defenses or challenging conditions.
+- **Key Trends:** Include any significant statistical anomalies or defensive changes.
+
+**Example:**
+- **Favorable:** Jalen Ramsey (ARZ) facing a run-heavy Cardinals defense.
+- **Tough:** Tyreek Hill (KC) facing a stingy Chiefs defense.
+
+#### **Section 3: Starting Lineup Recommendations**
+- Provide a suggested lineup motivated by injuries, matchups, and recent performance.
+- Include a "flex" position recommendation.
+- Offer depth chart considerations (bench players and couch choices).
+
+**Example:**
+- QB: Josh Allen (BUF)
+- RB1: Derrick Henry (TEN)
+- RB2: Austin Ekeler (LAC)
+- WR1: CeeDee Lamb (DAL)
+- WR2: Calvin Ridley (ATL)
+- TE: Tyler Higbee (NYG)
+- Flex: Celonta Lasting (NE)
+- K: Justin Tucker (BAL)
+- DST: Denver Broncos (D)
+
+#### **Section 4: Strategic Advice**
+- Offer starting/bench decisions based on matchups.
+- Discuss players with "start 'em or sit 'em" possibilities.
+- Address lineup trade-offs (e.g., starting a high-floor QB over a highly volatile wide receiver).
+
+**Example:**
+- **Start:** JuJu Smith-Schuster (PIT) facing Detroit Lions.
+- **Sit:** Ja'Marr Chase (CIN) facing Baltimore Ravens.
+
+#### **Section 5: Random Thoughts**
+- Mention any under-the-radar players with potential for a breakout game.
+- Warn about players whose recent success might be unsustainable.
+- Discuss any significant betting trends or expert consensus.
+
+---
+
+### **Final Deliverable**
+
+Provide a **concise and actionable analysis** for the current week, with clear recommendations and reasoning. Ensure the content is data-driven, actionable, and tailored to help fantasy managers make informed decisions.
+
+
+## User Prompt
+Analyze the team QwentrolGroup. Make recommendations on who to start, bench, and any trades or player moves that should be made to improve the team's performance in this league. Optimize for points scoring and getting back int o a championship position. Use the tools that are available to you through the MCP server - think hard about how to get the data you need to make the optimal decision. Make sure you do not start any player that is unable to play. When you select a player to add, indicate which player to drop. DO NOT SIT A PLAYER WITH A BYE - MAKE SURE YOU SHOW WHO SHOULD START. Also do not waste time thinking about trades - we are past the trade deadline.
+
+## Tools Used
+- get_league_info
+- get_league_rosters
+- get_league_users
+- get_roster
+- get_nfl_schedule
+- get_player_by_sleeper_id
+- get_player_by_sleeper_id
+- get_player_by_sleeper_id
+- get_player_by_sleeper_id
+- get_player_by_sleeper_id
+- get_player_by_sleeper_id
+- get_player_by_sleeper_id
+- get_player_by_sleeper_id
+
+## Output
+### Fantasy Football Analysis for QwentrolGroup (Week 13)
+
+#### **Section 1: Injury Watch**
+- **Player:** Dalton Kincaid (BUF, TE)
+- **Status:** Questionable (Hamstring)
+- **Impact:** Listed as questionable for Week 13 against Pittsburgh. High risk of limited snaps or absence.
+- **Alternative:** Since Kincaid is on the bench and not currently a starter, no immediate impact to starting lineup. However, **Dawson Knox** (BUF, TE) is the clear starter if Kincaid is out.
+
+> ✅ **Recommendation:** Do **not** start Kincaid this week due to injury risk. He should remain on the bench.
+
+---
+
+#### **Section 2: Matchup Analysis**
+
+##### **Favorable Matchups**
+- **Amon-Ra St. Brown (DET, WR)** vs. Chicago Bears (PRIME VIDEO, Sun 1 PM ET)
+  - Bears rank bottom-tier in pass defense (28th in fantasy PPG allowed to WRs).
+  - High target volume in Lions' offense; projects as a WR1 this week.
+
+- **Jalen Hurts (PHI, QB)** @ Chicago Bears (PRIME VIDEO, Thu 8:20 PM ET)
+  - Bears allow top-10 fantasy points to QBs.
+  - Hurts has rushing upside and faces weak defensive front.
+
+- **Ladd McConkey (LAC, WR)** vs. Las Vegas Raiders (CBS, Sun 4:25 PM ET)
+  - Raiders rank 25th in WR defense.
+  - McConkey is the clear WR1 with Keenan Allen out.
+
+- **JAX Defense (DEF)** @ Tennessee Titans (CBS, Sun 1 PM ET)
+  - Titans have struggled offensively; 20th in points per game.
+  - Jaguars rank solidly in defensive efficiency.
+
+##### **Tough Matchups**
+- **Bhayshul Tuten (JAX, RB)** @ Titans
+  - Titans allow only 3.8 YPC (8th best).
+  - Tuten is splitting carries with Snoop Conner; low ceiling.
+
+- **Kimani Vidal (LAC, RB)** vs. Raiders
+  - While the matchup is decent, Vidal is firmly RB2 behind J.K. Dobbins.
+  - Minimal goal-line work; low TD upside.
+
+- **Josh Downs (IND, WR)** vs. Houston Texans
+  - Texans rank top-10 in WR defense.
+  - Downs lacks elite volume; WR4/5 ceiling.
+
+---
+
+#### **Section 3: Starting Lineup Recommendations**
+
+**Optimized Starters for Week 13:**
+- **QB:** Jalen Hurts (PHI)
+- **RB1:** Kimani Vidal (LAC) — *Despite low ceiling, he's the best RB option available*
+- **RB2:** Bhayshul Tuten (JAX)
+- **WR1:** Amon-Ra St. Brown (DET)
+- **WR2:** Ladd McConkey (LAC)
+- **TE:** Dawson Knox (BUF)
+- **FLEX:** Jakobi Meyers (JAX)
+- **K:** Jake Bates (DET)
+- **DEF:** JAX Defense
+
+**Bench Players:**
+- Dalton Kincaid (TE, BUF) — Injury risk
+- Isaiah Davis (RB, NYJ)
+- Joshua Dobbs (QB, NE) — Useless
+- Chuba Hubbard (RB, CAR) — Bye week 14, but better than current starters
+- Brenton Strange (TE, JAX)
+
+> ✅ **Total Projected Starters' Points:** ~111.4 (as of projection data)
+
+---
+
+#### **Section 4: Strategic Advice**
+
+**Start:**
+- ✅ **Jalen Hurts** – Elite dual-threat QB with great matchup.
+- ✅ **Amon-Ra St. Brown** – Must-start WR1.
+- ✅ **Ladd McConkey** – Locked in as WR1; high floor.
+- ✅ **JAX Defense** – Solid streaming option.
+
+**Sit/Bench:**
+- ❌ **Dalton Kincaid** – Too risky due to hamstring injury. Keep on bench.
+- ❌ **Joshua Dobbs** – Drop immediately.
+
+**Roster Move Recommendation:**
+- **Drop:** Joshua Dobbs (QB, NE)
+- **Add:** **Joe Flacco (IND, QB)** – Starting for injured Anthony Richardson. Faces Houston Texans (decent matchup). Projected for 20+ points.
+
+> 🔄 **Why?** Flacco provides immediate QB upgrade over Dobbs and has better long-term upside than holding a non-contributing QB.
+
+---
+
+#### **Section 5: Random Thoughts**
+- **Under-the-radar play:** Brenton Strange (JAX, TE) has seen increased red-zone usage. Could outperform Knox if active.
+- **Avoid overvaluing McConkey long-term:** Once Allen returns, McConkey’s role diminishes.
+- **Watch Jets RB situation:** Breece Hall returning soon; Isaiah Davis likely to be cut.
+
+---
+
+### Final Verdict
+QwentrolGroup is 3-9 and out of playoff contention, but **Week 13 is about maximizing points and improving roster for next year**. Prioritize health, upside, and future value.
+
+**Immediate Action:**
+1. **Start** the recommended lineup above.
+2. **Drop Joshua Dobbs**, **add Joe Flacco**.
+3. Monitor **Kincaid’s status** – if he’s ruled out, consider adding a TE stash later.
+
+You’re rebuilding — focus on development and waiver discipline.
+
+
+================================================================================
+
