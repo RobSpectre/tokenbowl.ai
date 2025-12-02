@@ -10,7 +10,7 @@ div(class="bg-[var(--color-background)]")
           button(class="px-4 py-2 bg-[var(--color-surface)] hover:bg-[var(--color-primary)] hover:text-black border border-[var(--color-primary)] disabled:opacity-50 disabled:cursor-not-allowed text-[var(--color-primary)] font-bold transition-all duration-200"
             @click="handleWeekChange('prev')"
             :disabled="selectedWeek === 1"
-          ) < PREV
+          ) &lt; PREV
           div(class="relative")
             select(class="px-4 py-2 bg-[var(--color-surface)] text-[var(--color-primary)] font-bold text-xl border border-[var(--color-primary)] focus:outline-none focus:bg-[var(--color-primary)] focus:text-black transition-colors uppercase font-mono"
               v-model="selectedWeek"
@@ -920,7 +920,7 @@ export default {
       }
     }, { deep: true })
 
-    const loadData = async () => {
+    const loadData = async (isInitialLoad = false) => {
       try {
         // App.vue has already initialized the store - data is ready
         // Just set up the view state
@@ -937,89 +937,99 @@ export default {
               console.log('[Home] leagueStore.currentWeek populated:', newWeek)
               unwatch()
               // Recursive call to retry loading once we have data
-              loadData()
+              loadData(true)
             }
           })
           return
         }
 
-        const currentWeek = leagueStore.currentWeek
+        // Only determine the target week on initial load
+        // On manual navigation (isInitialLoad = false), we trust selectedWeek.value
+        if (isInitialLoad) {
+          const currentWeek = leagueStore.currentWeek
 
-        // Set selected week initially to current week
-        // We might adjust this if the current week has no points yet
-        let targetWeek = currentWeek
-        if (urlWeek && urlWeek >= 1 && urlWeek <= 18) {
-          targetWeek = urlWeek
-        }
+          // Set selected week initially to current week
+          // We might adjust this if the current week has no points yet
+          let targetWeek = currentWeek
+          if (urlWeek && urlWeek >= 1 && urlWeek <= 18) {
+            targetWeek = urlWeek
+          }
 
-        // Ensure the target week data is loaded
-        await leagueStore.ensureWeekLoaded(targetWeek)
+          // Ensure the target week data is loaded
+          await leagueStore.ensureWeekLoaded(targetWeek)
 
-        // Smart Week Selection:
-        // If we're on the default current week (no URL param), and it has 0 points (games haven't started),
-        // but the previous week DOES have points, show the previous week instead.
-        // This prevents showing a wall of zeros on Tuesday/Wednesday mornings.
-        if (!urlWeek && targetWeek > 1) {
-          const weekMatchups = allMatchups.value[targetWeek]
-          const hasPoints = weekMatchups?.some(m => 
-            (m[0]?.points > 0) || (m[1]?.points > 0)
-          )
-
-          if (!hasPoints) {
-            console.log(`[Home] Week ${targetWeek} has no points. Checking previous week...`)
-            // Check previous week
-            const prevWeek = targetWeek - 1
-            await leagueStore.ensureWeekLoaded(prevWeek)
-            
-            const prevMatchups = allMatchups.value[prevWeek]
-            const prevHasPoints = prevMatchups?.some(m => 
+          // Smart Week Selection:
+          // If we're on the default current week (no URL param), and it has 0 points (games haven't started),
+          // but the previous week DOES have points, show the previous week instead.
+          // This prevents showing a wall of zeros on Tuesday/Wednesday mornings.
+          if (!urlWeek && targetWeek > 1) {
+            const weekMatchups = allMatchups.value[targetWeek]
+            const hasPoints = weekMatchups?.some(m => 
               (m[0]?.points > 0) || (m[1]?.points > 0)
             )
 
-            if (prevHasPoints) {
-              console.log(`[Home] Defaulting to Week ${prevWeek} because Week ${targetWeek} hasn't started`)
-              targetWeek = prevWeek
+            if (!hasPoints) {
+              console.log(`[Home] Week ${targetWeek} has no points. Checking previous week...`)
+              // Check previous week
+              const prevWeek = targetWeek - 1
+              await leagueStore.ensureWeekLoaded(prevWeek)
+              
+              const prevMatchups = allMatchups.value[prevWeek]
+              const prevHasPoints = prevMatchups?.some(m => 
+                (m[0]?.points > 0) || (m[1]?.points > 0)
+              )
+
+              if (prevHasPoints) {
+                console.log(`[Home] Defaulting to Week ${prevWeek} because Week ${targetWeek} hasn't started`)
+                targetWeek = prevWeek
+              }
             }
           }
-        }
 
-        selectedWeek.value = targetWeek
-        console.log('[Home] Final selected week:', selectedWeek.value)
+          selectedWeek.value = targetWeek
+          console.log('[Home] Final selected week:', selectedWeek.value)
+        } else {
+          // Manual navigation: just ensure the selected week is loaded
+          console.time('ensureWeekLoaded')
+          await leagueStore.ensureWeekLoaded(selectedWeek.value)
+          console.timeEnd('ensureWeekLoaded')
+        }
 
         // Process injuries and transaction data (on-demand, will only run once due to caching)
         await Promise.all([
-          leagueStore.processInjuriesData(18),
-          leagueStore.processTransactionStats(18),
-          leagueStore.loadEnrichedPlayers() // Ensure we have injury data for win prob
+          leagueStore.fetchInjuriesForWeek(selectedWeek.value),
+          leagueStore.getTransactionsForWeek(selectedWeek.value)
         ])
 
         // Data is ready, hide section loading states
         loadingStandings.value = false
         loadingVideos.value = false
 
-        // Render charts
-        await nextTick()
-        renderStandingsChart()
-        renderPointsChart()
+        // Defer heavy chart rendering to unblock UI interactions
+        setTimeout(async () => {
+          // Render charts
+          renderStandingsChart()
+          renderPointsChart()
 
-        // Check if we have chart data
-        const hasTransactions = transactionStats.value && Object.keys(transactionStats.value.byWeek || {}).length > 0
-        if (hasTransactions) {
-          renderTransactionsChart()
-          renderModelTransactionsChart()
-        }
+          // Check if we have chart data
+          const hasTransactions = transactionStats.value && Object.keys(transactionStats.value.byWeek || {}).length > 0
+          if (hasTransactions) {
+            renderTransactionsChart()
+            renderModelTransactionsChart()
+          }
 
-        // Render injury charts if we have injury data
-        const hasInjuries = injuriesData.value && Object.keys(injuriesData.value).length > 0
-        if (hasInjuries) {
-          renderInjuriesChart()
-          renderModelInjuriesChart()
-        }
+          // Render injury charts if we have injury data
+          const hasInjuries = injuriesData.value && Object.keys(injuriesData.value).length > 0
+          if (hasInjuries) {
+            renderInjuriesChart()
+            renderModelInjuriesChart()
+          }
 
-        // Calculate win probabilities for matchups
-        calculateMatchupWinProbabilities()
+          // Calculate win probabilities for matchups
+          calculateMatchupWinProbabilities()
 
-        lastUpdated.value = new Date()
+          lastUpdated.value = new Date()
+        }, 10)
       } catch (err) {
         console.error('[Home] Error in loadData:', err)
         loadingStandings.value = false
@@ -1028,7 +1038,7 @@ export default {
     }
 
     onMounted(() => {
-      loadData()
+      loadData(true)
       
       // Check for auto-refresh every 10 seconds
       // We don't start it immediately to avoid race conditions with initial load
@@ -1090,7 +1100,6 @@ export default {
       await loadData()
     }, { immediate: false })
 
-    // Calculate win probabilities for all matchups in the selected week
     // Calculate win probabilities for all matchups in the selected week
     const calculateMatchupWinProbabilities = () => {
       console.time('calculateMatchupWinProbabilities')
