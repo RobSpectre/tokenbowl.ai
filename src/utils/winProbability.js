@@ -98,7 +98,7 @@ export function preparePlayerForSimulation(player) {
 
 /**
  * Calculate estimated game progress based on time
- * This is a simple time-based estimation when real game data isn't available
+ * Uses a continuous scale for smoother probability updates
  * @param {Date} gameStartTime - When the game started
  * @param {Date} currentTime - Current time
  * @returns {number} Estimated percentage complete (0-1)
@@ -106,84 +106,35 @@ export function preparePlayerForSimulation(player) {
 export function estimateGameProgress(gameStartTime, currentTime = new Date()) {
   const minutesSinceStart = (currentTime - gameStartTime) / 1000 / 60
 
-  // NFL games typically last ~3 hours for 60 minutes of game time
-  // Rough estimation by time slots
-  if (minutesSinceStart < 0) return 0  // Game hasn't started
-  if (minutesSinceStart < 60) return 0.25  // 1st quarter
-  if (minutesSinceStart < 120) return 0.50  // Halftime
-  if (minutesSinceStart < 180) return 0.75  // 3rd quarter
-  if (minutesSinceStart < 210) return 0.90  // Late 4th quarter
-  return 1.0  // Game is over
+  // NFL games typically last ~3 hours (180 mins)
+  // We map this to 0-100% progress
+
+  if (minutesSinceStart <= 0) return 0
+
+  // Game over after 3.5 hours (210 mins) to be safe
+  if (minutesSinceStart >= 210) return 1.0
+
+  // Linear interpolation for the duration of the game
+  // This avoids the "steps" of the previous implementation
+  return minutesSinceStart / 210
 }
 
 /**
- * Run a single Monte Carlo simulation
- * @param {Array<Object>} team1Players - Team 1 prepared players
- * @param {Array<Object>} team2Players - Team 2 prepared players
- * @returns {number} 1 if team1 wins, 0 if team2 wins
- */
-function simulateMatchup(team1Players, team2Players) {
-  const team1Final = team1Players.reduce((sum, player) => {
-    const randomPoints = player.remainingStdDev > 0
-      ? randomNormal(player.remainingProjection, player.remainingStdDev)
-      : player.remainingProjection
-    return sum + player.currentPoints + Math.max(0, randomPoints)
-  }, 0)
-
-  const team2Final = team2Players.reduce((sum, player) => {
-    const randomPoints = player.remainingStdDev > 0
-      ? randomNormal(player.remainingProjection, player.remainingStdDev)
-      : player.remainingProjection
-    return sum + player.currentPoints + Math.max(0, randomPoints)
-  }, 0)
-
-  return team1Final > team2Final ? 1 : 0
-}
-
-/**
- * Calculate win probability using Monte Carlo simulation
+ * Calculate win probability using Analytical Gaussian Approximation
+ * 
+ * This method assumes that the difference between two independent normal variables
+ * (Team A Score - Team B Score) is also normally distributed.
+ * 
+ * Mean(Diff) = Mean(A) - Mean(B)
+ * Variance(Diff) = Variance(A) + Variance(B)
+ * 
+ * We then calculate the Z-score for Diff > 0 and use the CDF.
+ * 
  * @param {Array<PlayerData>} team1Players - Team 1 players
  * @param {Array<PlayerData>} team2Players - Team 2 players
- * @param {number} numSimulations - Number of simulations to run (default: 5000)
  * @returns {Object} Win probability and confidence interval
  */
-export function calculateWinProbability(team1Players, team2Players, numSimulations = 5000) {
-  // Prepare all players for simulation
-  const team1Prepared = team1Players.map(preparePlayerForSimulation)
-  const team2Prepared = team2Players.map(preparePlayerForSimulation)
-
-  let team1Wins = 0
-
-  // Run simulations
-  for (let i = 0; i < numSimulations; i++) {
-    team1Wins += simulateMatchup(team1Prepared, team2Prepared)
-  }
-
-  const winProbability = team1Wins / numSimulations
-
-  // Calculate 95% confidence interval (binomial proportion)
-  const standardError = Math.sqrt((winProbability * (1 - winProbability)) / numSimulations)
-  const marginOfError = 1.96 * standardError
-
-  return {
-    team1WinProbability: winProbability,
-    team2WinProbability: 1 - winProbability,
-    confidenceInterval: {
-      lower: Math.max(0, winProbability - marginOfError),
-      upper: Math.min(1, winProbability + marginOfError)
-    },
-    simulations: numSimulations
-  }
-}
-
-/**
- * Calculate win probability using normal approximation (faster, less accurate)
- * Good for quick estimates or when computational resources are limited
- * @param {Array<PlayerData>} team1Players - Team 1 players
- * @param {Array<PlayerData>} team2Players - Team 2 players
- * @returns {number} Win probability for team 1 (0-1)
- */
-export function calculateWinProbabilityNormalApproximation(team1Players, team2Players) {
+export function calculateWinProbability(team1Players, team2Players) {
   const team1Prepared = team1Players.map(preparePlayerForSimulation)
   const team2Prepared = team2Players.map(preparePlayerForSimulation)
 
@@ -200,14 +151,28 @@ export function calculateWinProbabilityNormalApproximation(team1Players, team2Pl
   const expectedDifferential = (team1Current + team1Remaining) - (team2Current + team2Remaining)
   const combinedStdDev = Math.sqrt(team1Variance + team2Variance)
 
+  let winProbability;
+
   // Handle edge cases
   if (combinedStdDev === 0) {
-    return expectedDifferential > 0 ? 1 : (expectedDifferential < 0 ? 0 : 0.5)
+    winProbability = expectedDifferential > 0 ? 1 : (expectedDifferential < 0 ? 0 : 0.5)
+  } else {
+    // Calculate Z-score and probability using CDF
+    const z = expectedDifferential / combinedStdDev
+    winProbability = normalCDF(z)
   }
 
-  // Calculate Z-score and probability using CDF
-  const z = expectedDifferential / combinedStdDev
-  return normalCDF(z)
+  return {
+    team1WinProbability: winProbability,
+    team2WinProbability: 1 - winProbability,
+    // Confidence interval is not really applicable to the probability itself in the same way 
+    // as Monte Carlo sampling error, but we can return the projected score range
+    projectedScore: {
+      team1: team1Current + team1Remaining,
+      team2: team2Current + team2Remaining
+    },
+    method: 'analytical_gaussian'
+  }
 }
 
 /**

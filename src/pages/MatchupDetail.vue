@@ -80,7 +80,7 @@ div(class="container mx-auto px-4 py-6 max-w-7xl bg-[var(--color-background)]")
                 v-for="badge in getTeamBadges(matchup[0])"
                 :key="badge.type"
                 class="px-2 py-0.5 border text-xs font-bold font-mono"
-                :class="[badge.type === 'hot' ? 'border-red-500 text-red-500' : badge.type === 'cold' ? 'border-blue-500 text-blue-500' : 'border-[var(--color-secondary)] text-[var(--color-secondary)]']"
+                :class="getBadgeColorClass(badge.type)"
               ) {{ badge.label }}
             div(
               class="text-[var(--color-primary)] font-bold text-5xl mt-4 transition-all duration-300 font-mono"
@@ -111,7 +111,7 @@ div(class="container mx-auto px-4 py-6 max-w-7xl bg-[var(--color-background)]")
                 v-for="badge in getTeamBadges(matchup[1])"
                 :key="badge.type"
                 class="px-2 py-0.5 border text-xs font-bold font-mono"
-                :class="[badge.type === 'hot' ? 'border-red-500 text-red-500' : badge.type === 'cold' ? 'border-blue-500 text-blue-500' : 'border-[var(--color-secondary)] text-[var(--color-secondary)]']"
+                :class="getBadgeColorClass(badge.type)"
               ) {{ badge.label }}
 
         //- Mobile Layout
@@ -134,7 +134,7 @@ div(class="container mx-auto px-4 py-6 max-w-7xl bg-[var(--color-background)]")
                       v-for="badge in getTeamBadges(matchup[0])"
                       :key="badge.type"
                       class="px-1.5 py-0.5 border text-[10px] font-bold font-mono"
-                      :class="[badge.type === 'hot' ? 'border-red-500 text-red-500' : badge.type === 'cold' ? 'border-blue-500 text-blue-500' : 'border-[var(--color-secondary)] text-[var(--color-secondary)]']"
+                      :class="getBadgeColorClass(badge.type)"
                     ) {{ badge.label }}
               div(
                 class="text-[var(--color-primary)] font-bold text-2xl transition-all duration-300 font-mono"
@@ -161,7 +161,7 @@ div(class="container mx-auto px-4 py-6 max-w-7xl bg-[var(--color-background)]")
                       v-for="badge in getTeamBadges(matchup[1])"
                       :key="badge.type"
                       class="px-1.5 py-0.5 border text-[10px] font-bold font-mono"
-                      :class="[badge.type === 'hot' ? 'border-red-500 text-red-500' : badge.type === 'cold' ? 'border-blue-500 text-blue-500' : 'border-[var(--color-secondary)] text-[var(--color-secondary)]']"
+                      :class="getBadgeColorClass(badge.type)"
                     ) {{ badge.label }}
                 img(
                   class="h-14 w-14 object-contain"
@@ -525,10 +525,10 @@ div(class="container mx-auto px-4 py-6 max-w-7xl bg-[var(--color-background)]")
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useHead } from '@vueuse/head'
-import { useLeagueStore } from '../stores/league'
+import { useLeagueStore, normalizePlayerName } from '../stores/league'
 import { getTeamInfo } from '../teamMappings.js'
 // Removed: import { getPlayerInjuryStatus, getInjuryIndicator } from '../fantasyNerdsApi.js' - Now using enriched players from store
-import { getMultiplePlayerStats } from '../sleeperApi.js'
+
 import { marked } from 'marked'
 import 'github-markdown-css/github-markdown-dark.css'
 import WinProbabilityBar from '../components/WinProbabilityBar.vue'
@@ -643,8 +643,8 @@ export default {
       const day = now.getDay() // 0 = Sunday, 1 = Monday, etc.
       const hour = now.getHours()
 
-      // Thursday after 8PM EST through Monday
-      if (day === 4 && hour >= 20) return true // Thursday 8PM+
+      // Thursday after 12PM EST (for Thanksgiving) through Monday
+      if (day === 4 && hour >= 12) return true // Thursday 12PM+
       if (day === 5) return true // Friday all day
       if (day === 6) return true // Saturday all day
       if (day === 0) return true // Sunday all day
@@ -844,8 +844,8 @@ export default {
         const team1Players = convertTeamToPlayerData(team1Data, players.value, enrichedPlayers.value)
         const team2Players = convertTeamToPlayerData(team2Data, players.value, enrichedPlayers.value)
 
-        // Run Monte Carlo simulation (3000 for performance)
-        const result = calculateWinProbability(team1Players, team2Players, 3000)
+        // Run Analytical Gaussian Approximation
+        const result = calculateWinProbability(team1Players, team2Players)
 
         const probabilityData = {
           ...result,
@@ -1244,10 +1244,10 @@ export default {
       if (injuries.value && Object.keys(injuries.value).length > 0) {
         const player = players.value[playerId]
         if (player && player.full_name) {
-          const playerName = player.full_name.toLowerCase()
+          const playerName = normalizePlayerName(player.full_name)
 
           // Look for player in current week injuries
-          const injuryKey = Object.keys(injuries.value).find(k => k.toLowerCase() === playerName)
+          const injuryKey = Object.keys(injuries.value).find(k => normalizePlayerName(k) === playerName)
 
           if (injuryKey) {
             // Player IS in injury report - use current data
@@ -1396,6 +1396,22 @@ export default {
       return leagueStore.getTeamBadges(team.starters, week.value)
     }
 
+    const getBadgeColorClass = (type) => {
+      switch (type) {
+        case 'hot': return 'border-red-500 text-red-500'
+        case 'cold': return 'border-blue-500 text-blue-500'
+        case 'out':
+        case 'ir':
+        case 'empty':
+          return 'border-red-600 text-red-600'
+        case 'doubtful': return 'border-orange-500 text-orange-500'
+        case 'questionable': return 'border-yellow-500 text-yellow-500'
+        case 'bye': return 'border-gray-600 text-gray-600'
+        case 'suspended': return 'border-purple-600 text-purple-600'
+        default: return 'border-[var(--color-secondary)] text-[var(--color-secondary)]'
+      }
+    }
+
     // Map starters to specific roster slots with position-specific colors
     const getRosterSlots = () => {
       if (!matchup.value) return []
@@ -1532,7 +1548,7 @@ export default {
       getRosterSlots,
       getSlotColor,
       getPositionDifferential,
-      getPositionDifferential,
+      getBadgeColorClass,
       getTeamPositionsYetToStart,
       getTeamPlayersYetToPlayCount,
       markdownContents,

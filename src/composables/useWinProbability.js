@@ -17,7 +17,8 @@ export function useWinProbability(matchup, players, enrichedPlayers) {
       return null
     }
 
-    isCalculating.value = true
+    // No loading state needed for analytical method (it's instant)
+    isCalculating.value = false
 
     try {
       const [team1Data, team2Data] = matchup.value
@@ -26,8 +27,8 @@ export function useWinProbability(matchup, players, enrichedPlayers) {
       const team1Players = convertTeamToPlayerData(team1Data, players.value, enrichedPlayers.value)
       const team2Players = convertTeamToPlayerData(team2Data, players.value, enrichedPlayers.value)
 
-      // Run Monte Carlo simulation (3000 for performance)
-      const result = calculateWinProbability(team1Players, team2Players, 3000)
+      // Run Analytical Gaussian Approximation (instant)
+      const result = calculateWinProbability(team1Players, team2Players)
 
       winProbability.value = {
         ...result,
@@ -47,8 +48,6 @@ export function useWinProbability(matchup, players, enrichedPlayers) {
     } catch (error) {
       console.error('Error calculating win probability:', error)
       return null
-    } finally {
-      isCalculating.value = false
     }
   }
 
