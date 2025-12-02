@@ -8,7 +8,8 @@ import { getPlayers as getPlayersFromService, enrichPlayerData } from '../utils/
 // Cache version - increment when making breaking changes to data structure
 // Bumped to v17 to remove dynamic data (injuries/projections/transactions) from localStorage
 // Bumped to v19 to force refresh for week 13 update
-const CACHE_VERSION = 19 // v19: Force refresh for week 13 update
+// Bumped to v20 to fix stale Week 13 scores (0 points) for returning users
+const CACHE_VERSION = 20 // v20: Force refresh for week 13 score fix
 
 // Team code normalization mapping
 const normalizeTeamCode = (code) => {
@@ -17,6 +18,19 @@ const normalizeTeamCode = (code) => {
     'WSH': 'WAS'
   }
   return teamMappings[code] || code
+}
+
+// Helper to normalize player names for matching
+export const normalizePlayerName = (name) => {
+  if (!name) return ''
+  return name.toLowerCase()
+    .replace(/ jr\.?$/i, '')
+    .replace(/ sr\.?$/i, '')
+    .replace(/ ii$/i, '')
+    .replace(/ iii$/i, '')
+    .replace(/ iv$/i, '')
+    .replace(/[^a-z0-9\s]/g, '') // Remove punctuation
+    .trim()
 }
 
 export const useLeagueStore = defineStore('league', {
@@ -321,7 +335,16 @@ export const useLeagueStore = defineStore('league', {
 
         if (!game) return null
 
-        const gameDate = new Date(game.game_date)
+        // Fix timezone issue: API returns ET time without timezone
+        // If we parse it directly, it might be treated as UTC, shifting it 5 hours earlier
+        // This causes games to be marked as "Final" immediately at kickoff
+        let gameDateStr = game.game_date
+        if (gameDateStr && typeof gameDateStr === 'string' && !gameDateStr.includes('Z') && !gameDateStr.includes('+') && (gameDateStr.match(/-/g) || []).length < 3) {
+          // Append EST offset (-05:00)
+          // Note: This assumes standard time (Nov-Mar), which covers Thanksgiving
+          gameDateStr = gameDateStr.replace(' ', 'T') + '-05:00'
+        }
+        const gameDate = new Date(gameDateStr)
         const now = new Date()
         const isHome = game.home_team === normalizedTeam
         const opponent = isHome ? game.away_team : game.home_team
@@ -413,6 +436,11 @@ export const useLeagueStore = defineStore('league', {
       return state.latestVideo !== null
     },
 
+    // Get win probability for a matchup
+    getWinProbability: (state) => {
+      return (matchupId) => state.winProbabilities[matchupId] || null
+    },
+
     // Get team badges
     getTeamBadges: (state) => {
       return (starterIds, week = null, maxPositions = null) => {
@@ -467,7 +495,26 @@ export const useLeagueStore = defineStore('league', {
             let statusToCheck = null
             if (weekInjuryData && player.full_name) {
               const playerName = player.full_name || `${player.first_name || ''} ${player.last_name || ''}`.trim()
-              const weekInjury = getPlayerInjuryStatus(weekInjuryData, playerName)
+
+              // Try exact match first
+              let weekInjury = getPlayerInjuryStatus(weekInjuryData, playerName)
+
+              // If not found, try normalized match
+              if (!weekInjury) {
+                const normalizedName = normalizePlayerName(playerName)
+                // We need to iterate through injury map keys since they might not be normalized in the map
+                // But getPlayerInjuryStatus expects exact key match (lowercase)
+                // So we should probably normalize keys in getInjuries or iterate here.
+                // Iterating here is safer for now.
+                const injuryKeys = Object.keys(weekInjuryData)
+                for (const key of injuryKeys) {
+                  if (normalizePlayerName(key) === normalizedName) {
+                    weekInjury = weekInjuryData[key]
+                    break
+                  }
+                }
+              }
+
               statusToCheck = weekInjury?.game_status?.toUpperCase()
               // If we have current week injury data and player is NOT in it, they're healthy
               // Don't fall back to stale enrichedPlayer data
@@ -591,15 +638,14 @@ export const useLeagueStore = defineStore('league', {
           await this.loadEnrichedPlayers()
         }
 
-        // BACKGROUND CHECK: Even if we have cache, check if the week has advanced
-        // This fixes the issue where the app gets stuck on an old week
-        getLeague().then(leagueData => {
-          const remoteWeek = leagueData.settings.leg || 1
-          if (remoteWeek !== this.currentWeek) {
-            console.log(`🔄 Week advanced from ${this.currentWeek} to ${remoteWeek}. Forcing refresh...`)
-            this.initialize(true)
-          }
-        }).catch(err => console.error('Background week check failed:', err))
+        // BACKGROUND CHECK: Always refresh the current week to ensure scores are live
+        // This implements a "Stale-While-Revalidate" strategy:
+        // 1. Show cached data immediately (fast)
+        // 2. Update data in background (fresh)
+        console.log('🔄 Triggering background refresh of current week...')
+        this.refreshCurrentWeek().catch(err => {
+          console.error('❌ Background refresh failed:', err)
+        })
 
         return
       }
@@ -969,7 +1015,21 @@ export const useLeagueStore = defineStore('league', {
           try {
             const draftInfo = draftDataBySleeperId[playerId]
             const playerName = player.full_name || `${player.first_name || ''} ${player.last_name || ''}`.trim()
-            const injuryInfo = playerName ? getPlayerInjuryStatus(injuryData, playerName) : null
+
+            // Try exact match first
+            let injuryInfo = playerName ? getPlayerInjuryStatus(injuryData, playerName) : null
+
+            // If not found, try normalized match
+            if (!injuryInfo && playerName) {
+              const normalizedName = normalizePlayerName(playerName)
+              const injuryKeys = Object.keys(injuryData)
+              for (const key of injuryKeys) {
+                if (normalizePlayerName(key) === normalizedName) {
+                  injuryInfo = injuryData[key]
+                  break
+                }
+              }
+            }
 
             enriched[playerId] = {
               ...player,

@@ -255,11 +255,11 @@ div(class="bg-[var(--color-background)]")
                     span(class="text-white text-xs font-bold") {{ Math.abs((matchup[0].points || 0) - (matchup[1].points || 0)).toFixed(2) }}
 
               //- Win Probability (only for current week)
-              WinProbabilityBar(
-                v-if="matchupWinProbabilities[matchup[0].matchup_id] && selectedWeek === leagueStore.currentWeek"
-                :winProb="matchupWinProbabilities[matchup[0].matchup_id]"
-                :showDetails="false"
-              )
+              div(v-if="selectedWeek === leagueStore.currentWeek")
+                WinProbabilityBar(
+                  :winProb="matchupWinProbabilities[String(matchup[0].matchup_id)] || null"
+                  :showDetails="false"
+                )
 
               //- Universal Matchup Actions Footer
               div(class="mt-3 pt-3 border-t border-slate-700 flex justify-center bg-slate-900/30 -mx-4 -mb-4 lg:-mx-3 lg:-mb-3 py-2 relative z-20")
@@ -915,7 +915,7 @@ export default {
     // and loadData() already calls it during mount
     watch(() => leagueStore.enrichedPlayers, (newVal) => {
       if (newVal && Object.keys(newVal).length > 0) {
-        // console.log('Enriched players updated, recalculating win probabilities')
+        console.log('[Perf] Watcher: leagueStore.enrichedPlayers updated at', new Date().toISOString())
         calculateMatchupWinProbabilities()
       }
     }, { deep: true })
@@ -945,17 +945,46 @@ export default {
 
         const currentWeek = leagueStore.currentWeek
 
-        // Set selected week
+        // Set selected week initially to current week
+        // We might adjust this if the current week has no points yet
+        let targetWeek = currentWeek
         if (urlWeek && urlWeek >= 1 && urlWeek <= 18) {
-          selectedWeek.value = urlWeek
-        } else {
-          selectedWeek.value = currentWeek
+          targetWeek = urlWeek
         }
 
-        console.log('[Home] Selected week set to:', selectedWeek.value, 'currentWeek:', currentWeek)
+        // Ensure the target week data is loaded
+        await leagueStore.ensureWeekLoaded(targetWeek)
 
-        // Ensure the week data is loaded
-        await leagueStore.ensureWeekLoaded(selectedWeek.value)
+        // Smart Week Selection:
+        // If we're on the default current week (no URL param), and it has 0 points (games haven't started),
+        // but the previous week DOES have points, show the previous week instead.
+        // This prevents showing a wall of zeros on Tuesday/Wednesday mornings.
+        if (!urlWeek && targetWeek > 1) {
+          const weekMatchups = allMatchups.value[targetWeek]
+          const hasPoints = weekMatchups?.some(m => 
+            (m[0]?.points > 0) || (m[1]?.points > 0)
+          )
+
+          if (!hasPoints) {
+            console.log(`[Home] Week ${targetWeek} has no points. Checking previous week...`)
+            // Check previous week
+            const prevWeek = targetWeek - 1
+            await leagueStore.ensureWeekLoaded(prevWeek)
+            
+            const prevMatchups = allMatchups.value[prevWeek]
+            const prevHasPoints = prevMatchups?.some(m => 
+              (m[0]?.points > 0) || (m[1]?.points > 0)
+            )
+
+            if (prevHasPoints) {
+              console.log(`[Home] Defaulting to Week ${prevWeek} because Week ${targetWeek} hasn't started`)
+              targetWeek = prevWeek
+            }
+          }
+        }
+
+        selectedWeek.value = targetWeek
+        console.log('[Home] Final selected week:', selectedWeek.value)
 
         // Process injuries and transaction data (on-demand, will only run once due to caching)
         await Promise.all([
@@ -998,10 +1027,83 @@ export default {
       }
     }
 
+    onMounted(() => {
+      loadData()
+      
+      // Check for auto-refresh every 10 seconds
+      // We don't start it immediately to avoid race conditions with initial load
+      autoRefreshCheckInterval.value = setInterval(checkAutoRefreshStatus, 10000)
+    })
+
+    onUnmounted(() => {
+      stopAutoRefresh()
+      if (autoRefreshCheckInterval.value) {
+        clearInterval(autoRefreshCheckInterval.value)
+      }
+      
+      // Dispose charts
+      if (standingsChart) {
+        standingsChart.dispose()
+        standingsChart = null
+      }
+      if (pointsChart) {
+        pointsChart.dispose()
+        pointsChart = null
+      }
+      if (transactionsChart) {
+        transactionsChart.dispose()
+        transactionsChart = null
+      }
+      if (modelTransactionsChart) {
+        modelTransactionsChart.dispose()
+        modelTransactionsChart = null
+      }
+      if (injuriesChart) {
+        injuriesChart.dispose()
+        injuriesChart = null
+      }
+      if (modelInjuriesChart) {
+        modelInjuriesChart.dispose()
+        modelInjuriesChart = null
+      }
+    })
+
+    // Watch for week changes to reload data
+    watch(selectedWeek, async (newWeek, oldWeek) => {
+      if (newWeek === oldWeek) return
+      
+      console.log(`[Home] Week changed from ${oldWeek} to ${newWeek}`)
+      
+      // Stop auto-refresh if we move away from current week
+      if (newWeek !== leagueStore.currentWeek) {
+        stopAutoRefresh()
+      } else {
+        // If we moved back to current week, check if we should auto-refresh
+        checkAutoRefreshStatus()
+      }
+      
+      // Reset loading states
+      loadingStandings.value = true
+      loadingVideos.value = true
+      
+      // Reload data for the new week
+      await loadData()
+    }, { immediate: false })
+
+    // Calculate win probabilities for all matchups in the selected week
     // Calculate win probabilities for all matchups in the selected week
     const calculateMatchupWinProbabilities = () => {
+      console.time('calculateMatchupWinProbabilities')
+      const startTime = performance.now()
+      console.log('[Perf] Starting win probability calculation at', new Date().toISOString())
+
       const weekMatchups = allMatchups.value[selectedWeek.value]
       if (!weekMatchups || !players.value) {
+        console.log('[Perf] Missing dependencies:', { 
+          hasMatchups: !!weekMatchups, 
+          hasPlayers: !!players.value 
+        })
+        console.timeEnd('calculateMatchupWinProbabilities')
         return
       }
 
@@ -1018,8 +1120,8 @@ export default {
           const team1Players = convertTeamToPlayerData(team1Data, players.value, enrichedPlayers.value)
           const team2Players = convertTeamToPlayerData(team2Data, players.value, enrichedPlayers.value)
 
-          // Run Monte Carlo simulation (3000 for performance)
-          const result = calculateWinProbability(team1Players, team2Players, 3000)
+          // Run Analytical Gaussian Approximation
+          const result = calculateWinProbability(team1Players, team2Players)
 
           const probabilityData = {
             ...result,
@@ -1045,6 +1147,9 @@ export default {
       })
 
       matchupWinProbabilities.value = newProbabilities
+      const endTime = performance.now()
+      console.log(`[Perf] Calculation finished in ${(endTime - startTime).toFixed(2)}ms. Keys:`, Object.keys(newProbabilities))
+      console.timeEnd('calculateMatchupWinProbabilities')
     }
 
     // Convert team data from Sleeper to player data for simulation
@@ -1067,6 +1172,26 @@ export default {
           )
 
           // Determine game status (simplified)
+          const getSimplifiedGameStatus = (currentPoints, projection) => {
+            if (currentPoints === 0) {
+              return { status: 'scheduled', percentComplete: 0 }
+            }
+
+            // If current points >= 90% of projection, likely finished
+            if (projection > 0 && currentPoints >= projection * 0.9) {
+              return { status: 'final', percentComplete: 1.0 }
+            }
+
+            // Estimate progress based on current points vs projection
+            if (projection > 0) {
+              const percentComplete = Math.min(0.9, currentPoints / projection)
+              return { status: 'in_progress', percentComplete }
+            }
+
+            // Default to in progress at 50%
+            return { status: 'in_progress', percentComplete: 0.5 }
+          }
+
           const gameStatus = getSimplifiedGameStatus(currentPoints, projection)
 
           // Get injury status
@@ -1548,7 +1673,7 @@ export default {
       const isPopulated = newEnrichedPlayers && Object.keys(newEnrichedPlayers).length > 0
 
       if (wasEmpty && isPopulated) {
-        console.log('[EnrichedPlayers] Loaded - recalculating win probabilities')
+        console.log('[Perf] Watcher: enrichedPlayers populated at', new Date().toISOString())
         calculateMatchupWinProbabilities()
       }
     }, { deep: true })
@@ -1688,6 +1813,9 @@ export default {
 
     // Get team badges (injury, empty, bye, suspended) for a matchup
     const getTeamBadges = (matchup) => {
+      // Force dependency on enrichedPlayers so this re-runs when data loads
+      const _dep = enrichedPlayers.value
+      
       if (!matchup || !matchup.starters) return []
 
       // Use the centralized badge generation from the store
@@ -1771,6 +1899,8 @@ export default {
       if (!standingsChartRef.value || !leagueData.value || !allMatchups.value || !selectedWeek.value) return
 
       await nextTick()
+
+      if (!standingsChartRef.value) return
 
       if (!standingsChart) {
         standingsChart = echarts.init(standingsChartRef.value)
@@ -1897,7 +2027,9 @@ export default {
         series
       }
 
-      standingsChart.setOption(option, true) // Use notMerge: true to ensure chart fully updates
+      if (standingsChart) {
+        standingsChart.setOption(option, true) // Use notMerge: true to ensure chart fully updates
+      }
     }
 
     // Render points bar chart
@@ -1905,6 +2037,8 @@ export default {
       if (!pointsChartRef.value || !leagueData.value || !allMatchups.value || !selectedWeek.value) return
 
       await nextTick()
+
+      if (!pointsChartRef.value) return
 
       if (!pointsChart) {
         pointsChart = echarts.init(pointsChartRef.value)
@@ -2023,7 +2157,9 @@ export default {
         }]
       }
 
-      pointsChart.setOption(option, true) // Use notMerge: true to ensure chart fully updates
+      if (pointsChart) {
+        pointsChart.setOption(option, true) // Use notMerge: true to ensure chart fully updates
+      }
 
       // Fix aspect ratio for logos
       await nextTick()
@@ -2055,6 +2191,8 @@ export default {
         console.warn('[Charts] Transaction chart container has no dimensions, skipping render')
         return
       }
+
+      if (!transactionsChartRef.value) return
 
       if (!transactionsChart) {
         transactionsChart = echarts.init(transactionsChartRef.value)
@@ -2136,13 +2274,15 @@ export default {
           areaStyle: {
             color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
               { offset: 0, color: '#14b8a640' },
-              { offset: 1, color: '#14b8a610' }
+              { offset: 1, color: 'rgba(20, 184, 166, 0.1)' }
             ])
           }
         }]
       }
 
-      transactionsChart.setOption(option, true) // Use notMerge: true to ensure chart fully updates
+      if (transactionsChart) {
+        transactionsChart.setOption(option, true) // Use notMerge: true to ensure chart fully updates
+      }
     }
 
     // Render transaction volume by model chart
@@ -2150,6 +2290,8 @@ export default {
       if (!modelTransactionsChartRef.value || !leagueData.value || !transactionStats.value) return
 
       await nextTick()
+
+      if (!modelTransactionsChartRef.value) return
 
       // Check if container has dimensions before initializing
       const containerWidth = modelTransactionsChartRef.value.clientWidth
@@ -2311,7 +2453,9 @@ export default {
         ]
       }
 
-      modelTransactionsChart.setOption(option, true) // Use notMerge: true to ensure chart fully updates
+      if (modelTransactionsChart) {
+        modelTransactionsChart.setOption(option, true) // Use notMerge: true to ensure chart fully updates
+      }
     }
 
     // Render injuries volume by week line chart
@@ -2319,6 +2463,8 @@ export default {
       if (!injuriesChartRef.value || !leagueData.value || !injuriesData.value) return
 
       await nextTick()
+
+      if (!injuriesChartRef.value) return
 
       // Check if container has dimensions before initializing
       const containerWidth = injuriesChartRef.value.clientWidth
@@ -2420,7 +2566,9 @@ export default {
         }]
       }
 
-      injuriesChart.setOption(option, true) // Use notMerge: true to ensure chart fully updates
+      if (injuriesChart) {
+        injuriesChart.setOption(option, true) // Use notMerge: true to ensure chart fully updates
+      }
     }
 
     // Render injury volume by model chart
@@ -2428,6 +2576,8 @@ export default {
       if (!modelInjuriesChartRef.value || !leagueData.value || !injuriesData.value) return
 
       await nextTick()
+
+      if (!modelInjuriesChartRef.value) return
 
       // Check if container has dimensions before initializing
       const containerWidth = modelInjuriesChartRef.value.clientWidth
