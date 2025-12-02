@@ -40,30 +40,65 @@ export function resetTransactionCache() {
   transactionRoundsPromise = null
 }
 
+/**
+ * Helper to perform fetch with retry logic
+ * @param {string} url - URL to fetch
+ * @param {Object} options - Fetch options
+ * @param {number} retries - Number of retries (default: 3)
+ * @param {number} backoff - Initial backoff in ms (default: 1000)
+ * @returns {Promise<Response>}
+ */
+async function fetchWithRetry(url, options = {}, retries = 3, backoff = 1000) {
+  try {
+    const response = await fetch(url, options)
+
+    // If successful or 404 (not found is usually valid/terminal), return
+    if (response.ok || response.status === 404) {
+      return response
+    }
+
+    // If 429 (Too Many Requests) or 5xx (Server Error), retry
+    if (retries > 0 && (response.status === 429 || response.status >= 500)) {
+      console.warn(`Request failed with ${response.status}. Retrying in ${backoff}ms... (${retries} retries left)`)
+      await new Promise(resolve => setTimeout(resolve, backoff))
+      return fetchWithRetry(url, options, retries - 1, backoff * 2)
+    }
+
+    return response
+  } catch (error) {
+    if (retries > 0) {
+      console.warn(`Request failed with error: ${error.message}. Retrying in ${backoff}ms... (${retries} retries left)`)
+      await new Promise(resolve => setTimeout(resolve, backoff))
+      return fetchWithRetry(url, options, retries - 1, backoff * 2)
+    }
+    throw error
+  }
+}
+
 export async function getLeague() {
   // Cache-busting v2 - timestamp query prevents CDN/browser caching stale data
-  const response = await fetch(`${BASE_URL}/league/${LEAGUE_ID}?_t=${Date.now()}`)
+  const response = await fetchWithRetry(`${BASE_URL}/league/${LEAGUE_ID}?_t=${Date.now()}`)
   await validateResponse(response, 'getLeague')
   return response.json()
 }
 
 export async function getLeagueUsers() {
   // Add cache-busting timestamp to ensure fresh data
-  const response = await fetch(`${BASE_URL}/league/${LEAGUE_ID}/users?_t=${Date.now()}`)
+  const response = await fetchWithRetry(`${BASE_URL}/league/${LEAGUE_ID}/users?_t=${Date.now()}`)
   await validateResponse(response, 'getLeagueUsers')
   return response.json()
 }
 
 export async function getRosters() {
   // Add cache-busting timestamp to ensure fresh data
-  const response = await fetch(`${BASE_URL}/league/${LEAGUE_ID}/rosters?_t=${Date.now()}`)
+  const response = await fetchWithRetry(`${BASE_URL}/league/${LEAGUE_ID}/rosters?_t=${Date.now()}`)
   await validateResponse(response, 'getRosters')
   return response.json()
 }
 
 export async function getMatchups(week) {
   // Add cache-busting timestamp to ensure fresh data
-  const response = await fetch(`${BASE_URL}/league/${LEAGUE_ID}/matchups/${week}?_t=${Date.now()}`)
+  const response = await fetchWithRetry(`${BASE_URL}/league/${LEAGUE_ID}/matchups/${week}?_t=${Date.now()}`)
   await validateResponse(response, `getMatchups(week=${week})`)
   return response.json()
 }
@@ -152,13 +187,13 @@ export async function getCurrentMatchups() {
 }
 
 export async function getDrafts() {
-  const response = await fetch(`${BASE_URL}/league/${LEAGUE_ID}/drafts`)
+  const response = await fetchWithRetry(`${BASE_URL}/league/${LEAGUE_ID}/drafts`)
   await validateResponse(response, 'getDrafts')
   return response.json()
 }
 
 export async function getDraftPicks(draftId) {
-  const response = await fetch(`${BASE_URL}/draft/${draftId}/picks`)
+  const response = await fetchWithRetry(`${BASE_URL}/draft/${draftId}/picks`)
   await validateResponse(response, `getDraftPicks(draftId=${draftId})`)
   return response.json()
 }
@@ -168,7 +203,7 @@ export async function getPlayers(bustCache = false) {
   const url = bustCache
     ? `/data/players.json?_t=${Date.now()}`
     : `/data/players.json`
-  const response = await fetch(url, {
+  const response = await fetchWithRetry(url, {
     cache: bustCache ? 'reload' : 'default'
   })
   await validateResponse(response, 'getPlayers (local JSON)')
@@ -227,7 +262,7 @@ export async function getRelevantPlayers(bustCache = false) {
 
     // Check if we need to fetch all players from Sleeper API
     const isCacheFresh = allPlayersCacheTimestamp &&
-                         (Date.now() - allPlayersCacheTimestamp < ALL_PLAYERS_CACHE_DURATION)
+      (Date.now() - allPlayersCacheTimestamp < ALL_PLAYERS_CACHE_DURATION)
 
     let allPlayers
     if (isCacheFresh && allPlayersCache && !bustCache) {
@@ -235,7 +270,7 @@ export async function getRelevantPlayers(bustCache = false) {
       allPlayers = allPlayersCache
     } else {
       console.log('Fetching all players from Sleeper API...')
-      const response = await fetch(`${BASE_URL}/players/nfl`)
+      const response = await fetchWithRetry(`${BASE_URL}/players/nfl`)
       await validateResponse(response, 'getAllPlayers (Sleeper NFL)')
       allPlayers = await response.json()
 
@@ -315,7 +350,7 @@ export async function getTransactions(week) {
 
   // Check if we have cached rounds that are still fresh
   const isCacheFresh = transactionRoundsCacheTimestamp &&
-                       (Date.now() - transactionRoundsCacheTimestamp < TRANSACTION_CACHE_DURATION)
+    (Date.now() - transactionRoundsCacheTimestamp < TRANSACTION_CACHE_DURATION)
 
   let allRounds
   if (isCacheFresh && transactionRoundsCache) {
@@ -332,7 +367,7 @@ export async function getTransactions(week) {
       const roundPromises = []
       for (let round = 1; round <= 50; round++) {
         roundPromises.push(
-          fetch(`${BASE_URL}/league/${LEAGUE_ID}/transactions/${round}`)
+          fetchWithRetry(`${BASE_URL}/league/${LEAGUE_ID}/transactions/${round}`)
             .then(res => res.json())
             .catch(() => []) // Ignore errors for rounds that don't exist
         )
@@ -387,7 +422,7 @@ export async function getPlayerWeeklyStats(playerId, season = 2025, week) {
 
   // Check cache first
   const isCacheFresh = playerStatsCacheTimestamp[cacheKey] &&
-                       (Date.now() - playerStatsCacheTimestamp[cacheKey] < PLAYER_STATS_CACHE_DURATION)
+    (Date.now() - playerStatsCacheTimestamp[cacheKey] < PLAYER_STATS_CACHE_DURATION)
 
   if (isCacheFresh && playerStatsCache[cacheKey]) {
     return playerStatsCache[cacheKey]
@@ -395,7 +430,7 @@ export async function getPlayerWeeklyStats(playerId, season = 2025, week) {
 
   try {
     // Use undocumented stats endpoint (note: .com not .app)
-    const response = await fetch(
+    const response = await fetchWithRetry(
       `https://api.sleeper.com/stats/nfl/player/${playerId}?season=${season}&season_type=regular&grouping=week`
     )
 
