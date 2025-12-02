@@ -24,13 +24,15 @@ describe('Sleeper API', () => {
     it('should fetch league data', async () => {
       const mockLeague = { league_id: '123', name: 'Test League' }
       global.fetch.mockResolvedValueOnce({
+        ok: true,
         json: async () => mockLeague
       })
 
       const result = await getLeague()
 
       expect(global.fetch).toHaveBeenCalledWith(
-        expect.stringContaining('https://api.sleeper.app/v1/league/1266471057523490816?_t=')
+        expect.stringContaining('https://api.sleeper.app/v1/league/1266471057523490816?_t='),
+        {}
       )
       expect(result).toEqual(mockLeague)
     })
@@ -41,13 +43,15 @@ describe('Sleeper API', () => {
         { user_id: 'u2', username: 'user2' }
       ]
       global.fetch.mockResolvedValueOnce({
+        ok: true,
         json: async () => mockUsers
       })
 
       const result = await getLeagueUsers()
 
       expect(global.fetch).toHaveBeenCalledWith(
-        expect.stringContaining('https://api.sleeper.app/v1/league/1266471057523490816/users?_t=')
+        expect.stringContaining('https://api.sleeper.app/v1/league/1266471057523490816/users?_t='),
+        {}
       )
       expect(result).toEqual(mockUsers)
     })
@@ -58,13 +62,15 @@ describe('Sleeper API', () => {
         { roster_id: 2, owner_id: 'u2' }
       ]
       global.fetch.mockResolvedValueOnce({
+        ok: true,
         json: async () => mockRosters
       })
 
       const result = await getRosters()
 
       expect(global.fetch).toHaveBeenCalledWith(
-        expect.stringContaining('https://api.sleeper.app/v1/league/1266471057523490816/rosters?_t=')
+        expect.stringContaining('https://api.sleeper.app/v1/league/1266471057523490816/rosters?_t='),
+        {}
       )
       expect(result).toEqual(mockRosters)
     })
@@ -75,13 +81,15 @@ describe('Sleeper API', () => {
         { matchup_id: 1, roster_id: 2, points: 95 }
       ]
       global.fetch.mockResolvedValueOnce({
+        ok: true,
         json: async () => mockMatchups
       })
 
       const result = await getMatchups(5)
 
       expect(global.fetch).toHaveBeenCalledWith(
-        expect.stringContaining('https://api.sleeper.app/v1/league/1266471057523490816/matchups/5?_t=')
+        expect.stringContaining('https://api.sleeper.app/v1/league/1266471057523490816/matchups/5?_t='),
+        {}
       )
       expect(result).toEqual(mockMatchups)
     })
@@ -238,13 +246,15 @@ describe('Sleeper API', () => {
     it('should fetch drafts', async () => {
       const mockDrafts = [{ draft_id: 'd1', status: 'complete' }]
       global.fetch.mockResolvedValueOnce({
+        ok: true,
         json: async () => mockDrafts
       })
 
       const result = await getDrafts()
 
       expect(global.fetch).toHaveBeenCalledWith(
-        'https://api.sleeper.app/v1/league/1266471057523490816/drafts'
+        'https://api.sleeper.app/v1/league/1266471057523490816/drafts',
+        {}
       )
       expect(result).toEqual(mockDrafts)
     })
@@ -255,13 +265,15 @@ describe('Sleeper API', () => {
         { pick_no: 2, player_id: 'p2' }
       ]
       global.fetch.mockResolvedValueOnce({
+        ok: true,
         json: async () => mockPicks
       })
 
       const result = await getDraftPicks('d1')
 
       expect(global.fetch).toHaveBeenCalledWith(
-        'https://api.sleeper.app/v1/draft/d1/picks'
+        'https://api.sleeper.app/v1/draft/d1/picks',
+        {}
       )
       expect(result).toEqual(mockPicks)
     })
@@ -271,6 +283,7 @@ describe('Sleeper API', () => {
     it('should fetch players from local file without cache busting by default', async () => {
       const mockPlayers = { p1: { name: 'Player 1' } }
       global.fetch.mockResolvedValueOnce({
+        ok: true,
         json: async () => mockPlayers
       })
 
@@ -286,6 +299,7 @@ describe('Sleeper API', () => {
     it('should fetch players from local file with cache busting when requested', async () => {
       const mockPlayers = { p1: { name: 'Player 1' } }
       global.fetch.mockResolvedValueOnce({
+        ok: true,
         json: async () => mockPlayers
       })
 
@@ -349,7 +363,8 @@ describe('Sleeper API', () => {
 
       // Should have fetched from Sleeper API
       expect(global.fetch).toHaveBeenCalledWith(
-        'https://api.sleeper.app/v1/players/nfl'
+        'https://api.sleeper.app/v1/players/nfl',
+        {}
       )
       // Should return combined players
       expect(result.p1).toBeDefined()
@@ -447,6 +462,7 @@ describe('Sleeper API', () => {
       for (let round = 1; round <= 50; round++) {
         if (round === 3) {
           global.fetch.mockResolvedValueOnce({
+            ok: true,
             json: async () => [
               { type: 'waiver', adds: { p1: 1 }, leg: 5 },
               { type: 'trade', adds: { p2: 1 }, leg: 5 }
@@ -454,12 +470,14 @@ describe('Sleeper API', () => {
           })
         } else if (round === 5) {
           global.fetch.mockResolvedValueOnce({
+            ok: true,
             json: async () => [
               { type: 'waiver', adds: { p3: 1 }, leg: 5 }
             ]
           })
         } else {
           global.fetch.mockResolvedValueOnce({
+            ok: true,
             json: async () => []
           })
         }
@@ -471,10 +489,12 @@ describe('Sleeper API', () => {
       expect(global.fetch).toHaveBeenCalledTimes(50)
       // Should have called round 1, 2, 3, etc
       expect(global.fetch).toHaveBeenCalledWith(
-        'https://api.sleeper.app/v1/league/1266471057523490816/transactions/1'
+        'https://api.sleeper.app/v1/league/1266471057523490816/transactions/1',
+        {}
       )
       expect(global.fetch).toHaveBeenCalledWith(
-        'https://api.sleeper.app/v1/league/1266471057523490816/transactions/50'
+        'https://api.sleeper.app/v1/league/1266471057523490816/transactions/50',
+        {}
       )
       // Should return only transactions with leg=5
       expect(result).toHaveLength(3)
@@ -485,6 +505,7 @@ describe('Sleeper API', () => {
       // Mock all rounds to return empty or transactions for different weeks
       for (let round = 1; round <= 50; round++) {
         global.fetch.mockResolvedValueOnce({
+          ok: true,
           json: async () => [
             { type: 'waiver', adds: { p1: 1 }, leg: 3 }
           ]
@@ -503,10 +524,12 @@ describe('Sleeper API', () => {
           global.fetch.mockRejectedValueOnce(new Error('Network error'))
         } else if (round === 3) {
           global.fetch.mockResolvedValueOnce({
+            ok: true,
             json: async () => [{ type: 'waiver', adds: { p1: 1 }, leg: 5 }]
           })
         } else {
           global.fetch.mockResolvedValueOnce({
+            ok: true,
             json: async () => []
           })
         }

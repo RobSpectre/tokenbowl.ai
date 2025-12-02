@@ -3,6 +3,8 @@
  * Handles missing players by fetching them on-demand from Sleeper API
  */
 
+import { fetchWithRetry } from '../sleeperApi.js'
+
 // Cache for all fetched players
 let playerCache = {}
 
@@ -174,7 +176,7 @@ async function getAllPlayersFromAPI() {
 
   try {
     console.log('Fetching all players from Sleeper API...')
-    const response = await fetch('https://api.sleeper.app/v1/players/nfl')
+    const response = await fetchWithRetry('https://api.sleeper.app/v1/players/nfl')
 
     if (!response.ok) {
       throw new Error(`Failed to fetch players: ${response.status}`)

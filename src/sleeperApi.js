@@ -44,11 +44,16 @@ export function resetTransactionCache() {
  * Helper to perform fetch with retry logic
  * @param {string} url - URL to fetch
  * @param {Object} options - Fetch options
- * @param {number} retries - Number of retries (default: 3)
- * @param {number} backoff - Initial backoff in ms (default: 1000)
+ * @param {number} retries - Number of retries (default: 3, 0 in test)
+ * @param {number} backoff - Initial backoff in ms (default: 1000, 0 in test)
  * @returns {Promise<Response>}
  */
-async function fetchWithRetry(url, options = {}, retries = 3, backoff = 1000) {
+export async function fetchWithRetry(
+  url,
+  options = {},
+  retries = process.env.NODE_ENV === 'test' ? 0 : 3,
+  backoff = process.env.NODE_ENV === 'test' ? 0 : 1000
+) {
   try {
     const response = await fetch(url, options)
 
