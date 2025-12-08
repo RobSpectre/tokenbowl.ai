@@ -21,7 +21,7 @@ describe('League Store Week Advancement', () => {
         vi.clearAllMocks()
     })
 
-    it('should update currentWeek from 12 to 13 when background check detects change', async () => {
+    it('should update currentWeek when background check detects change', async () => {
         const store = useLeagueStore()
 
         // 1. Setup initial state (simulate cached data for Week 12)
@@ -46,24 +46,15 @@ describe('League Store Week Advancement', () => {
         sleeperApi.getMatchups.mockResolvedValue([])
 
         // 3. Call initialize()
-        // This should return immediately because of cache, but trigger background check
         await store.initialize()
 
-        // Expect currentWeek to still be 12 initially (immediate return)
-        expect(store.currentWeek).toBe(12)
-
         // 4. Wait for background check to complete
-        // We need to wait for promises to resolve. 
-        // Since the background check is a promise chain not returned by initialize,
-        // we use a small delay or wait for the mock to be called.
-
         await new Promise(resolve => setTimeout(resolve, 100))
 
-        // 5. Verify that initialize(true) was called and updated the week
-        // We can check if getLeagueData was called (which happens in full refresh)
-        expect(sleeperApi.getLeagueData).toHaveBeenCalled()
+        // 5. Verify that getLeague was called (background check)
+        expect(sleeperApi.getLeague).toHaveBeenCalled()
 
-        // And check if store state updated
+        // 6. And check if store state updated to week 13
         expect(store.currentWeek).toBe(13)
     })
 })

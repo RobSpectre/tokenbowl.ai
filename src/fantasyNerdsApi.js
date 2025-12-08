@@ -4,7 +4,7 @@ const BASE_URL = import.meta.env.VITE_FANTASY_NERDS_PROXY_URL || 'https://tokenb
 
 /**
  * Fetch NFL injury data for a specific week from Fantasy Nerds API
- * @param {number} week - NFL week number (1-18)
+ * @param {number} week - NFL week number (1-17)
  * @returns {Promise<Object>} Injury data keyed by player name
  */
 export async function getInjuries(week) {
@@ -115,7 +115,7 @@ export function getInjuryIndicator(injury) {
 
 /**
  * Fetch NFL weekly projections for a specific week from Fantasy Nerds API
- * @param {number} week - NFL week number (1-18)
+ * @param {number} week - NFL week number (1-17)
  * @returns {Promise<Object>} Weekly projections data keyed by player name
  */
 export async function getWeeklyProjections(week) {

@@ -995,10 +995,16 @@ export default {
           console.timeEnd('ensureWeekLoaded')
         }
 
-        // Process injuries and transaction data (on-demand, will only run once due to caching)
+        // Fetch raw injuries and transaction data
         await Promise.all([
           leagueStore.fetchInjuriesForWeek(selectedWeek.value),
           leagueStore.getTransactionsForWeek(selectedWeek.value)
+        ])
+
+        // Process data for charts (transforms raw data into chart-ready format)
+        await Promise.all([
+          leagueStore.processInjuriesData(selectedWeek.value),
+          leagueStore.processTransactionStats(selectedWeek.value)
         ])
 
         // Data is ready, hide section loading states
@@ -1722,11 +1728,23 @@ export default {
 
       // Check if the chart refs exist before rendering
       if (standingsChartRef.value && pointsChartRef.value) {
-        console.log('[Charts] Rendering history/points charts - matchups loaded')
-        renderStandingsChart()
-        renderPointsChart()
+        const width = standingsChartRef.value.clientWidth
+        if (width > 0) {
+          console.log('[Charts] Rendering history/points charts - matchups loaded')
+          renderStandingsChart()
+          renderPointsChart()
+        } else {
+          // Retry after a short delay for containers to become visible
+          setTimeout(() => {
+            if (standingsChartRef.value?.clientWidth > 0) {
+              console.log('[Charts] Retry: Rendering history/points charts')
+              renderStandingsChart()
+              renderPointsChart()
+            }
+          }, 200)
+        }
       }
-    }, { deep: true })
+    }, { deep: true, immediate: true })
 
     // Watch for injury data changes AND section visibility to re-render injury charts
     watch([injuriesData, leagueData, allMatchups], async ([newInjuriesData, newLeagueData, newAllMatchups]) => {
@@ -1754,9 +1772,17 @@ export default {
           renderModelInjuriesChart()
         } else {
           console.warn('[Charts] Injury chart containers not visible yet, will retry when visible')
+          // Retry after a short delay for containers to become visible
+          setTimeout(() => {
+            if (injuriesChartRef.value?.clientWidth > 0) {
+              console.log('[Charts] Retry: Rendering injury charts')
+              renderInjuriesChart()
+              renderModelInjuriesChart()
+            }
+          }, 200)
         }
       }
-    }, { deep: true })
+    }, { deep: true, immediate: true })
 
     // Watch for transaction data changes to re-render transaction charts
     watch(transactionStats, async (newData, oldData) => {

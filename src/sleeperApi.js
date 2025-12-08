@@ -108,6 +108,18 @@ export async function getMatchups(week) {
   return response.json()
 }
 
+export async function getWinnersBracket() {
+  const response = await fetchWithRetry(`${BASE_URL}/league/${LEAGUE_ID}/winners_bracket?_t=${Date.now()}`)
+  await validateResponse(response, 'getWinnersBracket')
+  return response.json()
+}
+
+export async function getLosersBracket() {
+  const response = await fetchWithRetry(`${BASE_URL}/league/${LEAGUE_ID}/losers_bracket?_t=${Date.now()}`)
+  await validateResponse(response, 'getLosersBracket')
+  return response.json()
+}
+
 export async function getLeagueData() {
   try {
     const [league, users, rosters] = await Promise.all([

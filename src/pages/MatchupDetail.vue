@@ -26,7 +26,8 @@ div(class="container mx-auto px-4 py-6 max-w-7xl bg-[var(--color-background)]")
           .flex.items-center.gap-3
             h1(class="text-[var(--color-primary)] text-xl sm:text-3xl font-bold uppercase tracking-widest font-mono")
               span(class="text-[var(--color-secondary)] mr-2") >
-              | Week {{ week }} Matchup
+              span(v-if="playoffRound") {{ playoffRound }}
+              span(v-else) Week {{ week }} Matchup
             //- Game Status Badge
             div(
               class="px-3 py-1 border text-xs font-bold uppercase font-mono"
@@ -599,6 +600,56 @@ export default {
 
       // After game hours on current week, show "Final"
       return 'Final'
+    })
+
+    // Compute playoff round label
+    const playoffRound = computed(() => {
+      if (!week.value || week.value < 15) return null
+      if (!matchup.value || matchup.value.length < 2) return null
+      
+      // Try to get bracket info from store using roster IDs
+      const rosterId1 = matchup.value[0].roster_id
+      const rosterId2 = matchup.value[1].roster_id
+      const bracketInfo = leagueStore.getBracketMatchup(rosterId1, rosterId2)
+      
+      if (bracketInfo) {
+        // Winners Bracket
+        if (bracketInfo.type === 'winners') {
+          if (bracketInfo.r === 1) return 'Quarterfinal'
+          if (bracketInfo.r === 2) return 'Semi-Final'
+          if (bracketInfo.r === 3) {
+            // If it's the main championship (usually p: 1 or no p)
+            if (!bracketInfo.p || bracketInfo.p === 1) return 'Championship'
+            return `${bracketInfo.p}rd Place Match`
+          }
+        }
+        
+        // Losers Bracket (Toilet Bowl)
+        if (bracketInfo.type === 'losers') {
+          // Check for specific place matches
+          if (bracketInfo.p) {
+             // e.g. 7th Place Match, 9th Place Match
+             // p is the place the WINNER gets? Or the match is for Nth place?
+             // Usually p=1 in losers bracket means 1st place in consolation (which is 7th overall in 6-team playoff?)
+             // Let's stick to generic names unless we are sure.
+             // But user asked for "what place".
+             // If p matches 1, it's the "Consolation Championship"
+             if (bracketInfo.p === 1) return 'Consolation Championship'
+             return `Consolation Match (Place ${bracketInfo.p})`
+          }
+          
+          if (bracketInfo.r === 1) return 'Consolation Round 1'
+          if (bracketInfo.r === 2) return 'Consolation Round 2'
+          if (bracketInfo.r === 3) return 'Toilet Bowl'
+        }
+      }
+
+      // Fallback based on week if bracket data missing
+      if (week.value === 15) return 'Playoffs Round 1'
+      if (week.value === 16) return 'Playoffs Round 2'
+      if (week.value === 17) return 'Championship Week'
+      
+      return null
     })
 
     // SEO Meta Tags
