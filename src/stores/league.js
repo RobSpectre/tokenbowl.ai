@@ -11,7 +11,8 @@ import { getPlayers as getPlayersFromService, enrichPlayerData } from '../utils/
 // Bumped to v20 to fix stale Week 13 scores (0 points) for returning users
 // Bumped to v21 to fix stuck injury processing promise for returning users
 // Bumped to v22 to use new phased state machine initialization
-const CACHE_VERSION = 22 // v22: Phased state machine init to prevent race conditions
+// Bumped to v23 to add timeout protection and stuck state recovery
+const CACHE_VERSION = 23 // v23: Added timeouts + stuck state detection/recovery
 
 // Team code normalization mapping
 const normalizeTeamCode = (code) => {
@@ -621,15 +622,22 @@ export const useLeagueStore = defineStore('league', {
      */
     async fetchBrackets() {
       try {
-        const [winners, losers] = await Promise.all([
-          getWinnersBracket(),
-          getLosersBracket()
+        // Add 15-second timeout to prevent hanging forever
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Timeout fetching brackets')), 15000)
+        )
+        const [winners, losers] = await Promise.race([
+          Promise.all([getWinnersBracket(), getLosersBracket()]),
+          timeoutPromise
         ])
         this.winnersBracket = winners
         this.losersBracket = losers
         return true
       } catch (error) {
         console.error('Error fetching brackets:', error)
+        // Set empty brackets on failure so isDataReady can still be true
+        this.winnersBracket = this.winnersBracket || []
+        this.losersBracket = this.losersBracket || []
         return false
       }
     },
@@ -711,7 +719,34 @@ export const useLeagueStore = defineStore('league', {
      * After awaiting, ALL data (including processed injuries/transactions) is ready.
      */
     async initialize(forceRefresh = false) {
-      console.log(`[INIT] initialize() called. State: ${this.initState}, forceRefresh: ${forceRefresh}`)
+      console.log(`[INIT] initialize() called. State: ${this.initState}, forceRefresh: ${forceRefresh}, hasPromise: ${!!this._initPromise}`)
+
+      // ═══════════════════════════════════════════════════════════════
+      // DEFENSIVE: Detect and recover from stuck/invalid states
+      // These can occur if page was closed during initialization
+      // ═══════════════════════════════════════════════════════════════
+
+      // Case 1: initState is 'initializing' but no promise exists - stuck state
+      if (this.initState === 'initializing' && !this._initPromise) {
+        console.warn('[INIT] ⚠️ Detected stuck state (initializing without promise), resetting...')
+        this.initState = 'idle'
+        this.isInitializing = false
+      }
+
+      // Case 2: _initPromise exists but isn't a real Promise (corrupted state)
+      if (this._initPromise && typeof this._initPromise.then !== 'function') {
+        console.warn('[INIT] ⚠️ Invalid _initPromise detected (not a Promise), clearing...')
+        this._initPromise = null
+        this.initState = 'idle'
+        this.isInitializing = false
+      }
+
+      // Case 3: isInitializing is true but initState isn't 'initializing' - inconsistent
+      if (this.isInitializing && this.initState !== 'initializing') {
+        console.warn('[INIT] ⚠️ Inconsistent state detected, resetting flags...')
+        this.isInitializing = false
+        this._initPromise = null
+      }
 
       // CRITICAL: Check cache version FIRST - before any early returns
       // This ensures returning users with old cache get a fresh start
@@ -734,7 +769,8 @@ export const useLeagueStore = defineStore('league', {
       }
 
       // If already initializing, return the existing promise (prevents duplicate work)
-      if (this.initState === 'initializing' && this._initPromise) {
+      // IMPORTANT: Only do this if we have a VALID promise
+      if (this.initState === 'initializing' && this._initPromise && typeof this._initPromise.then === 'function') {
         console.log('[INIT] Already initializing, returning existing promise')
         return this._initPromise
       }
@@ -780,7 +816,52 @@ export const useLeagueStore = defineStore('league', {
       this.initState = 'initializing'
       this.isInitializing = true
 
+      // Global timeout for entire initialization (30 seconds)
+      // This is a safety net to prevent the app from hanging forever
+      const INIT_TIMEOUT_MS = 30000
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Initialization timed out after 30 seconds')), INIT_TIMEOUT_MS)
+      })
+
       try {
+        // Race the initialization against the timeout
+        await Promise.race([
+          this._runInitPhases(useCachedData),
+          timeoutPromise
+        ])
+
+        // ═══════════════════════════════════════════════════════════════
+        // COMPLETE - Core data ready, UI can render
+        // ═══════════════════════════════════════════════════════════════
+        this.initState = 'ready'
+        this.lastFullLoad = Date.now()
+        console.log('✅ [INIT] Initialization complete. State: ready')
+
+        // ═══════════════════════════════════════════════════════════════
+        // PHASE 4: Process Stats for Charts (runs in background)
+        // This is deferred because it can take a while (14 weeks of API calls)
+        // and shouldn't block the loading screen
+        // ═══════════════════════════════════════════════════════════════
+        setTimeout(() => this._processChartData(), 50)
+
+        // Background refresh for checking week changes
+        setTimeout(() => this._backgroundRefresh(), 200)
+
+      } catch (error) {
+        console.error('❌ [INIT] Initialization failed:', error)
+        this.initState = 'error'
+        this.errors['init'] = error.message || 'Failed to initialize league data'
+        throw error
+      } finally {
+        this.isInitializing = false
+        this._initPromise = null
+      }
+    },
+
+    /**
+     * Run initialization phases (separated for timeout wrapping)
+     */
+    async _runInitPhases(useCachedData) {
         // ═══════════════════════════════════════════════════════════════
         // PHASE 1: Core Data (parallel - no dependencies between them)
         // ═══════════════════════════════════════════════════════════════
@@ -873,71 +954,6 @@ export const useLeagueStore = defineStore('league', {
           console.error('Dynamic data failed:', e)
         }
         console.log('[INIT] ✓ Phase 3 complete')
-
-        // ═══════════════════════════════════════════════════════════════
-        // PHASE 4: Process Stats (depends on ALL above)
-        // ═══════════════════════════════════════════════════════════════
-        console.log('[INIT] ══ PHASE 4: Processing stats for charts ══')
-
-        // Verify all dependencies
-        this._verifyDependencies('Phase 4', {
-          nflSchedule: !!this.nflSchedule,
-          players: Object.keys(this.players).length > 0,
-          rosters: this.rosters.length > 0,
-          currentWeek: !!this.currentWeek
-        })
-
-        // Process in parallel (both depend on the same data, not each other)
-        const phase4Tasks = []
-
-        if (!this.processedTransactionStats.byWeek ||
-            Object.keys(this.processedTransactionStats.byWeek).length === 0) {
-          phase4Tasks.push(
-            this.processTransactionStats(this.currentWeek)
-              .catch(e => console.error('Transaction stats failed:', e))
-          )
-        }
-
-        if (!this.processedInjuriesByTeam[`week${this.currentWeek}`]) {
-          phase4Tasks.push(
-            this.processInjuriesData(this.currentWeek)
-              .catch(e => console.error('Injuries data failed:', e))
-          )
-        }
-
-        await Promise.all(phase4Tasks)
-
-        // Enriched players (depends on injuries being processed)
-        if (Object.keys(this.enrichedPlayers).length === 0) {
-          try {
-            await this.loadEnrichedPlayers()
-          } catch (e) {
-            console.error('Enriched players failed:', e)
-          }
-        }
-
-        console.log('[INIT] ✓ Phase 4 complete')
-
-        // ═══════════════════════════════════════════════════════════════
-        // COMPLETE
-        // ═══════════════════════════════════════════════════════════════
-        this.initState = 'ready'
-        this.lastFullLoad = Date.now()
-        console.log('✅ [INIT] Initialization complete. State: ready')
-
-        // Background refresh is now TRULY background - only after full init
-        // Use setTimeout to ensure it doesn't block
-        setTimeout(() => this._backgroundRefresh(), 100)
-
-      } catch (error) {
-        console.error('❌ [INIT] Initialization failed:', error)
-        this.initState = 'error'
-        this.errors['init'] = error.message || 'Failed to initialize league data'
-        throw error
-      } finally {
-        this.isInitializing = false
-        this._initPromise = null
-      }
     },
 
     /**
@@ -951,6 +967,48 @@ export const useLeagueStore = defineStore('league', {
 
       if (missing.length > 0) {
         console.warn(`[INIT] ⚠️ ${phase} starting with missing deps: ${missing.join(', ')}`)
+      }
+    },
+
+    /**
+     * Process chart data in background after initialization.
+     * This is deferred from main init because it can take a while
+     * (fetching injuries for all 14+ weeks).
+     */
+    async _processChartData() {
+      console.log('[INIT] ══ PHASE 4 (background): Processing stats for charts ══')
+
+      // Verify dependencies
+      this._verifyDependencies('Phase 4', {
+        nflSchedule: !!this.nflSchedule,
+        players: Object.keys(this.players).length > 0,
+        rosters: this.rosters.length > 0,
+        currentWeek: !!this.currentWeek
+      })
+
+      try {
+        // Process transactions first (usually faster)
+        if (!this.processedTransactionStats.byWeek ||
+            Object.keys(this.processedTransactionStats.byWeek).length === 0) {
+          await this.processTransactionStats(this.currentWeek)
+            .catch(e => console.error('Transaction stats failed:', e))
+        }
+
+        // Process injuries (can be slow - 14 weeks of API calls)
+        if (!this.processedInjuriesByTeam[`week${this.currentWeek}`]) {
+          await this.processInjuriesData(this.currentWeek)
+            .catch(e => console.error('Injuries data failed:', e))
+        }
+
+        // Enriched players (depends on injuries)
+        if (Object.keys(this.enrichedPlayers).length === 0) {
+          await this.loadEnrichedPlayers()
+            .catch(e => console.error('Enriched players failed:', e))
+        }
+
+        console.log('[INIT] ✓ Phase 4 (background) complete')
+      } catch (e) {
+        console.error('[INIT] Phase 4 (background) failed:', e)
       }
     },
 
@@ -1044,8 +1102,11 @@ export const useLeagueStore = defineStore('league', {
       try {
         console.log(`🌐 Loading week ${week}...`)
 
-        // Load matchups for this week
-        const matchups = await getMatchups(week)
+        // Load matchups for this week with 15-second timeout
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error(`Timeout fetching matchups for week ${week}`)), 15000)
+        )
+        const matchups = await Promise.race([getMatchups(week), timeoutPromise])
 
         // Build roster map
         const rosterMap = {}
@@ -1288,7 +1349,9 @@ export const useLeagueStore = defineStore('league', {
         console.log(`🌐 Loading enriched players... (force: ${forceRefresh})`)
 
         const currentWeek = this.currentWeek || 1
-        const injuryData = await getInjuries(currentWeek)
+        // Use already-fetched injury data from injuriesByWeek (fetched with timeout protection)
+        // This prevents redundant API calls and avoids hangs from slow API responses
+        const injuryData = this.injuriesByWeek[currentWeek] || {}
 
         const draftDataBySleeperId = {}
         this.draftPicks.forEach(pick => {
@@ -1399,7 +1462,11 @@ export const useLeagueStore = defineStore('league', {
 
       try {
         console.log(`🌐 Loading transactions for week ${week}...`)
-        const trans = await getTransactions(week)
+        // Add 15-second timeout to prevent hanging forever
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error(`Timeout fetching transactions for week ${week}`)), 15000)
+        )
+        const trans = await Promise.race([getTransactions(week), timeoutPromise])
 
         const userMap = {}
         this.users.forEach(user => {
@@ -1483,7 +1550,11 @@ export const useLeagueStore = defineStore('league', {
 
       try {
         console.log(`🌐 Loading projections for week ${week}... (force: ${forceRefresh})`)
-        const projectionsData = await getWeeklyProjections(week)
+        // Add 15-second timeout to prevent hanging forever
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error(`Timeout fetching projections for week ${week}`)), 15000)
+        )
+        const projectionsData = await Promise.race([getWeeklyProjections(week), timeoutPromise])
         this.weeklyProjectionsByWeek[week] = projectionsData
         return projectionsData
       } catch (error) {

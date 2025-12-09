@@ -194,8 +194,8 @@ describe('App Resiliency', () => {
     })
 
     it('retries initialization when retry event is emitted', async () => {
-        // First fail
-        global.fetch.mockRejectedValueOnce(new Error('Network Error'))
+        // Fail ALL fetches during initial load (Phase 1 runs parallel fetches)
+        global.fetch.mockRejectedValue(new Error('Network Error'))
 
         wrapper = createWrapper()
         leagueStore = useLeagueStore()
@@ -203,10 +203,27 @@ describe('App Resiliency', () => {
         await flushPromises()
         expect(wrapper.findComponent(ErrorState).exists()).toBe(true)
 
-        // Reset mocks to ensure success on retry
-        global.fetch.mockResolvedValue({
-            ok: true,
-            json: () => Promise.resolve({ settings: { leg: 1 } })
+        // Reset mocks to ensure success on retry - handle different endpoint types
+        global.fetch.mockImplementation((url) => {
+            const urlStr = String(url)
+            if (urlStr.includes('/users') || urlStr.includes('/rosters') ||
+                urlStr.includes('/matchups') || urlStr.includes('/winners_bracket') ||
+                urlStr.includes('/losers_bracket') || urlStr.includes('/transactions')) {
+                return Promise.resolve({
+                    ok: true,
+                    json: () => Promise.resolve([])
+                })
+            }
+            if (urlStr.includes('/players')) {
+                return Promise.resolve({
+                    ok: true,
+                    json: () => Promise.resolve({})
+                })
+            }
+            return Promise.resolve({
+                ok: true,
+                json: () => Promise.resolve({ settings: { leg: 1 } })
+            })
         })
 
         const initialCallCount = global.fetch.mock.calls.length

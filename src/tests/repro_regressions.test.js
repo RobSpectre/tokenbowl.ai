@@ -165,11 +165,14 @@ describe('Regression Tests', () => {
             'p1': { full_name: 'Patrick Mahomes II', first_name: 'Patrick', last_name: 'Mahomes II' }
         }
 
-        // Mock injury data
-        // We need to mock getInjuries to return data with "Patrick Mahomes"
-        vi.mocked(fantasyNerdsApi.getInjuries).mockResolvedValue({
+        // Set current week so loadEnrichedPlayers knows which week to look up
+        store.currentWeek = 1
+
+        // loadEnrichedPlayers uses cached injuriesByWeek instead of fetching
+        // (avoids redundant API calls and potential hangs from slow API)
+        store.injuriesByWeek[1] = {
             'Patrick Mahomes': { game_status: 'Questionable' }
-        })
+        }
 
         await store.loadEnrichedPlayers(true)
 

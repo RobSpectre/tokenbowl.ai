@@ -263,7 +263,7 @@ describe('League Store - Cache Version Handling', () => {
     await store.initialize()
 
     // Verify cache version was updated
-    expect(store.cacheVersion).toBe(21) // Current version
+    expect(store.cacheVersion).toBe(23) // Current version (v23: Timeouts + stuck state recovery)
 
     // Verify data was refreshed (not just returned from cache)
     expect(sleeperApi.getLeagueData).toHaveBeenCalled()

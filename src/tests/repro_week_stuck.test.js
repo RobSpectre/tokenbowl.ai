@@ -48,8 +48,8 @@ describe('League Store Week Advancement', () => {
         // 3. Call initialize()
         await store.initialize()
 
-        // 4. Wait for background check to complete
-        await new Promise(resolve => setTimeout(resolve, 100))
+        // 4. Wait for background check to complete (needs > 200ms due to setTimeout delay)
+        await new Promise(resolve => setTimeout(resolve, 300))
 
         // 5. Verify that getLeague was called (background check)
         expect(sleeperApi.getLeague).toHaveBeenCalled()
