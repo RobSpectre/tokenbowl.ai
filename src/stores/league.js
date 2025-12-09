@@ -10,7 +10,8 @@ import { getPlayers as getPlayersFromService, enrichPlayerData } from '../utils/
 // Bumped to v19 to force refresh for week 13 update
 // Bumped to v20 to fix stale Week 13 scores (0 points) for returning users
 // Bumped to v21 to fix stuck injury processing promise for returning users
-const CACHE_VERSION = 21 // v21: Fix stuck injury charts
+// Bumped to v22 to use new phased state machine initialization
+const CACHE_VERSION = 22 // v22: Phased state machine init to prevent race conditions
 
 // Team code normalization mapping
 const normalizeTeamCode = (code) => {
@@ -752,30 +753,181 @@ export const useLeagueStore = defineStore('league', {
     },
 
     /**
-     * Internal initialization implementation
-     * Separated from initialize() to cleanly manage the promise
+     * Internal initialization implementation - UNIFIED PHASED STATE MACHINE
+     *
+     * This replaces the old split cached/fresh paths with a single flow that:
+     * 1. Has explicit phases with documented dependencies
+     * 2. Uses Promise.all for parallel loading where safe
+     * 3. ALWAYS awaits async operations (no fire-and-forget during init)
+     * 4. Handles both cached and fresh data in the same flow
+     *
+     * DEPENDENCY GRAPH:
+     * ┌─────────────────────────────────────────────────────────────────┐
+     * │ PHASE 1 (parallel - no deps):                                   │
+     * │   nflSchedule, leagueData, players, brackets, staticData        │
+     * ├─────────────────────────────────────────────────────────────────┤
+     * │ PHASE 2 (needs league.currentWeek):                             │
+     * │   weekData                                                      │
+     * ├─────────────────────────────────────────────────────────────────┤
+     * │ PHASE 3 (needs nflSchedule, players, rosters):                  │
+     * │   dynamicData (injuries, projections)                           │
+     * ├─────────────────────────────────────────────────────────────────┤
+     * │ PHASE 4 (needs all above):                                      │
+     * │   processInjuriesData, processTransactionStats, enrichedPlayers │
+     * └─────────────────────────────────────────────────────────────────┘
      */
     async _doInitialize(useCachedData) {
-      // Set state to initializing
       this.initState = 'initializing'
-      this.isInitializing = true // Legacy flag for backward compatibility
+      this.isInitializing = true
 
       try {
-        if (useCachedData) {
-          console.log('[INIT] Using cached data path')
-          await this._initializeFromCache()
-        } else {
-          console.log('[INIT] Using fresh data path')
-          await this._initializeFresh()
+        // ═══════════════════════════════════════════════════════════════
+        // PHASE 1: Core Data (parallel - no dependencies between them)
+        // ═══════════════════════════════════════════════════════════════
+        console.log('[INIT] ══ PHASE 1: Loading core data (parallel) ══')
+
+        const phase1Tasks = []
+
+        // NFL Schedule - CRITICAL for bye week calculations
+        if (!this.nflSchedule) {
+          phase1Tasks.push(
+            this.loadNFLSchedule().catch(e => console.error('NFL schedule failed:', e))
+          )
         }
 
-        // ALL initialization complete - NOW set ready
+        // League data (league, rosters, users) - CRITICAL
+        if (!useCachedData || !this.league || this.rosters.length === 0) {
+          phase1Tasks.push(
+            getLeagueData().then(data => {
+              this.league = data.league
+              this.rosters = data.rosters
+              this.users = data.users
+              this.currentWeek = this.league?.settings?.leg || 1
+            }).catch(e => {
+              throw new Error(`League Data Load Failed: ${e.message}`)
+            })
+          )
+        }
+
+        // Players
+        if (Object.keys(this.players).length === 0) {
+          phase1Tasks.push(
+            (typeof this.fetchPlayers === 'function'
+              ? this.fetchPlayers()
+              : getRelevantPlayers().then(p => { this.players = p })
+            ).catch(e => console.error('Players failed:', e))
+          )
+        }
+
+        // Brackets
+        if (!this.winnersBracket || !this.losersBracket) {
+          phase1Tasks.push(
+            this.fetchBrackets().catch(e => console.error('Brackets failed:', e))
+          )
+        }
+
+        // Static data (historical matchups for charts)
+        if (!this.allMatchups[1]) {
+          phase1Tasks.push(
+            this.loadStaticData().catch(e => console.error('Static data failed:', e))
+          )
+        }
+
+        // Wait for ALL phase 1 tasks to complete
+        await Promise.all(phase1Tasks)
+        console.log('[INIT] ✓ Phase 1 complete')
+
+        // ═══════════════════════════════════════════════════════════════
+        // PHASE 2: Week Data (depends on league.currentWeek from Phase 1)
+        // ═══════════════════════════════════════════════════════════════
+        console.log('[INIT] ══ PHASE 2: Loading week data ══')
+
+        // Verify Phase 1 dependency
+        if (!this.currentWeek) {
+          console.warn('[INIT] currentWeek not set, defaulting to 1')
+          this.currentWeek = 1
+        }
+
+        try {
+          await this.loadWeekData(this.currentWeek)
+        } catch (e) {
+          console.error('Week data failed:', e)
+        }
+        console.log('[INIT] ✓ Phase 2 complete')
+
+        // ═══════════════════════════════════════════════════════════════
+        // PHASE 3: Dynamic Data (depends on nflSchedule, players, rosters)
+        // ═══════════════════════════════════════════════════════════════
+        console.log('[INIT] ══ PHASE 3: Loading dynamic data ══')
+
+        // Verify Phase 1 dependencies before proceeding
+        this._verifyDependencies('Phase 3', {
+          nflSchedule: !!this.nflSchedule,
+          players: Object.keys(this.players).length > 0,
+          rosters: this.rosters.length > 0
+        })
+
+        try {
+          await this.refreshDynamicData()
+        } catch (e) {
+          console.error('Dynamic data failed:', e)
+        }
+        console.log('[INIT] ✓ Phase 3 complete')
+
+        // ═══════════════════════════════════════════════════════════════
+        // PHASE 4: Process Stats (depends on ALL above)
+        // ═══════════════════════════════════════════════════════════════
+        console.log('[INIT] ══ PHASE 4: Processing stats for charts ══')
+
+        // Verify all dependencies
+        this._verifyDependencies('Phase 4', {
+          nflSchedule: !!this.nflSchedule,
+          players: Object.keys(this.players).length > 0,
+          rosters: this.rosters.length > 0,
+          currentWeek: !!this.currentWeek
+        })
+
+        // Process in parallel (both depend on the same data, not each other)
+        const phase4Tasks = []
+
+        if (!this.processedTransactionStats.byWeek ||
+            Object.keys(this.processedTransactionStats.byWeek).length === 0) {
+          phase4Tasks.push(
+            this.processTransactionStats(this.currentWeek)
+              .catch(e => console.error('Transaction stats failed:', e))
+          )
+        }
+
+        if (!this.processedInjuriesByTeam[`week${this.currentWeek}`]) {
+          phase4Tasks.push(
+            this.processInjuriesData(this.currentWeek)
+              .catch(e => console.error('Injuries data failed:', e))
+          )
+        }
+
+        await Promise.all(phase4Tasks)
+
+        // Enriched players (depends on injuries being processed)
+        if (Object.keys(this.enrichedPlayers).length === 0) {
+          try {
+            await this.loadEnrichedPlayers()
+          } catch (e) {
+            console.error('Enriched players failed:', e)
+          }
+        }
+
+        console.log('[INIT] ✓ Phase 4 complete')
+
+        // ═══════════════════════════════════════════════════════════════
+        // COMPLETE
+        // ═══════════════════════════════════════════════════════════════
         this.initState = 'ready'
+        this.lastFullLoad = Date.now()
         console.log('✅ [INIT] Initialization complete. State: ready')
 
-        // Start background refresh (fire-and-forget) to check for week changes
-        // This runs for both cached and fresh paths to ensure data stays current
-        this._backgroundRefresh()
+        // Background refresh is now TRULY background - only after full init
+        // Use setTimeout to ensure it doesn't block
+        setTimeout(() => this._backgroundRefresh(), 100)
 
       } catch (error) {
         console.error('❌ [INIT] Initialization failed:', error)
@@ -783,136 +935,34 @@ export const useLeagueStore = defineStore('league', {
         this.errors['init'] = error.message || 'Failed to initialize league data'
         throw error
       } finally {
-        this.isInitializing = false // Legacy flag
-        this._initPromise = null // Clear promise so future calls start fresh
+        this.isInitializing = false
+        this._initPromise = null
       }
     },
 
     /**
-     * Initialize from cached data - fills in any missing pieces
+     * Verify dependencies are met before proceeding to a phase.
+     * Logs warnings for missing deps but doesn't throw (graceful degradation).
      */
-    async _initializeFromCache() {
-      // Load NFL schedule if missing
-      if (!this.nflSchedule) {
-        this.loadNFLSchedule()
-      }
+    _verifyDependencies(phase, deps) {
+      const missing = Object.entries(deps)
+        .filter(([_, met]) => !met)
+        .map(([name]) => name)
 
-      // Ensure brackets are loaded
-      if (!this.winnersBracket || !this.losersBracket) {
-        await this.fetchBrackets()
-      }
-
-      // Ensure static data is loaded (historical weeks for charts)
-      if (!this.allMatchups[1]) {
-        console.log('📦 Historical matchups missing, loading static data...')
-        await this.loadStaticData()
-      }
-
-      // CRITICAL: Always process transaction and injury stats
-      // Even if cached, we need these for charts
-      if (!this.processedTransactionStats.byWeek || Object.keys(this.processedTransactionStats.byWeek).length === 0) {
-        console.log('📊 Transaction stats missing, processing...')
-        await this.processTransactionStats(this.currentWeek)
-      }
-
-      if (!this.processedInjuriesByTeam[`week${this.currentWeek}`]) {
-        console.log('🏥 Injuries data missing, processing...')
-        await this.processInjuriesData(this.currentWeek)
-      }
-
-      // Ensure enriched players are loaded
-      if (Object.keys(this.enrichedPlayers).length === 0) {
-        if (!this.processedInjuriesByTeam[`week${this.currentWeek}`]) {
-          await this.fetchInjuriesForWeek(this.currentWeek)
-        }
-        await this.loadEnrichedPlayers()
+      if (missing.length > 0) {
+        console.warn(`[INIT] ⚠️ ${phase} starting with missing deps: ${missing.join(', ')}`)
       }
     },
 
     /**
-     * Fresh initialization - load everything from API
-     */
-    async _initializeFresh() {
-      // 1. Load League Data (REQUIRED - fail fast if this fails)
-      console.log('[INIT] Step 1: Loading league data...')
-      try {
-        const leagueData = await getLeagueData()
-        this.league = leagueData.league
-        this.rosters = leagueData.rosters
-        this.users = leagueData.users
-        this.currentWeek = this.league?.settings?.leg || 1
-      } catch (e) {
-        throw new Error(`League Data Load Failed: ${e.message}`)
-      }
-
-      // 2. Load Brackets
-      console.log('[INIT] Step 2: Loading brackets...')
-      try {
-        await this.fetchBrackets()
-      } catch (e) {
-        console.error('Bracket fetch failed:', e)
-      }
-
-      // 3. Load Players
-      console.log('[INIT] Step 3: Loading players...')
-      if (Object.keys(this.players).length === 0) {
-        try {
-          if (typeof this.fetchPlayers === 'function') {
-            await this.fetchPlayers()
-          } else {
-            const players = await getRelevantPlayers()
-            this.players = players
-          }
-        } catch (e) {
-          console.error('Player fetch failed:', e)
-        }
-      }
-
-      // 4. Load Static Data (historical weeks for charts)
-      console.log('[INIT] Step 4: Loading static data...')
-      try {
-        await this.loadStaticData()
-      } catch (e) {
-        console.error('Static data load failed:', e)
-      }
-
-      // 5. Load Current Week Data
-      console.log('[INIT] Step 5: Loading current week data...')
-      try {
-        await this.loadWeekData(this.currentWeek)
-      } catch (e) {
-        console.error('Week data load failed:', e)
-      }
-
-      // 6. Load Dynamic Data (injuries, projections, etc.)
-      console.log('[INIT] Step 6: Loading dynamic data...')
-      try {
-        await this.refreshDynamicData()
-      } catch (e) {
-        console.error('Dynamic data refresh failed:', e)
-      }
-
-      // 7. Process Transaction and Injury Stats (for charts)
-      // THIS IS CRITICAL - must complete before we're "ready"
-      console.log('[INIT] Step 7: Processing stats for charts...')
-      try {
-        await this.processTransactionStats(this.currentWeek)
-      } catch (e) {
-        console.error('Transaction stats processing failed:', e)
-      }
-
-      try {
-        await this.processInjuriesData(this.currentWeek)
-      } catch (e) {
-        console.error('Injuries data processing failed:', e)
-      }
-
-      this.lastFullLoad = Date.now()
-    },
-
-    /**
-     * Background refresh - runs after initialization is complete
-     * Checks for week changes and refreshes dynamic data
+     * Background refresh - runs AFTER initialization is complete
+     * Checks for week changes and refreshes dynamic data.
+     *
+     * IMPORTANT: All calls here are intentionally fire-and-forget
+     * because we're already in 'ready' state. This is SAFE because:
+     * 1. Core data is already loaded
+     * 2. These are incremental updates, not initial loads
+     * 3. Each method has its own guards against race conditions
      */
     async _backgroundRefresh() {
       try {
@@ -921,10 +971,18 @@ export const useLeagueStore = defineStore('league', {
 
         if (remoteWeek !== this.currentWeek) {
           console.log(`🔄 Week advanced from ${this.currentWeek} to ${remoteWeek}. Forcing full refresh...`)
+          // This IS fire-and-forget because user initiated a page load
+          // and we want to update in background
           this.refreshCurrentWeek()
         } else {
-          this.refreshDynamicData()
-          this.fetchBrackets()
+          // These are safe to fire-and-forget because:
+          // - We're already 'ready'
+          // - They have internal guards
+          // - They're updating existing data, not loading new
+          await Promise.all([
+            this.refreshDynamicData().catch(e => console.error('Dynamic refresh failed:', e)),
+            this.fetchBrackets().catch(e => console.error('Bracket refresh failed:', e))
+          ])
         }
       } catch (e) {
         console.error('Background refresh failed:', e)
