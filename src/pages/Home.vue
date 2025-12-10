@@ -56,159 +56,218 @@ div(class="bg-[var(--color-background)]")
 
       //- Matchups Grid
       div(class="bg-black border-b border-x border-[var(--color-primary)] p-6 lg:p-4" v-if="allMatchups[selectedWeek]")
-        div(class="grid grid-cols-1 gap-4 lg:gap-3")
-          div(
-            v-for="(matchup, index) in allMatchups[selectedWeek]"
-            :key="index"
-            @click="goToMatchupDetail(matchup)"
-            class="bg-[var(--color-surface)] overflow-hidden hover:bg-[var(--color-background)] transition-all duration-200 cursor-pointer border border-[var(--color-primary)] terminal-shadow hover:translate-x-1 hover:translate-y-1 hover:shadow-none"
-            :class="{ 'matchup-highlight': matchup.length === 2 && isMatchupAnimating(selectedWeek, matchup[0].matchup_id) }"
-          )
-            div(class="p-4 lg:p-3" v-if="matchup.length === 2")
-              //- Mobile Layout (stacked)
-              div(class="flex flex-col gap-2 md:hidden")
-                //- Team 1 (Mobile)
-                .flex.items-center.justify-between.w-full.bg-slate-750.rounded-lg.p-2
-                  div(class="flex items-center gap-2 flex-1 min-w-0")
-                    img(class="h-10 w-10 flex-shrink-0 object-contain"
-                      :src="getTeamInfo(matchup[0].roster?.user?.display_name).logo"
-                      :alt="getTeamInfo(matchup[0].roster?.user?.display_name).aiModel"
-                      :class="getTeamInfo(matchup[0].roster?.user?.display_name).invertLogo ? 'invert brightness-200' : ''"
-                    )
-                    div(class="min-w-0 flex-1")
-                      div(class="text-white font-bold text-sm truncate") {{ getTeamInfo(matchup[0].roster?.user?.display_name).aiModel }}
-                      div(class="text-blue-400 text-xs font-semibold truncate") {{ getTeamInfo(matchup[0].roster?.user?.display_name).owner }}
-                      div(class="flex items-center gap-1 flex-wrap")
-                        div(:class="getRecordColor(getRecordThroughWeek(matchup[0].roster_id, selectedWeek - 1).wins, getRecordThroughWeek(matchup[0].roster_id, selectedWeek - 1).losses)" class="text-xs font-bold") {{ getRecordThroughWeek(matchup[0].roster_id, selectedWeek - 1).wins }}-{{ getRecordThroughWeek(matchup[0].roster_id, selectedWeek - 1).losses }}
-                        div(
-                          v-for="badge in getTeamBadges(matchup[0])"
-                          :key="badge.type"
-                          :class="[badge.color, badge.color === 'bg-yellow-500' ? 'text-black' : 'text-white']"
-                          class="px-1.5 py-0.5 rounded text-[10px] font-bold"
-                        ) {{ badge.label }}
-                  div(class="flex flex-col items-end flex-shrink-0 ml-2")
-                    div(
-                      class="text-white font-black text-xl transition-all duration-300"
-                      :class="{ 'score-pulse': isScoreAnimating(selectedWeek, matchup[0].matchup_id, matchup[0].roster_id) }"
-                    ) {{ matchup[0].points?.toFixed(2) || '0.00' }}
-                    div(v-if="isWeekComplete(matchup)")
-                      span.text-green-400.text-xs.font-bold.uppercase(v-if="matchup[0].points > matchup[1].points") W
-                      span.text-red-400.text-xs.font-bold.uppercase(v-else-if="matchup[0].points < matchup[1].points") L
+        div(class="flex flex-col gap-4 lg:gap-3")
+          template(v-for="(matchup, index) in displayMatchups" :key="index")
+            //- Bracket Section Header (for playoff weeks)
+            div(
+              v-if="shouldShowBracketHeader(matchup, index)"
+              class="flex items-center gap-3"
+              :class="{ 'mt-4': index > 0 }"
+            )
+              span(:class="getBracketHeader(matchup.bracketType).colorClass" class="text-2xl") {{ getBracketHeader(matchup.bracketType).icon }}
+              h3(:class="getBracketHeader(matchup.bracketType).colorClass" class="font-bold text-xl uppercase tracking-wider") {{ getBracketHeader(matchup.bracketType).title }}
 
-                  //- VS Separator (Mobile) - smaller and properly spaced
-                div(class="flex items-center justify-center py-1")
-                  div(class="relative flex items-center justify-center w-full")
-                    div(class="absolute inset-0 flex items-center")
-                      div(class="w-full border-t border-slate-600")
-                    div(class="relative bg-slate-800 px-2")
-                      span(class="text-gray-400 font-bold text-xs") VS
+            //- Matchup Card
+            div(
+              @click="goToMatchupDetail(matchup)"
+              class="bg-[var(--color-surface)] overflow-hidden hover:bg-[var(--color-background)] transition-all duration-200 cursor-pointer terminal-shadow hover:translate-x-1 hover:translate-y-1 hover:shadow-none relative"
+              :class="[matchup.bracketType === 'championship' ? 'border-2 border-yellow-500/50' : matchup.bracketType === 'consolation' ? 'border border-slate-600' : 'border border-[var(--color-primary)]', { 'matchup-highlight': matchup.length === 2 && isMatchupAnimating(selectedWeek, matchup[0].matchup_id) }]"
+            )
+              //- Bracket Round Badge (for playoff matchups)
+              div(
+                v-if="matchup.bracketInfo"
+                class="absolute top-2 right-2 z-10 px-2 py-0.5 text-xs font-bold uppercase rounded"
+                :class="matchup.bracketType === 'championship' ? 'bg-yellow-500 text-black' : 'bg-slate-600 text-white'"
+              ) {{ getBracketRoundLabel(matchup.bracketInfo) }}
+              div(class="p-4 lg:p-3" v-if="matchup.length === 2")
+                //- Mobile Layout (stacked)
+                div(class="flex flex-col gap-2 md:hidden")
+                  //- Team 1 (Mobile) - TBD version
+                  .flex.items-center.justify-between.w-full.bg-slate-750.rounded-lg.p-2(v-if="matchup[0].isTBD")
+                    div(class="flex items-center gap-2 flex-1 min-w-0")
+                      div(class="h-10 w-10 flex-shrink-0 rounded-full bg-slate-600 flex items-center justify-center")
+                        span(class="text-slate-400 text-lg") ?
+                      div(class="min-w-0 flex-1")
+                        div(class="text-slate-400 font-bold text-sm truncate italic") {{ matchup[0].tbdDescription }}
+                    div(class="flex flex-col items-end flex-shrink-0 ml-2")
+                      div(class="text-slate-500 font-black text-xl") —
+                  //- Team 1 (Mobile) - Known team version
+                  .flex.items-center.justify-between.w-full.bg-slate-750.rounded-lg.p-2(v-else)
+                    div(class="flex items-center gap-2 flex-1 min-w-0")
+                      img(class="h-10 w-10 flex-shrink-0 object-contain"
+                        :src="getTeamInfo(matchup[0].roster?.user?.display_name).logo"
+                        :alt="getTeamInfo(matchup[0].roster?.user?.display_name).aiModel"
+                        :class="getTeamInfo(matchup[0].roster?.user?.display_name).invertLogo ? 'invert brightness-200' : ''"
+                      )
+                      div(class="min-w-0 flex-1")
+                        div(class="text-white font-bold text-sm truncate") {{ getTeamInfo(matchup[0].roster?.user?.display_name).aiModel }}
+                        div(class="text-blue-400 text-xs font-semibold truncate") {{ getTeamInfo(matchup[0].roster?.user?.display_name).owner }}
+                        div(class="flex items-center gap-1 flex-wrap")
+                          div(:class="getRecordColor(getRecordThroughWeek(matchup[0].roster_id, selectedWeek - 1).wins, getRecordThroughWeek(matchup[0].roster_id, selectedWeek - 1).losses)" class="text-xs font-bold") {{ getRecordThroughWeek(matchup[0].roster_id, selectedWeek - 1).wins }}-{{ getRecordThroughWeek(matchup[0].roster_id, selectedWeek - 1).losses }}
+                          div(
+                            v-for="badge in getTeamBadges(matchup[0])"
+                            :key="badge.type"
+                            :class="[badge.color, badge.color === 'bg-yellow-500' ? 'text-black' : 'text-white']"
+                            class="px-1.5 py-0.5 rounded text-[10px] font-bold"
+                          ) {{ badge.label }}
+                    div(class="flex flex-col items-end flex-shrink-0 ml-2")
+                      div(
+                        class="text-white font-black text-xl transition-all duration-300"
+                        :class="{ 'score-pulse': isScoreAnimating(selectedWeek, matchup[0].matchup_id, matchup[0].roster_id) }"
+                      ) {{ matchup[0].points?.toFixed(2) || '0.00' }}
+                      div(v-if="isWeekComplete(matchup)")
+                        span.text-green-400.text-xs.font-bold.uppercase(v-if="matchup[0].points > matchup[1].points") W
+                        span.text-red-400.text-xs.font-bold.uppercase(v-else-if="matchup[0].points < matchup[1].points") L
 
-                //- Team 2 (Mobile)
-                .flex.items-center.justify-between.w-full.bg-slate-750.rounded-lg.p-2
-                  div(class="flex items-center gap-2 flex-1 min-w-0")
-                    img(class="h-10 w-10 flex-shrink-0 object-contain"
-                      :src="getTeamInfo(matchup[1].roster?.user?.display_name).logo"
-                      :alt="getTeamInfo(matchup[1].roster?.user?.display_name).aiModel"
-                      :class="getTeamInfo(matchup[1].roster?.user?.display_name).invertLogo ? 'invert brightness-200' : ''"
-                    )
-                    div(class="min-w-0 flex-1")
-                      div(class="text-white font-bold text-sm truncate") {{ getTeamInfo(matchup[1].roster?.user?.display_name).aiModel }}
-                      div(class="text-blue-400 text-xs font-semibold truncate") {{ getTeamInfo(matchup[1].roster?.user?.display_name).owner }}
-                      div(class="flex items-center gap-1 flex-wrap")
-                        div(:class="getRecordColor(getRecordThroughWeek(matchup[1].roster_id, selectedWeek - 1).wins, getRecordThroughWeek(matchup[1].roster_id, selectedWeek - 1).losses)" class="text-xs font-bold") {{ getRecordThroughWeek(matchup[1].roster_id, selectedWeek - 1).wins }}-{{ getRecordThroughWeek(matchup[1].roster_id, selectedWeek - 1).losses }}
-                        div(
-                          v-for="badge in getTeamBadges(matchup[1])"
-                          :key="badge.type"
-                          :class="[badge.color, badge.color === 'bg-yellow-500' ? 'text-black' : 'text-white']"
-                          class="px-1.5 py-0.5 rounded text-[10px] font-bold"
-                        ) {{ badge.label }}
-                  div(class="flex flex-col items-end flex-shrink-0 ml-2")
-                    div(
-                      class="text-white font-black text-xl transition-all duration-300"
-                      :class="{ 'score-pulse': isScoreAnimating(selectedWeek, matchup[1].matchup_id, matchup[1].roster_id) }"
-                    ) {{ matchup[1].points?.toFixed(2) || '0.00' }}
-                    div(v-if="isWeekComplete(matchup)")
-                      span.text-green-400.text-xs.font-bold.uppercase(v-if="matchup[1].points > matchup[0].points") W
-                      span.text-red-400.text-xs.font-bold.uppercase(v-else-if="matchup[1].points < matchup[0].points") L
+                    //- VS Separator (Mobile) - smaller and properly spaced
+                  div(class="flex items-center justify-center py-1")
+                    div(class="relative flex items-center justify-center w-full")
+                      div(class="absolute inset-0 flex items-center")
+                        div(class="w-full border-t border-slate-600")
+                      div(class="relative bg-slate-800 px-2")
+                        span(class="text-gray-400 font-bold text-xs") VS
 
-              //- Desktop Layout (single horizontal line on lg screens, 2-row grid on lg)
-              div(class="hidden md:flex md:flex-col md:gap-2 lg:grid lg:grid-cols-[48px_minmax(200px,1fr)_auto_auto_auto_minmax(200px,1fr)_48px] lg:grid-rows-[auto_auto] lg:gap-x-4 lg:gap-y-3 lg:py-4 lg:px-6")
-                //- Team 1 Logo (hidden on md, shown on lg in grid)
-                img(class="hidden lg:block h-12 w-12 object-contain"
-                  :src="getTeamInfo(matchup[0].roster?.user?.display_name).logo"
-                  :alt="getTeamInfo(matchup[0].roster?.user?.display_name).aiModel"
-                  :class="getTeamInfo(matchup[0].roster?.user?.display_name).invertLogo ? 'invert brightness-200' : ''"
-                )
+                  //- Team 2 (Mobile) - TBD version
+                  .flex.items-center.justify-between.w-full.bg-slate-750.rounded-lg.p-2(v-if="matchup[1].isTBD")
+                    div(class="flex items-center gap-2 flex-1 min-w-0")
+                      div(class="h-10 w-10 flex-shrink-0 rounded-full bg-slate-600 flex items-center justify-center")
+                        span(class="text-slate-400 text-lg") ?
+                      div(class="min-w-0 flex-1")
+                        div(class="text-slate-400 font-bold text-sm truncate italic") {{ matchup[1].tbdDescription }}
+                    div(class="flex flex-col items-end flex-shrink-0 ml-2")
+                      div(class="text-slate-500 font-black text-xl") —
+                  //- Team 2 (Mobile) - Known team version
+                  .flex.items-center.justify-between.w-full.bg-slate-750.rounded-lg.p-2(v-else)
+                    div(class="flex items-center gap-2 flex-1 min-w-0")
+                      img(class="h-10 w-10 flex-shrink-0 object-contain"
+                        :src="getTeamInfo(matchup[1].roster?.user?.display_name).logo"
+                        :alt="getTeamInfo(matchup[1].roster?.user?.display_name).aiModel"
+                        :class="getTeamInfo(matchup[1].roster?.user?.display_name).invertLogo ? 'invert brightness-200' : ''"
+                      )
+                      div(class="min-w-0 flex-1")
+                        div(class="text-white font-bold text-sm truncate") {{ getTeamInfo(matchup[1].roster?.user?.display_name).aiModel }}
+                        div(class="text-blue-400 text-xs font-semibold truncate") {{ getTeamInfo(matchup[1].roster?.user?.display_name).owner }}
+                        div(class="flex items-center gap-1 flex-wrap")
+                          div(:class="getRecordColor(getRecordThroughWeek(matchup[1].roster_id, selectedWeek - 1).wins, getRecordThroughWeek(matchup[1].roster_id, selectedWeek - 1).losses)" class="text-xs font-bold") {{ getRecordThroughWeek(matchup[1].roster_id, selectedWeek - 1).wins }}-{{ getRecordThroughWeek(matchup[1].roster_id, selectedWeek - 1).losses }}
+                          div(
+                            v-for="badge in getTeamBadges(matchup[1])"
+                            :key="badge.type"
+                            :class="[badge.color, badge.color === 'bg-yellow-500' ? 'text-black' : 'text-white']"
+                            class="px-1.5 py-0.5 rounded text-[10px] font-bold"
+                          ) {{ badge.label }}
+                    div(class="flex flex-col items-end flex-shrink-0 ml-2")
+                      div(
+                        class="text-white font-black text-xl transition-all duration-300"
+                        :class="{ 'score-pulse': isScoreAnimating(selectedWeek, matchup[1].matchup_id, matchup[1].roster_id) }"
+                      ) {{ matchup[1].points?.toFixed(2) || '0.00' }}
+                      div(v-if="isWeekComplete(matchup)")
+                        span.text-green-400.text-xs.font-bold.uppercase(v-if="matchup[1].points > matchup[0].points") W
+                        span.text-red-400.text-xs.font-bold.uppercase(v-else-if="matchup[1].points < matchup[0].points") L
 
-                //- Team 1 Info (full width on md, grid column on lg)
-                div(class="flex items-center gap-3 md:bg-slate-750 md:rounded-lg md:p-3 lg:bg-transparent lg:p-0 lg:min-w-0")
-                  img(class="h-12 w-12 lg:hidden object-contain flex-shrink-0"
+                //- Desktop Layout (single horizontal line on lg screens, 2-row grid on lg)
+                div(class="hidden md:flex md:flex-col md:gap-2 lg:grid lg:grid-cols-[48px_minmax(200px,1fr)_auto_auto_auto_minmax(200px,1fr)_48px] lg:grid-rows-[auto_auto] lg:gap-x-4 lg:gap-y-3 lg:py-4 lg:px-6")
+                  //- Team 1 Logo (hidden on md, shown on lg in grid) - TBD version
+                  div(v-if="matchup[0].isTBD" class="hidden lg:flex h-12 w-12 rounded-full bg-slate-600 items-center justify-center")
+                    span(class="text-slate-400 text-xl") ?
+                  //- Team 1 Logo - Known team version
+                  img(v-else class="hidden lg:block h-12 w-12 object-contain"
                     :src="getTeamInfo(matchup[0].roster?.user?.display_name).logo"
                     :alt="getTeamInfo(matchup[0].roster?.user?.display_name).aiModel"
                     :class="getTeamInfo(matchup[0].roster?.user?.display_name).invertLogo ? 'invert brightness-200' : ''"
                   )
-                  div(class="flex-1 min-w-0")
-                    div(class="text-white font-bold text-base") {{ getTeamInfo(matchup[0].roster?.user?.display_name).aiModel }}
-                    div(class="flex items-center gap-2 text-xs")
-                      span(class="text-blue-400 font-semibold") {{ getTeamInfo(matchup[0].roster?.user?.display_name).owner }}
-                      span(:class="getRecordColor(getRecordThroughWeek(matchup[0].roster_id, selectedWeek - 1).wins, getRecordThroughWeek(matchup[0].roster_id, selectedWeek - 1).losses)" class="font-bold") {{ getRecordThroughWeek(matchup[0].roster_id, selectedWeek - 1).wins }}-{{ getRecordThroughWeek(matchup[0].roster_id, selectedWeek - 1).losses }}
-                      span(
-                        v-for="badge in getTeamBadges(matchup[0])"
-                        :key="badge.type"
-                        :class="[badge.color, badge.color === 'bg-yellow-500' ? 'text-black' : 'text-white']"
-                        class="px-1.5 py-0.5 rounded font-bold"
-                      ) {{ badge.label }}
-                  div(class="lg:hidden flex items-center gap-1")
-                    div(class="text-white font-black text-2xl") {{ matchup[0].points?.toFixed(2) || '0.00' }}
+
+                  //- Team 1 Info (full width on md, grid column on lg) - TBD version
+                  div(v-if="matchup[0].isTBD" class="flex items-center gap-3 md:bg-slate-750 md:rounded-lg md:p-3 lg:bg-transparent lg:p-0 lg:min-w-0")
+                    div(class="h-12 w-12 lg:hidden rounded-full bg-slate-600 flex items-center justify-center flex-shrink-0")
+                      span(class="text-slate-400 text-xl") ?
+                    div(class="flex-1 min-w-0")
+                      div(class="text-slate-400 font-bold text-base italic") {{ matchup[0].tbdDescription }}
+                    div(class="lg:hidden flex items-center gap-1")
+                      div(class="text-slate-500 font-black text-2xl") —
+                  //- Team 1 Info - Known team version
+                  div(v-else class="flex items-center gap-3 md:bg-slate-750 md:rounded-lg md:p-3 lg:bg-transparent lg:p-0 lg:min-w-0")
+                    img(class="h-12 w-12 lg:hidden object-contain flex-shrink-0"
+                      :src="getTeamInfo(matchup[0].roster?.user?.display_name).logo"
+                      :alt="getTeamInfo(matchup[0].roster?.user?.display_name).aiModel"
+                      :class="getTeamInfo(matchup[0].roster?.user?.display_name).invertLogo ? 'invert brightness-200' : ''"
+                    )
+                    div(class="flex-1 min-w-0")
+                      div(class="text-white font-bold text-base") {{ getTeamInfo(matchup[0].roster?.user?.display_name).aiModel }}
+                      div(class="flex items-center gap-2 text-xs")
+                        span(class="text-blue-400 font-semibold") {{ getTeamInfo(matchup[0].roster?.user?.display_name).owner }}
+                        span(:class="getRecordColor(getRecordThroughWeek(matchup[0].roster_id, selectedWeek - 1).wins, getRecordThroughWeek(matchup[0].roster_id, selectedWeek - 1).losses)" class="font-bold") {{ getRecordThroughWeek(matchup[0].roster_id, selectedWeek - 1).wins }}-{{ getRecordThroughWeek(matchup[0].roster_id, selectedWeek - 1).losses }}
+                        span(
+                          v-for="badge in getTeamBadges(matchup[0])"
+                          :key="badge.type"
+                          :class="[badge.color, badge.color === 'bg-yellow-500' ? 'text-black' : 'text-white']"
+                          class="px-1.5 py-0.5 rounded font-bold"
+                        ) {{ badge.label }}
+                    div(class="lg:hidden flex items-center gap-1")
+                      div(class="text-white font-black text-2xl") {{ matchup[0].points?.toFixed(2) || '0.00' }}
+                      span(v-if="isWeekComplete(matchup) && matchup[0].points > matchup[1].points" class="text-green-400 text-sm font-bold") W
+                      span(v-else-if="isWeekComplete(matchup) && matchup[0].points < matchup[1].points" class="text-red-400 text-sm font-bold") L
+
+                  //- Team 1 Score (lg grid column only) - TBD shows dash
+                  div(v-if="matchup[0].isTBD" class="hidden lg:flex items-center gap-2")
+                    div(class="text-slate-500 font-black text-2xl whitespace-nowrap") —
+                  div(v-else class="hidden lg:flex items-center gap-2")
+                    div(class="text-white font-black text-2xl whitespace-nowrap") {{ matchup[0].points?.toFixed(2) || '0.00' }}
                     span(v-if="isWeekComplete(matchup) && matchup[0].points > matchup[1].points" class="text-green-400 text-sm font-bold") W
                     span(v-else-if="isWeekComplete(matchup) && matchup[0].points < matchup[1].points" class="text-red-400 text-sm font-bold") L
 
-                //- Team 1 Score (lg grid column only)
-                div(class="hidden lg:flex items-center gap-2")
-                  div(class="text-white font-black text-2xl whitespace-nowrap") {{ matchup[0].points?.toFixed(2) || '0.00' }}
-                  span(v-if="isWeekComplete(matchup) && matchup[0].points > matchup[1].points" class="text-green-400 text-sm font-bold") W
-                  span(v-else-if="isWeekComplete(matchup) && matchup[0].points < matchup[1].points" class="text-red-400 text-sm font-bold") L
+                  //- VS Separator (lg grid column only)
+                  div(class="hidden lg:flex flex-col items-center justify-center gap-2")
+                    div(class="bg-slate-700 rounded px-3 py-1")
+                      span(class="text-white font-black text-sm") VS
 
-                //- VS Separator (lg grid column only)
-                div(class="hidden lg:flex flex-col items-center justify-center gap-2")
-                  div(class="bg-slate-700 rounded px-3 py-1")
-                    span(class="text-white font-black text-sm") VS
-
-                //- Team 2 Score (lg grid column only)
-                div(class="hidden lg:flex items-center gap-2")
-                  span(v-if="isWeekComplete(matchup) && matchup[1].points > matchup[0].points" class="text-green-400 text-sm font-bold") W
-                  span(v-else-if="isWeekComplete(matchup) && matchup[1].points < matchup[0].points" class="text-red-400 text-sm font-bold") L
-                  div(class="text-white font-black text-2xl whitespace-nowrap") {{ matchup[1].points?.toFixed(2) || '0.00' }}
-
-                //- Team 2 Info (full width on md, grid column on lg)
-                div(class="flex items-center gap-3 md:bg-slate-750 md:rounded-lg md:p-3 lg:bg-transparent lg:p-0 lg:min-w-0")
-                  div(class="lg:hidden flex items-center gap-1 order-first")
+                  //- Team 2 Score (lg grid column only) - TBD shows dash
+                  div(v-if="matchup[1].isTBD" class="hidden lg:flex items-center gap-2")
+                    div(class="text-slate-500 font-black text-2xl whitespace-nowrap") —
+                  div(v-else class="hidden lg:flex items-center gap-2")
                     span(v-if="isWeekComplete(matchup) && matchup[1].points > matchup[0].points" class="text-green-400 text-sm font-bold") W
                     span(v-else-if="isWeekComplete(matchup) && matchup[1].points < matchup[0].points" class="text-red-400 text-sm font-bold") L
-                    div(class="text-white font-black text-2xl") {{ matchup[1].points?.toFixed(2) || '0.00' }}
-                  div(class="flex-1 min-w-0 lg:text-right")
-                    div(class="text-white font-bold text-base") {{ getTeamInfo(matchup[1].roster?.user?.display_name).aiModel }}
-                    div(class="flex items-center gap-2 text-xs lg:justify-end")
-                      span(class="text-blue-400 font-semibold") {{ getTeamInfo(matchup[1].roster?.user?.display_name).owner }}
-                      span(:class="getRecordColor(getRecordThroughWeek(matchup[1].roster_id, selectedWeek - 1).wins, getRecordThroughWeek(matchup[1].roster_id, selectedWeek - 1).losses)" class="font-bold") {{ getRecordThroughWeek(matchup[1].roster_id, selectedWeek - 1).wins }}-{{ getRecordThroughWeek(matchup[1].roster_id, selectedWeek - 1).losses }}
-                      span(
-                        v-for="badge in getTeamBadges(matchup[1])"
-                        :key="badge.type"
-                        :class="[badge.color, badge.color === 'bg-yellow-500' ? 'text-black' : 'text-white']"
-                        class="px-1.5 py-0.5 rounded font-bold"
-                      ) {{ badge.label }}
-                  img(class="h-12 w-12 lg:hidden object-contain flex-shrink-0"
+                    div(class="text-white font-black text-2xl whitespace-nowrap") {{ matchup[1].points?.toFixed(2) || '0.00' }}
+
+                  //- Team 2 Info (full width on md, grid column on lg) - TBD version
+                  div(v-if="matchup[1].isTBD" class="flex items-center gap-3 md:bg-slate-750 md:rounded-lg md:p-3 lg:bg-transparent lg:p-0 lg:min-w-0")
+                    div(class="lg:hidden flex items-center gap-1 order-first")
+                      div(class="text-slate-500 font-black text-2xl") —
+                    div(class="flex-1 min-w-0 lg:text-right")
+                      div(class="text-slate-400 font-bold text-base italic") {{ matchup[1].tbdDescription }}
+                    div(class="h-12 w-12 lg:hidden rounded-full bg-slate-600 flex items-center justify-center flex-shrink-0")
+                      span(class="text-slate-400 text-xl") ?
+                  //- Team 2 Info - Known team version
+                  div(v-else class="flex items-center gap-3 md:bg-slate-750 md:rounded-lg md:p-3 lg:bg-transparent lg:p-0 lg:min-w-0")
+                    div(class="lg:hidden flex items-center gap-1 order-first")
+                      span(v-if="isWeekComplete(matchup) && matchup[1].points > matchup[0].points" class="text-green-400 text-sm font-bold") W
+                      span(v-else-if="isWeekComplete(matchup) && matchup[1].points < matchup[0].points" class="text-red-400 text-sm font-bold") L
+                      div(class="text-white font-black text-2xl") {{ matchup[1].points?.toFixed(2) || '0.00' }}
+                    div(class="flex-1 min-w-0 lg:text-right")
+                      div(class="text-white font-bold text-base") {{ getTeamInfo(matchup[1].roster?.user?.display_name).aiModel }}
+                      div(class="flex items-center gap-2 text-xs lg:justify-end")
+                        span(class="text-blue-400 font-semibold") {{ getTeamInfo(matchup[1].roster?.user?.display_name).owner }}
+                        span(:class="getRecordColor(getRecordThroughWeek(matchup[1].roster_id, selectedWeek - 1).wins, getRecordThroughWeek(matchup[1].roster_id, selectedWeek - 1).losses)" class="font-bold") {{ getRecordThroughWeek(matchup[1].roster_id, selectedWeek - 1).wins }}-{{ getRecordThroughWeek(matchup[1].roster_id, selectedWeek - 1).losses }}
+                        span(
+                          v-for="badge in getTeamBadges(matchup[1])"
+                          :key="badge.type"
+                          :class="[badge.color, badge.color === 'bg-yellow-500' ? 'text-black' : 'text-white']"
+                          class="px-1.5 py-0.5 rounded font-bold"
+                        ) {{ badge.label }}
+                    img(class="h-12 w-12 lg:hidden object-contain flex-shrink-0"
+                      :src="getTeamInfo(matchup[1].roster?.user?.display_name).logo"
+                      :alt="getTeamInfo(matchup[1].roster?.user?.display_name).aiModel"
+                      :class="getTeamInfo(matchup[1].roster?.user?.display_name).invertLogo ? 'invert brightness-200' : ''"
+                    )
+
+                  //- Team 2 Logo (hidden on md, shown on lg in grid) - TBD version
+                  div(v-if="matchup[1].isTBD" class="hidden lg:flex h-12 w-12 rounded-full bg-slate-600 items-center justify-center")
+                    span(class="text-slate-400 text-xl") ?
+                  //- Team 2 Logo - Known team version
+                  img(v-else class="hidden lg:block h-12 w-12 object-contain"
                     :src="getTeamInfo(matchup[1].roster?.user?.display_name).logo"
                     :alt="getTeamInfo(matchup[1].roster?.user?.display_name).aiModel"
                     :class="getTeamInfo(matchup[1].roster?.user?.display_name).invertLogo ? 'invert brightness-200' : ''"
                   )
-
-                //- Team 2 Logo (hidden on md, shown on lg in grid)
-                img(class="hidden lg:block h-12 w-12 object-contain"
-                  :src="getTeamInfo(matchup[1].roster?.user?.display_name).logo"
-                  :alt="getTeamInfo(matchup[1].roster?.user?.display_name).aiModel"
-                  :class="getTeamInfo(matchup[1].roster?.user?.display_name).invertLogo ? 'invert brightness-200' : ''"
-                )
 
                 //- Point Differential Bar (Row 2 - spans columns 2-6 on lg)
                 div(v-if="(selectedWeek === leagueStore.currentWeek || isWeekComplete(matchup)) && (matchup[0].points || 0) !== (matchup[1].points || 0)" class="hidden lg:block lg:col-start-2 lg:col-end-7")
@@ -232,43 +291,43 @@ div(class="bg-[var(--color-background)]")
                     )
                       span(class="text-white text-sm font-bold") +{{ Math.abs((matchup[0].points || 0) - (matchup[1].points || 0)).toFixed(1) }}
 
-              //- Point Differential Bar (shown on md only, hidden on lg)
-              div(v-if="(selectedWeek === leagueStore.currentWeek || isWeekComplete(matchup)) && (matchup[0].points || 0) !== (matchup[1].points || 0)" class="mt-3 pt-3 border-t border-slate-700 lg:hidden")
-                div(class="relative h-6 flex items-center")
-                  //- Center Line
-                  div(class="absolute left-1/2 transform -translate-x-1/2 w-0.5 h-full bg-slate-600 z-0")
+                //- Point Differential Bar (shown on md only, hidden on lg)
+                div(v-if="(selectedWeek === leagueStore.currentWeek || isWeekComplete(matchup)) && (matchup[0].points || 0) !== (matchup[1].points || 0)" class="mt-3 pt-3 border-t border-slate-700 lg:hidden")
+                  div(class="relative h-6 flex items-center")
+                    //- Center Line
+                    div(class="absolute left-1/2 transform -translate-x-1/2 w-0.5 h-full bg-slate-600 z-0")
 
-                  //- Bar pointing toward winner (team 0 on left)
-                  div(
-                    v-if="matchup[0].points > matchup[1].points"
-                    class="absolute right-1/2 h-5 bg-gradient-to-l from-cyan-500 to-cyan-600 rounded-l flex items-center justify-start pl-2"
-                    :style="{ width: `${Math.min(((matchup[0].points - matchup[1].points) / 70) * 45, 45)}%` }"
+                    //- Bar pointing toward winner (team 0 on left)
+                    div(
+                      v-if="matchup[0].points > matchup[1].points"
+                      class="absolute right-1/2 h-5 bg-gradient-to-l from-cyan-500 to-cyan-600 rounded-l flex items-center justify-start pl-2"
+                      :style="{ width: `${Math.min(((matchup[0].points - matchup[1].points) / 70) * 45, 45)}%` }"
+                    )
+                      span(class="text-white text-xs font-bold") {{ Math.abs((matchup[0].points || 0) - (matchup[1].points || 0)).toFixed(2) }}
+
+                    //- Bar pointing toward winner (team 1 on right)
+                    div(
+                      v-else-if="matchup[1].points > matchup[0].points"
+                      class="absolute left-1/2 h-5 bg-gradient-to-r from-cyan-500 to-cyan-600 rounded-r flex items-center justify-end pr-2"
+                      :style="{ width: `${Math.min(((matchup[1].points - matchup[0].points) / 70) * 45, 45)}%` }"
+                    )
+                      span(class="text-white text-xs font-bold") {{ Math.abs((matchup[0].points || 0) - (matchup[1].points || 0)).toFixed(2) }}
+
+                //- Win Probability (only for current week)
+                div(v-if="selectedWeek === leagueStore.currentWeek")
+                  WinProbabilityBar(
+                    :winProb="matchupWinProbabilities[String(matchup[0].matchup_id)] || null"
+                    :showDetails="false"
                   )
-                    span(class="text-white text-xs font-bold") {{ Math.abs((matchup[0].points || 0) - (matchup[1].points || 0)).toFixed(2) }}
 
-                  //- Bar pointing toward winner (team 1 on right)
-                  div(
-                    v-else-if="matchup[1].points > matchup[0].points"
-                    class="absolute left-1/2 h-5 bg-gradient-to-r from-cyan-500 to-cyan-600 rounded-r flex items-center justify-end pr-2"
-                    :style="{ width: `${Math.min(((matchup[1].points - matchup[0].points) / 70) * 45, 45)}%` }"
+                //- Universal Matchup Actions Footer
+                div(class="mt-3 pt-3 border-t border-slate-700 flex justify-center bg-slate-900/30 -mx-4 -mb-4 lg:-mx-3 lg:-mb-3 py-2 relative z-20")
+                  button(
+                    @click.stop="goToMatchupTokens(matchup)"
+                    class="flex items-center gap-2 px-4 py-1.5 rounded-full bg-slate-800 hover:bg-[var(--color-primary)] text-[var(--color-primary)] hover:text-black transition-all duration-200 border border-[var(--color-primary)] group relative z-30"
                   )
-                    span(class="text-white text-xs font-bold") {{ Math.abs((matchup[0].points || 0) - (matchup[1].points || 0)).toFixed(2) }}
-
-              //- Win Probability (only for current week)
-              div(v-if="selectedWeek === leagueStore.currentWeek")
-                WinProbabilityBar(
-                  :winProb="matchupWinProbabilities[String(matchup[0].matchup_id)] || null"
-                  :showDetails="false"
-                )
-
-              //- Universal Matchup Actions Footer
-              div(class="mt-3 pt-3 border-t border-slate-700 flex justify-center bg-slate-900/30 -mx-4 -mb-4 lg:-mx-3 lg:-mb-3 py-2 relative z-20")
-                button(
-                  @click.stop="goToMatchupTokens(matchup)"
-                  class="flex items-center gap-2 px-4 py-1.5 rounded-full bg-slate-800 hover:bg-[var(--color-primary)] text-[var(--color-primary)] hover:text-black transition-all duration-200 border border-[var(--color-primary)] group relative z-30"
-                )
-                  span(class="text-lg") 🎟️
-                  span(class="text-xs font-bold uppercase tracking-wider") View Tokens
+                    span(class="text-lg") 🎟️
+                    span(class="text-xs font-bold uppercase tracking-wider") View Tokens
 
       //- No Matchups
       .bg-slate-900.rounded-b-lg.p-8.text-center(v-else)
@@ -857,6 +916,233 @@ export default {
     }))
 
     const allMatchups = computed(() => leagueStore.allMatchups)
+
+    // Determine if we're in a playoff week
+    const isPlayoffWeek = computed(() => {
+      const playoffStart = leagueStore.league?.settings?.playoff_week_start || 15
+      return selectedWeek.value >= playoffStart
+    })
+
+    // Helper to determine which bracket a matchup belongs to
+    // Sleeper's matchups API returns pre-scheduled games, not playoff brackets,
+    // so we check if BOTH teams are in the same bracket (winners or losers)
+    const findBracketMatchup = (rosterId1, rosterId2, week) => {
+      if (!leagueStore.winnersBracket && !leagueStore.losersBracket) {
+        return null
+      }
+
+      // Calculate playoff round from week
+      const playoffStart = leagueStore.league?.settings?.playoff_week_start || 15
+      const playoffRound = week - playoffStart + 1
+
+      // Extract all roster_ids from winners bracket (including bye teams in later rounds)
+      const winnersRosterIds = new Set()
+      if (leagueStore.winnersBracket) {
+        leagueStore.winnersBracket.forEach(m => {
+          if (m.t1) winnersRosterIds.add(m.t1)
+          if (m.t2) winnersRosterIds.add(m.t2)
+        })
+      }
+
+      // Extract all roster_ids from losers bracket
+      const losersRosterIds = new Set()
+      if (leagueStore.losersBracket) {
+        leagueStore.losersBracket.forEach(m => {
+          if (m.t1) losersRosterIds.add(m.t1)
+          if (m.t2) losersRosterIds.add(m.t2)
+        })
+      }
+
+      // Check if both teams are in winners bracket
+      const team1InWinners = winnersRosterIds.has(rosterId1)
+      const team2InWinners = winnersRosterIds.has(rosterId2)
+      const team1InLosers = losersRosterIds.has(rosterId1)
+      const team2InLosers = losersRosterIds.has(rosterId2)
+
+      if (team1InWinners && team2InWinners) {
+        return { type: 'winners', r: playoffRound }
+      }
+
+      if (team1InLosers && team2InLosers) {
+        return { type: 'losers', r: playoffRound }
+      }
+
+      // Mixed bracket or unknown - shouldn't happen in proper playoffs
+      return null
+    }
+
+    // Helper to get team name from roster_id
+    const getTeamNameFromRosterId = (rosterId) => {
+      const roster = leagueStore.rosters?.find(r => r.roster_id === rosterId)
+      if (!roster) return null
+      const user = leagueStore.users?.find(u => u.user_id === roster.owner_id)
+      return getTeamInfo(user?.display_name).aiModel
+    }
+
+    // Helper to describe where a TBD team comes from
+    const getTBDDescription = (fromInfo, bracketData) => {
+      if (!fromInfo) return 'TBD'
+
+      // fromInfo is like {w: 1} (winner of matchup 1) or {l: 2} (loser of matchup 2)
+      const sourceMatchupId = fromInfo.w || fromInfo.l
+      const isWinner = 'w' in fromInfo
+
+      // Find the source matchup in the bracket
+      const sourceEntry = bracketData?.find(e => e.m === sourceMatchupId)
+      if (!sourceEntry) return 'TBD'
+
+      const team1Name = getTeamNameFromRosterId(sourceEntry.t1)
+      const team2Name = getTeamNameFromRosterId(sourceEntry.t2)
+
+      if (team1Name && team2Name) {
+        return `${isWinner ? 'Winner' : 'Loser'} of ${team1Name} vs ${team2Name}`
+      }
+      return 'TBD'
+    }
+
+    // Build a matchup object from bracket entry and roster data
+    // Now supports partial matchups where one team is TBD
+    const buildBracketMatchup = (bracketEntry, bracketType, matchupsData) => {
+      const bracketData = bracketType === 'winners' ? leagueStore.winnersBracket : leagueStore.losersBracket
+
+      // Get roster info for known teams
+      const roster1 = bracketEntry.t1 ? leagueStore.rosters?.find(r => r.roster_id === bracketEntry.t1) : null
+      const roster2 = bracketEntry.t2 ? leagueStore.rosters?.find(r => r.roster_id === bracketEntry.t2) : null
+
+      // Need at least one known team to show the matchup
+      if (!roster1 && !roster2) return null
+
+      const user1 = roster1 ? leagueStore.users?.find(u => u.user_id === roster1.owner_id) : null
+      const user2 = roster2 ? leagueStore.users?.find(u => u.user_id === roster2.owner_id) : null
+
+      // Try to get actual points from matchups data if available
+      const weekMatchups = matchupsData || []
+      const flatMatchups = weekMatchups.flat()
+      const team1Data = bracketEntry.t1 ? flatMatchups.find(m => m.roster_id === bracketEntry.t1) : null
+      const team2Data = bracketEntry.t2 ? flatMatchups.find(m => m.roster_id === bracketEntry.t2) : null
+
+      // Build team 1 entry (or TBD placeholder)
+      const team1Entry = roster1 ? {
+        roster_id: bracketEntry.t1,
+        roster: { ...roster1, user: user1 },
+        points: team1Data?.points || 0,
+        matchup_id: bracketEntry.m,
+        isTBD: false
+      } : {
+        roster_id: null,
+        roster: null,
+        points: 0,
+        matchup_id: bracketEntry.m,
+        isTBD: true,
+        tbdDescription: getTBDDescription(bracketEntry.t1_from, bracketData)
+      }
+
+      // Build team 2 entry (or TBD placeholder)
+      const team2Entry = roster2 ? {
+        roster_id: bracketEntry.t2,
+        roster: { ...roster2, user: user2 },
+        points: team2Data?.points || 0,
+        matchup_id: bracketEntry.m,
+        isTBD: false
+      } : {
+        roster_id: null,
+        roster: null,
+        points: 0,
+        matchup_id: bracketEntry.m,
+        isTBD: true,
+        tbdDescription: getTBDDescription(bracketEntry.t2_from, bracketData)
+      }
+
+      const matchup = [team1Entry, team2Entry]
+
+      // Add bracket info as properties on the array
+      matchup.bracketInfo = { ...bracketEntry, type: bracketType }
+      matchup.bracketType = bracketType === 'winners' ? 'championship' : 'consolation'
+      matchup.hasTBD = team1Entry.isTBD || team2Entry.isTBD
+
+      return matchup
+    }
+
+    // Enhanced matchups - uses bracket data for playoff weeks
+    const displayMatchups = computed(() => {
+      const matchups = allMatchups.value[selectedWeek.value] || []
+
+      if (!isPlayoffWeek.value) {
+        // Regular season - return matchups with null bracket info
+        return matchups.map(m => {
+          const enhanced = [...m]
+          enhanced.bracketInfo = null
+          enhanced.bracketType = null
+          return enhanced
+        })
+      }
+
+      // Playoff weeks - construct matchups from bracket data
+      const playoffStart = leagueStore.league?.settings?.playoff_week_start || 15
+      const playoffRound = selectedWeek.value - playoffStart + 1
+      const result = []
+
+      // Get championship bracket matchups for this round
+      // Include matchups where at least one team is known (clinched/bye teams)
+      if (leagueStore.winnersBracket) {
+        leagueStore.winnersBracket
+          .filter(entry => entry.r === playoffRound && (entry.t1 || entry.t2))
+          .forEach(entry => {
+            const matchup = buildBracketMatchup(entry, 'winners', matchups)
+            if (matchup) result.push(matchup)
+          })
+      }
+
+      // Get consolation bracket matchups for this round
+      // Include matchups where at least one team is known
+      if (leagueStore.losersBracket) {
+        leagueStore.losersBracket
+          .filter(entry => entry.r === playoffRound && (entry.t1 || entry.t2))
+          .forEach(entry => {
+            const matchup = buildBracketMatchup(entry, 'losers', matchups)
+            if (matchup) result.push(matchup)
+          })
+      }
+
+      // Sort: championship first, then consolation
+      return result.sort((a, b) => {
+        const order = { 'championship': 0, 'consolation': 1 }
+        return (order[a.bracketType] ?? 2) - (order[b.bracketType] ?? 2)
+      })
+    })
+
+    // Check if we should show a bracket section header before this matchup
+    const shouldShowBracketHeader = (matchup, index) => {
+      if (!isPlayoffWeek.value || !matchup.bracketType) return false
+      // Show header if this is the first matchup of this bracket type
+      if (index === 0) return true
+      const prevMatchup = displayMatchups.value[index - 1]
+      return prevMatchup?.bracketType !== matchup.bracketType
+    }
+
+    // Get bracket header info
+    const getBracketHeader = (bracketType) => {
+      if (bracketType === 'championship') {
+        return { title: 'Championship Bracket', icon: '🏆', colorClass: 'text-yellow-400' }
+      }
+      return { title: 'Consolation Bracket', icon: '🎮', colorClass: 'text-slate-400' }
+    }
+
+    // Get round label for bracket matchup
+    const getBracketRoundLabel = (bracketInfo) => {
+      if (!bracketInfo) return ''
+      const round = bracketInfo.r
+      if (bracketInfo.type === 'winners') {
+        if (round === 1) return 'Quarterfinal'
+        if (round === 2) return 'Semifinal'
+        if (round === 3) return 'Championship'
+      } else {
+        if (round === 1) return 'Round 1'
+        if (round === 2) return 'Consolation Final'
+      }
+      return `Round ${round}`
+    }
+
     const players = computed(() => leagueStore.players)
     const enrichedPlayers = computed(() => leagueStore.enrichedPlayers)
     const transactions = computed(() => leagueStore.getTransactionsForWeek(selectedWeek.value))
@@ -2925,6 +3211,11 @@ export default {
       leagueStore,
       leagueData,
       allMatchups,
+      displayMatchups,
+      isPlayoffWeek,
+      shouldShowBracketHeader,
+      getBracketHeader,
+      getBracketRoundLabel,
       selectedWeek,
       currentWeek,
       transactions,
